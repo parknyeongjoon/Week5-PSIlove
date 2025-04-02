@@ -8,6 +8,7 @@
 #include "UObject/ObjectMacros.h"
 
 
+class UTextBillboardComponent;
 class UActorComponent;
 
 class AActor : public UObject
@@ -15,7 +16,7 @@ class AActor : public UObject
     DECLARE_CLASS(AActor, UObject)
 
 public:
-    AActor() = default;
+    AActor();
 
     /** Actor가 게임에 배치되거나 스폰될 때 호출됩니다. */
     virtual void BeginPlay();
@@ -97,7 +98,10 @@ private:
 
     /** 본인이 소유하고 있는 컴포넌트들의 정보 */
     TSet<UActorComponent*> OwnedComponents;
-    
+
+    UTextBillboardComponent* UUIDComponent = nullptr;
+
+    void InitUUIDBillboard();
     /** 현재 Actor가 삭제 처리중인지 여부 */
     uint8 bActorIsBeingDestroyed : 1;
     bool bIsActorTickEnable = true;

@@ -127,7 +127,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GLevel = FObjectFactory::ConstructObject<ULevel>();
     GLevel->Initialize();
 
-    GLevel = GLevel->Duplicate<ULevel>();
+    // GLevel = GLevel->Duplicate<ULevel>();
 
     return 0;
 }

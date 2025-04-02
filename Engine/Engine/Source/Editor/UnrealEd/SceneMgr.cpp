@@ -6,7 +6,7 @@
 #include "BaseGizmos/GizmoArrowComponent.h"
 #include "UObject/ObjectFactory.h"
 #include <fstream>
-#include "Components/UBillboardComponent.h"
+#include "Components/BillboardComponent.h"
 #include "Components/LightComponent.h"
 #include "Components/SkySphereComponent.h"
 #include "Camera/CameraComponent.h"

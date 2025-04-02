@@ -2,6 +2,9 @@
 #include "Components/ActorComponent.h"
 #include "UnrealEd/EditorPanel.h"
 
+class UTextRenderComponent;
+class UTextBillboardComponent;
+class UBillboardComponent;
 class UStaticMeshComponent;
 
 class PropertyEditorPanel : public UEditorPanel
@@ -22,6 +25,14 @@ private:
     void RenderForMaterial(UStaticMeshComponent* StaticMeshComp);
     void RenderMaterialView(UMaterial* Material);
     void RenderCreateMaterialView();
+
+    /* Text Settings */
+    void RenderForTextRender(UTextRenderComponent* TextRenderComp);
+    void RenderForTextBillboard(UTextBillboardComponent* TextBillboardComp);
+
+    /* Billboard Settings */
+    void RenderForBillboard(UBillboardComponent* BillboardComp);
+    
 private:
     float Width = 0, Height = 0;
     FVector Location = FVector(0, 0, 0);

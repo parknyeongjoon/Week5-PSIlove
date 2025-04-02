@@ -47,7 +47,6 @@ public:
     void SetupAttachment(USceneComponent* InParent);
 
 private:
-    class UTextUUID* uuidText = nullptr;
 
 public:
 };
