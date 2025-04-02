@@ -11,17 +11,6 @@ UClass* UObject::StaticClass()
     return &ClassInfo;
 }
 
-UObject* UObject::Duplicate()
-{
-    // 새 객체 생성 및 얕은 복사
-    UObject* NewObject = FObjectFactory::DuplicateObject<UObject>(*this);
-
-    // 서브 오브젝트는 깊은 복사로 별도 처리
-    NewObject->DuplicateSubObjects();
-
-    return NewObject;
-}
-
 void UObject::DuplicateSubObjects()
 {
 }
@@ -36,6 +25,7 @@ UObject::UObject()
     , InternalIndex(std::numeric_limits<uint32>::max())
     , NamePrivate("None")
 {
+    
 }
 
 bool UObject::IsA(const UClass* SomeBase) const
