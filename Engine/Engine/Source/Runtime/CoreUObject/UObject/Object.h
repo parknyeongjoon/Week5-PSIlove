@@ -27,7 +27,7 @@ public:
 
 protected:
     virtual void DuplicateSubObjects();
-    virtual void DuplicateObjects();
+    virtual void DuplicateObjects(const UObject& InObject);
 
 private:
     friend class FObjectFactory;

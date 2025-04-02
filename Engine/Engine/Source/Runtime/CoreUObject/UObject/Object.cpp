@@ -1,5 +1,6 @@
 #include "Engine/Source/Runtime/CoreUObject/UObject/Object.h"
 
+#include "ObjectFactory.h"
 #include "UClass.h"
 #include "UObjectHash.h"
 
@@ -12,8 +13,8 @@ UClass* UObject::StaticClass()
 
 UObject* UObject::Duplicate()
 {
-    // 새 객체 생성
-    UObject* NewObject = new UObject(*this); // 얕은 복사 수행
+    // 새 객체 생성 및 얕은 복사
+    UObject* NewObject = FObjectFactory::ConstructObject<UObject>(*this);
 
     // 서브 오브젝트는 깊은 복사로 별도 처리
     NewObject->DuplicateSubObjects();
@@ -23,12 +24,10 @@ UObject* UObject::Duplicate()
 
 void UObject::DuplicateSubObjects()
 {
-    // TODO: 
 }
 
-void UObject::DuplicateObjects()
+void UObject::DuplicateObjects(const UObject& InObject)
 {
-    // TODO:
 }
 
 UObject::UObject()
