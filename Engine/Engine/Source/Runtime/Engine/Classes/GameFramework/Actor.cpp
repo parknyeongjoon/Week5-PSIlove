@@ -140,15 +140,9 @@ void AActor::DuplicateSubObjects()
 {
     if (OwnedComponents.Num() > 0)
     {
-        for (const auto& Comp : OwnedComponents) 
-        {
-            if (Comp == Cast<UActorComponent>(RootComponent)) 
-            {
-                USceneComponent* NewRootComp = Comp->Duplicate<USceneComponent>();
-                RootComponent = NewRootComp;
-                RootComponent->Owner = this;
-            }
-        }
+        OwnedComponents.Remove(RootComponent);
+        RootComponent = RootComponent->Duplicate<USceneComponent>();
+
         TSet<UActorComponent*> NewOwnedComps;
         for (const auto& Comp : OwnedComponents) 
         {

@@ -3,6 +3,7 @@
 #include "Math/JungleMath.h"
 #include "UObject/ObjectFactory.h"
 #include "UTextUUID.h"
+#include "Engine/Classes/Components/SkySphereComponent.h"
 
 #include "UObject/Casts.h"
 
@@ -84,7 +85,7 @@ FVector USceneComponent::GetWorldRotation()
 
 FVector USceneComponent::GetWorldScale()
 {
-	if (AttachParent)
+	if (AttachParent && dynamic_cast<USkySphereComponent*>(this))
 	{
 		return FVector(AttachParent->GetWorldScale() + GetLocalScale());
 	}

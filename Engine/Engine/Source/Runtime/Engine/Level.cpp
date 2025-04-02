@@ -21,6 +21,8 @@ void ULevel::Initialize()
     USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
     skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
     skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
+
+    SpawnedActor->DuplicateAndAdd();
 }
 
 void ULevel::CreateBaseObject()
