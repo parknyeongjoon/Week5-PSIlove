@@ -1,4 +1,4 @@
-﻿#include "Actor.h"
+#include "Actor.h"
 
 #include "Level.h"
 
@@ -134,4 +134,46 @@ bool AActor::SetActorScale(const FVector& NewScale)
         return true;
     }
     return false;
+}
+
+void AActor::DuplicateSubObjects()
+{
+    if (Owner) {
+        AActor* NewOwner = FObjectFactory::DuplicateObject<AActor>(*Owner);
+        Owner = NewOwner;
+    }
+    if (OwnedComponents.Num() > 0) {
+        for (const auto& Comp : OwnedComponents) {
+            if (Comp == Cast<UActorComponent>(RootComponent)) {
+                USceneComponent* NewRootComp = FObjectFactory::DuplicateObject<USceneComponent>(*Cast<USceneComponent>(Comp));
+                RootComponent = NewRootComp;
+            }
+        }
+        TSet<UActorComponent*> NewOwnedComps = OwnedComponents;
+        OwnedComponents.Empty();
+        for (const auto& Comp : NewOwnedComps) {
+            UActorComponent* NewComp = FObjectFactory::DuplicateObject<UActorComponent>(*Comp);
+            OwnedComponents.Add(NewComp);
+            NewComp->Owner = this;
+            if (USceneComponent* NewSceneComp = Cast<USceneComponent>(Comp))
+            {
+                if (NewSceneComp != RootComponent)
+                {
+                    NewSceneComp->SetupAttachment(RootComponent);
+                }
+            }
+            Comp->InitializeComponent();
+        }
+    }
+}
+
+void AActor::DuplicateObject(const UObject* SourceObject)
+{
+    if (AActor* SourceActor = Cast<AActor>(SourceObject)) {
+        bActorIsBeingDestroyed = false;
+        SetActorLabel(SourceActor->GetActorLabel());
+        Owner = SourceActor->GetOwner();
+        RootComponent = SourceActor->GetRootComponent();
+        OwnedComponents = SourceActor->GetComponents();
+    }
 }
