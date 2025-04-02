@@ -30,7 +30,7 @@ public:
     static T* DuplicateObject(const T& InObject)
     {
         T* Obj = FObjectFactory::ConstructObject<T>();
-        Obj->DuplicateObject(&InObject);
+        Obj->DuplicateObject(&InObject); // 오브젝트 얕은 복사
         return Obj;
     }
 };
