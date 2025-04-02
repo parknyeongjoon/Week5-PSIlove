@@ -138,22 +138,20 @@ bool AActor::SetActorScale(const FVector& NewScale)
 
 void AActor::DuplicateSubObjects()
 {
-    if (Owner) {
-        AActor* NewOwner = Owner->Duplicate<AActor>();
-        Owner = NewOwner;
-    }
-    if (OwnedComponents.Num() > 0) {
-        for (const auto& Comp : OwnedComponents) {
-            if (Comp == Cast<UActorComponent>(RootComponent)) {
+    if (OwnedComponents.Num() > 0)
+    {
+        for (const auto& Comp : OwnedComponents) 
+        {
+            if (Comp == Cast<UActorComponent>(RootComponent)) 
+            {
                 USceneComponent* NewRootComp = Comp->Duplicate<USceneComponent>();
                 RootComponent = NewRootComp;
             }
         }
-        TSet<UActorComponent*> NewOwnedComps = OwnedComponents;
-        OwnedComponents.Empty();
-        for (const auto& Comp : NewOwnedComps) {
+        TSet<UActorComponent*> NewOwnedComps;
+        for (const auto& Comp : OwnedComponents) 
+        {
             UActorComponent* NewComp = Comp->Duplicate<UActorComponent>();
-            OwnedComponents.Add(NewComp);
             NewComp->Owner = this;
             if (USceneComponent* NewSceneComp = Cast<USceneComponent>(Comp))
             {
@@ -163,16 +161,18 @@ void AActor::DuplicateSubObjects()
                 }
             }
             NewComp->InitializeComponent();
+            NewOwnedComps.Add(NewComp);
         }
+        OwnedComponents = NewOwnedComps;
     }
 }
 
 void AActor::DuplicateObject(const UObject* SourceObject)
 {
-    if (AActor* SourceActor = Cast<AActor>(SourceObject)) {
+    if (AActor* SourceActor = Cast<AActor>(SourceObject)) 
+    {
         bActorIsBeingDestroyed = false;
         SetActorLabel(SourceActor->GetActorLabel());
-        Owner = SourceActor->GetOwner();
         RootComponent = SourceActor->GetRootComponent();
         OwnedComponents = SourceActor->GetComponents();
     }

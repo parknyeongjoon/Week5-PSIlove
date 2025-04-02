@@ -86,7 +86,6 @@ public:
     bool SetActorRotation(const FVector& NewRotation);
     bool SetActorScale(const FVector& NewScale);
 
-protected:
     virtual void DuplicateSubObjects() override;
     virtual void DuplicateObject(const UObject* SourceObject) override;
 

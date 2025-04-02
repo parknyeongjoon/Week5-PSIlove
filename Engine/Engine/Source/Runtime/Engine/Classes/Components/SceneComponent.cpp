@@ -3,6 +3,9 @@
 #include "Math/JungleMath.h"
 #include "UObject/ObjectFactory.h"
 #include "UTextUUID.h"
+
+#include "UObject/Casts.h"
+
 USceneComponent::USceneComponent() :RelativeLocation(FVector(0.f, 0.f, 0.f)), RelativeRotation(FVector(0.f, 0.f, 0.f)), RelativeScale3D(FVector(1.f, 1.f, 1.f))
 {
 }
@@ -123,5 +126,31 @@ void USceneComponent::SetupAttachment(USceneComponent* InParent)
     ) {
         AttachParent = InParent;
         InParent->AttachChildren.AddUnique(this);
+    }
+}
+
+void USceneComponent::DuplicateSubObjects()
+{
+    TArray<USceneComponent*> NewChildren = AttachChildren;
+    AttachChildren.Empty();
+    for (const auto& Child : NewChildren) 
+    {
+        USceneComponent* NewChild = Child->Duplicate<USceneComponent>();
+        NewChild->SetupAttachment(this);
+    }
+    UTextUUID* NewUUIDText = uuidText->Duplicate<UTextUUID>();
+    uuidText = NewUUIDText;
+}
+
+void USceneComponent::DuplicateObject(const UObject* SourceObject)
+{
+    if (USceneComponent* SourceSceneComp = Cast<USceneComponent>(SourceObject)) 
+    {
+        RelativeLocation = SourceSceneComp->RelativeLocation;
+        RelativeRotation = SourceSceneComp->RelativeRotation;
+        RelativeScale3D = SourceSceneComp->RelativeScale3D;
+        QuatRotation = SourceSceneComp->QuatRotation;
+        AttachChildren = SourceSceneComp->AttachChildren;
+        uuidText = SourceSceneComp->uuidText;
     }
 }
