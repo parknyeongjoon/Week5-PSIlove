@@ -4,6 +4,7 @@
 #include "Level.h"
 #include "Actors/Player.h"
 #include "BaseGizmos/GizmoBaseComponent.h"
+#include "BaseGizmos/TransformGizmo.h"
 #include "Components/LightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BillboardComponent.h"
@@ -1048,6 +1049,27 @@ void FRenderer::PrepareRender(ULevel* Level)
         A->GetRootComponent()->GetChildrenComponents(temp);
         Ss + temp;
     }
+
+
+    for (const USceneComponent* iter : TObjectRange<USceneComponent>())
+    {
+        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
+        {
+            GizmoObjs.Add(pGizmoComp);
+        }
+        if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(iter))
+        {
+            TextObjs.Add(TextRenderComp);
+        }
+        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
+        {
+            LightObjs.Add(pLightComp);
+        }
+    }
+    
+
+
+    
     for (const auto iter : Ss)
     {
         if (UStaticMeshComponent* pStaticMeshComp = Cast<UStaticMeshComponent>(iter))
@@ -1055,10 +1077,7 @@ void FRenderer::PrepareRender(ULevel* Level)
             if (!Cast<UGizmoBaseComponent>(iter))
                 StaticMeshObjs.Add(pStaticMeshComp);
         }
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        {
-            GizmoObjs.Add(pGizmoComp);
-        }
+
         if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
         {
             if (UTextBillboardComponent* TextBillboardComp = Cast<UTextBillboardComponent>(iter))
@@ -1070,14 +1089,7 @@ void FRenderer::PrepareRender(ULevel* Level)
                 BillboardObjs.Add(pBillboardComp);
             }
         }
-        if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(iter))
-        {
-            TextObjs.Add(TextRenderComp);
-        }
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
+
     }
 }
 

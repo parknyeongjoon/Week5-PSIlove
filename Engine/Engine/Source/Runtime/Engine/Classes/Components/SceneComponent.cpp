@@ -117,11 +117,11 @@ void USceneComponent::SetRotation(FVector _newRot)
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent)
 {
-    if (InParent != AttachParent                                    // 설정하려는 Parent가 기존의 Parent와 다르거나
-        && InParent != this                                         // InParent가 본인이 아니고
-        && InParent != nullptr                                      // InParent가 유효한 포인터 이며
-        && (AttachParent == nullptr                                 // AttachParent도 유효하며
-            || !AttachParent->AttachChildren.Contains(this)))  // 이미 AttachParent의 자식이 아닌 경우
+    // if (InParent != AttachParent                                    // 설정하려는 Parent가 기존의 Parent와 다르거나
+    //     && InParent != this                                         // InParent가 본인이 아니고
+    //     && InParent != nullptr                                      // InParent가 유효한 포인터 이며
+    //     && (AttachParent == nullptr                                 // AttachParent도 유효하며
+    //         || !AttachParent->AttachChildren.Contains(this)))  // 이미 AttachParent의 자식이 아닌 경우
     {
         AttachParent = InParent;
         InParent->AttachChildren.AddUnique(this);
