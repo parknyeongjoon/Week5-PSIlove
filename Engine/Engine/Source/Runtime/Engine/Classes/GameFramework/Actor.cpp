@@ -2,7 +2,7 @@
 
 #include "World.h"
 
-#include "Components/UTextUUID.h"
+#include "Components/TextUUIDComponent.h"
 
 AActor::AActor()
 {
@@ -17,7 +17,7 @@ void AActor::BeginPlay()
         Comp->BeginPlay();
     }
 
-    UUIDComponent = AddComponent<UTextUUID>();
+    UUIDComponent = AddComponent<UTextUUIDComponent>();
     if (UUIDComponent)
     {
         UUIDComponent->SetUUID(GetUUID());

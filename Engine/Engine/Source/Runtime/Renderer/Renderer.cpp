@@ -6,9 +6,9 @@
 #include "BaseGizmos/GizmoBaseComponent.h"
 #include "Components/LightComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/UBillboardComponent.h"
-#include "Components/UParticleSubUVComp.h"
-#include "Components/UText.h"
+#include "Components/BillboardComponent.h"
+#include "Components/ParticleSubUVComp.h"
+#include "Components/TextComponent.h"
 #include "Components/Material/Material.h"
 #include "D3D11RHI/GraphicDevice.h"
 #include "Launch/EngineLoop.h"
@@ -1161,7 +1161,7 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
                 SubUVParticle->indexTextureBuffer, SubUVParticle->numIndices, SubUVParticle->Texture->TextureSRV, SubUVParticle->Texture->SamplerState
             );
         }
-        else if (UText* Text = Cast<UText>(BillboardComp))
+        else if (UTextComponent* Text = Cast<UTextComponent>(BillboardComp))
         {
             FEngineLoop::renderer.RenderTextPrimitive(
                 Text->vertexTextBuffer, Text->numTextVertices,

@@ -1,5 +1,5 @@
 #include "LightComponent.h"
-#include "UBillboardComponent.h"
+#include "BillboardComponent.h"
 #include "Math/JungleMath.h"
 #include "UnrealEd/PrimitiveBatch.h"
 

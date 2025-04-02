@@ -1,16 +1,16 @@
-#include "UText.h"
+#include "TextComponent.h"
 
 #include "World.h"
 #include "Engine/Source/Editor/PropertyEditor/ShowFlags.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "LevelEditor/SLevelEditor.h"
 
-UText::UText()
+UTextComponent::UTextComponent()
 {
     SetType(StaticClass()->GetName());
 }
 
-UText::~UText()
+UTextComponent::~UTextComponent()
 {
 	if (vertexTextBuffer)
 	{
@@ -19,12 +19,12 @@ UText::~UText()
 	}
 }
 
-void UText::InitializeComponent()
+void UTextComponent::InitializeComponent()
 {
     Super::InitializeComponent();
 }
 
-void UText::TickComponent(float DeltaTime)
+void UTextComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
 
@@ -40,17 +40,17 @@ void UText::TickComponent(float DeltaTime)
     //RelativeRotation.z = degree + 90;
 }
 
-void UText::ClearText()
+void UTextComponent::ClearText()
 {
     vertexTextureArr.Empty();
 }
-void UText::SetRowColumnCount(int32 InRowCount, int32 InColumnCount) 
+void UTextComponent::SetRowColumnCount(int32 InRowCount, int32 InColumnCount) 
 {
     RowCount = InRowCount;
     ColumnCount = InColumnCount;
 }
 
-int UText::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int UTextComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
 {
 	if (!(ShowFlags::GetInstance().currentFlags & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))) {
 		return 0;
@@ -65,7 +65,7 @@ int UText::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float
 }
 
 
-void UText::SetText(FWString _text)
+void UTextComponent::SetText(FWString _text)
 {
 	text = _text;
 	if (_text.empty())
@@ -141,7 +141,7 @@ void UText::SetText(FWString _text)
 
 	CreateTextTextureVertexBuffer(vertexTextureArr,byteWidth);
 }
-void UText::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
+void UTextComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
 {
     //대문자만 받는중
     int StartU = 0;
@@ -188,7 +188,7 @@ void UText::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
     outStartU = static_cast<float>(offsetU);
     outStartV = static_cast<float>(StartV + offsetV);
 }
-void UText::setStartUV(char alphabet, float& outStartU, float& outStartV)
+void UTextComponent::setStartUV(char alphabet, float& outStartU, float& outStartV)
 {
     //대문자만 받는중
     int StartU=0;
@@ -231,7 +231,7 @@ void UText::setStartUV(char alphabet, float& outStartU, float& outStartV)
     outStartV = static_cast<float>(StartV + offsetV);
 
 }
-void UText::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,UINT byteWidth)
+void UTextComponent::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,UINT byteWidth)
 {
 	numTextVertices = static_cast<UINT>(_vertex.Num());
 	// 2. Create a vertex buffer
@@ -257,7 +257,7 @@ void UText::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,
 }
 
 
-void UText::TextMVPRendering()
+void UTextComponent::TextMVPRendering()
 {
     FEngineLoop::renderer.PrepareTextureShader();
     //FEngineLoop::renderer.UpdateSubUVConstant(0, 0);

@@ -1,5 +1,5 @@
 #pragma once
-#include "UBillboardComponent.h"
+#include "BillboardComponent.h"
 
 class UParticleSubUVComp : public UBillboardComponent
 {

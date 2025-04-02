@@ -1,13 +1,13 @@
 #pragma once
-#include "UBillboardComponent.h"
+#include "BillboardComponent.h"
 
-class UText : public UBillboardComponent
+class UTextComponent : public UBillboardComponent
 {
-    DECLARE_CLASS(UText, UBillboardComponent)
+    DECLARE_CLASS(UTextComponent, UBillboardComponent)
 
 public:
-    UText();
-    virtual ~UText() override;
+    UTextComponent();
+    virtual ~UTextComponent() override;
 
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;
