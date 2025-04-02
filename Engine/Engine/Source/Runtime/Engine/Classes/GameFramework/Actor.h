@@ -83,6 +83,8 @@ public:
     FVector GetActorRightVector() const { return RootComponent ? RootComponent->GetRightVector() : FVector::RightVector; }
     FVector GetActorUpVector() const { return RootComponent ? RootComponent->GetUpVector() : FVector::UpVector; }
 
+    bool IsActorTickEnable() const { return bIsActorTickEnable; }
+
     bool SetActorLocation(const FVector& NewLocation);
     bool SetActorRotation(const FVector& NewRotation);
     bool SetActorScale(const FVector& NewScale);
@@ -100,9 +102,9 @@ private:
     UTextBillboardComponent* UUIDComponent = nullptr;
 
     void InitUUIDBillboard();
-
     /** 현재 Actor가 삭제 처리중인지 여부 */
     uint8 bActorIsBeingDestroyed : 1;
+    bool bIsActorTickEnable = true;
 
 #if 1 // TODO: WITH_EDITOR 추가
 public:

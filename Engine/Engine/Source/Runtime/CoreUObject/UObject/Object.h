@@ -6,7 +6,7 @@
 extern FEngineLoop GEngineLoop;
 
 class UClass;
-class UWorld;
+class ULevel;
 
 
 class UObject
@@ -47,9 +47,9 @@ public:
     UObject();
     virtual ~UObject() = default;
 
-    UWorld* GetWorld()
+    ULevel* GetLevel()
     {
-        return GEngineLoop.GetWorld();
+        return GEngineLoop.GetLevel();
     }
 
     FEngineLoop& GetEngine()
@@ -114,7 +114,7 @@ template <typename T> requires std::derived_from<T, UObject>
 T* UObject::Duplicate()
 {
     // 새 객체 생성 및 얕은 복사
-    T* NewObject = FObjectFactory::DuplicateObject(*this);
+    T* NewObject = FObjectFactory::DuplicateObject(*dynamic_cast<T*>(this));
     // 서브 오브젝트는 깊은 복사로 별도 처리
     NewObject->DuplicateSubObjects();
     return NewObject;

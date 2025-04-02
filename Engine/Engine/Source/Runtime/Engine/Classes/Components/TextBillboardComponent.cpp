@@ -1,6 +1,6 @@
 #include "TextBillboardComponent.h"
 
-#include "World.h"
+#include "Level.h"
 #include "Engine/Source/Editor/PropertyEditor/ShowFlags.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "LevelEditor/SLevelEditor.h"

@@ -1,6 +1,6 @@
 ﻿#include "ControlEditorPanel.h"
 
-#include "World.h"
+#include "Level.h"
 #include "Actors/Player.h"
 #include "Components/CubeComp.h"
 #include "Components/LightComponent.h"
@@ -260,20 +260,20 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
             if (ImGui::Selectable(primitive.label))
             {
                 // GEngineLoop.GetWorld()->SpawnObject(static_cast<OBJECTS>(primitive.obj));
-                UWorld* World = GEngineLoop.GetWorld();
+                ULevel* level = GEngineLoop.GetLevel();
                 AActor* SpawnedActor = nullptr;
                 switch (static_cast<OBJECTS>(primitive.obj))
                 {
                 case OBJ_SPHERE:
                 {
-                    SpawnedActor = World->SpawnActor<AActor>();
+                    SpawnedActor = level->SpawnActor<AActor>();
                     SpawnedActor->SetActorLabel(TEXT("OBJ_SPHERE"));
                     SpawnedActor->AddComponent<USphereComp>();
                     break;
                 }
                 case OBJ_CUBE:
                 {
-                    AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
+                    AStaticMeshActor* TempActor = level->SpawnActor<AStaticMeshActor>();
                     TempActor->SetActorLabel(TEXT("OBJ_CUBE"));
                     UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
                     FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
@@ -282,7 +282,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                 }
                 case OBJ_SpotLight:
                 {
-                    SpawnedActor = World->SpawnActor<AActor>();
+                    SpawnedActor = level->SpawnActor<AActor>();
                     SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
                     auto a = SpawnedActor->AddComponent<ULightComponentBase>();
                     UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
@@ -292,7 +292,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                 }
                 case OBJ_PARTICLE:
                 {
-                    SpawnedActor = World->SpawnActor<AActor>();
+                    SpawnedActor = level->SpawnActor<AActor>();
                     SpawnedActor->SetActorLabel(TEXT("OBJ_PARTICLE"));
                     UParticleSubUVComp* ParticleComponent = SpawnedActor->AddComponent<UParticleSubUVComp>();
                     ParticleComponent->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
@@ -303,17 +303,18 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                 }
                 case OBJ_Text:
                 {
-                    SpawnedActor = World->SpawnActor<AActor>();
+                    SpawnedActor = level->SpawnActor<AActor>();
                     SpawnedActor->SetActorLabel(TEXT("OBJ_Text"));
                     UTextRenderComponent* TextComponent = SpawnedActor->AddComponent<UTextRenderComponent>();
                     TextComponent->SetTexture(L"Assets/Texture/font.png");
                     TextComponent->SetRowColumnCount(106, 106);
                     TextComponent->SetText(L"안녕하세요 Jungle 1");
+                        TextComponent->SetRotation(FVector(90.f, 0.f, 0.f));
                     break;
                 }
                 case OBJ_BILLBOARD:
                 {
-                    SpawnedActor = World->SpawnActor<AActor>();
+                    SpawnedActor = level->SpawnActor<AActor>();
                     SpawnedActor->SetActorLabel(TEXT("OBJ_BILLBOARD"));
                     UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
                     BillboardComp->SetTexture(L"Editor/Icon/S_Actor.png");
@@ -327,7 +328,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
         
                 if (SpawnedActor)
                 {
-                    World->SetPickedActor(SpawnedActor);
+                    level->SetPickedActor(SpawnedActor);
                 }
             }
         }
@@ -430,7 +431,7 @@ void ControlEditorPanel::CreateFlagButton() const
 // code is so dirty / Please refactor
 void ControlEditorPanel::CreateSRTButton(ImVec2 ButtonSize) const
 {
-    AEditorPlayer* Player = GEngineLoop.GetWorld()->GetEditorPlayer();
+    AEditorPlayer* Player = GEngineLoop.GetLevel()->GetEditorPlayer();
 
     ImVec4 ActiveColor = ImVec4(0.00f, 0.00f, 0.85f, 1.0f);
     

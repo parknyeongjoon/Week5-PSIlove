@@ -11,7 +11,7 @@
 
 class UPrimitiveComponent;
 class ULightComponentBase;
-class UWorld;
+class ULevel;
 class FGraphicsDevice;
 class UMaterial;
 struct FStaticMaterial;
@@ -149,12 +149,13 @@ public: // line shader
     //Render Pass Demo
     void PrepareRender();
     void ClearRenderArr();
-    void Render(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
-    void RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderTexts(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
+    void RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderBillboards(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderTexts(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    
 private:
     TArray<UStaticMeshComponent*> StaticMeshObjs;
     TArray<UGizmoBaseComponent*> GizmoObjs;

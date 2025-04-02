@@ -4,7 +4,7 @@
 #include "Define.h"
 #include <DirectXMath.h>
 
-#include "World.h"
+#include "Level.h"
 #include "Math/MathUtility.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "LevelEditor/SLevelEditor.h"

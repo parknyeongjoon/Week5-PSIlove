@@ -15,7 +15,7 @@ enum Type : uint64
 };
 }
 
-class UWorld;
+class ULevel;
 class ShowFlags : public IWindowToggleable
 {
 private:
