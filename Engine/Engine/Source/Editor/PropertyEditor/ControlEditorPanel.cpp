@@ -6,7 +6,7 @@
 #include "Components/LightComponent.h"
 #include "Components/SphereComp.h"
 #include "Components/ParticleSubUVComp.h"
-#include "Components/TextComponent.h"
+#include "Components/TextBillboardComponent.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Engine/StaticMeshActor.h"
 #include "ImGUI/imgui_internal.h"
@@ -250,6 +250,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
             { .label= "Sphere",    .obj= OBJ_SPHERE },
             { .label= "SpotLight", .obj= OBJ_SpotLight },
             { .label= "Particle",  .obj= OBJ_PARTICLE },
+            { .label= "Billboard", .obj= OBJ_BILLBOARD },
             { .label= "Text",      .obj= OBJ_Text }
         };
 
@@ -303,11 +304,18 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                 {
                     SpawnedActor = World->SpawnActor<AActor>();
                     SpawnedActor->SetActorLabel(TEXT("OBJ_Text"));
-                    UTextComponent* TextComponent = SpawnedActor->AddComponent<UTextComponent>();
+                    UTextBillboardComponent* TextComponent = SpawnedActor->AddComponent<UTextBillboardComponent>();
                     TextComponent->SetTexture(L"Assets/Texture/font.png");
                     TextComponent->SetRowColumnCount(106, 106);
                     TextComponent->SetText(L"안녕하세요 Jungle 1");
                     break;
+                }
+                case OBJ_BILLBOARD:
+                {
+                    SpawnedActor = World->SpawnActor<AActor>();
+                    SpawnedActor->SetActorLabel(TEXT("OBJ_BILLBOARD"));
+                    UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
+                    BillboardComp->SetTexture(L"Editor/Icon/S_Actor.png");
                 }
                 case OBJ_TRIANGLE:
                 case OBJ_CAMERA:

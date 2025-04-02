@@ -1,13 +1,13 @@
 #pragma once
 #include "BillboardComponent.h"
 
-class UTextComponent : public UBillboardComponent
+class UTextBillboardComponent : public UBillboardComponent
 {
-    DECLARE_CLASS(UTextComponent, UBillboardComponent)
+    DECLARE_CLASS(UTextBillboardComponent, UBillboardComponent)
 
 public:
-    UTextComponent();
-    virtual ~UTextComponent() override;
+    UTextBillboardComponent();
+    virtual ~UTextBillboardComponent() override;
 
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;
@@ -36,6 +36,4 @@ protected:
     void setStartUV(char alphabet, float& outStartU, float& outStartV);
     void setStartUV(wchar_t hangul, float& outStartU, float& outStartV);
     void CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex, UINT byteWidth);
-
-    void TextMVPRendering();
 };

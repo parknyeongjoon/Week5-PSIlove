@@ -1,16 +1,16 @@
-#include "TextComponent.h"
+#include "TextBillboardComponent.h"
 
 #include "World.h"
 #include "Engine/Source/Editor/PropertyEditor/ShowFlags.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "LevelEditor/SLevelEditor.h"
 
-UTextComponent::UTextComponent()
+UTextBillboardComponent::UTextBillboardComponent()
 {
     SetType(StaticClass()->GetName());
 }
 
-UTextComponent::~UTextComponent()
+UTextBillboardComponent::~UTextBillboardComponent()
 {
 	if (vertexTextBuffer)
 	{
@@ -19,12 +19,12 @@ UTextComponent::~UTextComponent()
 	}
 }
 
-void UTextComponent::InitializeComponent()
+void UTextBillboardComponent::InitializeComponent()
 {
     Super::InitializeComponent();
 }
 
-void UTextComponent::TickComponent(float DeltaTime)
+void UTextBillboardComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
 
@@ -40,17 +40,17 @@ void UTextComponent::TickComponent(float DeltaTime)
     //RelativeRotation.z = degree + 90;
 }
 
-void UTextComponent::ClearText()
+void UTextBillboardComponent::ClearText()
 {
     vertexTextureArr.Empty();
 }
-void UTextComponent::SetRowColumnCount(int32 InRowCount, int32 InColumnCount) 
+void UTextBillboardComponent::SetRowColumnCount(int32 InRowCount, int32 InColumnCount) 
 {
     RowCount = InRowCount;
     ColumnCount = InColumnCount;
 }
 
-int UTextComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int UTextBillboardComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
 {
 	if (!(ShowFlags::GetInstance().currentFlags & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))) {
 		return 0;
@@ -65,7 +65,7 @@ int UTextComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirecti
 }
 
 
-void UTextComponent::SetText(FWString _text)
+void UTextBillboardComponent::SetText(FWString _text)
 {
 	text = _text;
 	if (_text.empty())
@@ -141,7 +141,7 @@ void UTextComponent::SetText(FWString _text)
 
 	CreateTextTextureVertexBuffer(vertexTextureArr,byteWidth);
 }
-void UTextComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
+void UTextBillboardComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
 {
     //대문자만 받는중
     int StartU = 0;
@@ -188,7 +188,7 @@ void UTextComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStar
     outStartU = static_cast<float>(offsetU);
     outStartV = static_cast<float>(StartV + offsetV);
 }
-void UTextComponent::setStartUV(char alphabet, float& outStartU, float& outStartV)
+void UTextBillboardComponent::setStartUV(char alphabet, float& outStartU, float& outStartV)
 {
     //대문자만 받는중
     int StartU=0;
@@ -231,7 +231,7 @@ void UTextComponent::setStartUV(char alphabet, float& outStartU, float& outStart
     outStartV = static_cast<float>(StartV + offsetV);
 
 }
-void UTextComponent::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,UINT byteWidth)
+void UTextBillboardComponent::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,UINT byteWidth)
 {
 	numTextVertices = static_cast<UINT>(_vertex.Num());
 	// 2. Create a vertex buffer
@@ -254,30 +254,4 @@ void UTextComponent::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>&
 	//FEngineLoop::resourceMgr.RegisterMesh(&FEngineLoop::renderer, "JungleText", _vertex, _vertex.Num() * sizeof(FVertexTexture),
 	//	nullptr, 0);
 
-}
-
-
-void UTextComponent::TextMVPRendering()
-{
-    FEngineLoop::renderer.PrepareTextureShader();
-    //FEngineLoop::renderer.UpdateSubUVConstant(0, 0);
-    //FEngineLoop::renderer.PrepareSubUVConstant();
-    FMatrix Model = CreateBillboardMatrix();
-
-    FMatrix MVP = Model * GetEngine().GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix() * GetEngine().GetLevelEditor()->GetActiveViewportClient()->GetProjectionMatrix();
-    FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-    FVector4 UUIDColor = EncodeUUID() / 255.0f;
-    if (this == GetWorld()->GetPickingGizmo()) {
-        FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-    }
-    else
-        FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
-
-    if (ShowFlags::GetInstance().currentFlags & static_cast<uint64>(EEngineShowFlags::SF_BillboardText)) {
-        FEngineLoop::renderer.RenderTextPrimitive(vertexTextBuffer, numTextVertices,
-            Texture->TextureSRV, Texture->SamplerState);
-    }
-    //Super::Render();
-
-    FEngineLoop::renderer.PrepareShader();
 }

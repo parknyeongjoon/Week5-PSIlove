@@ -9,6 +9,7 @@
 #include "Define.h"
 #include "Container/Set.h"
 
+class UPrimitiveComponent;
 class ULightComponentBase;
 class UWorld;
 class FGraphicsDevice;
@@ -85,9 +86,13 @@ public:
     void UpdateTextureConstant(float UOffset, float VOffset);
 
 public://텍스쳐용 기능 추가
-    ID3D11VertexShader* VertexTextureShader = nullptr;
-    ID3D11PixelShader* PixelTextureShader = nullptr;
+    ID3D11VertexShader* TextureVertexShader = nullptr;
+    ID3D11PixelShader* TexturePixelShader = nullptr;
     ID3D11InputLayout* TextureInputLayout = nullptr;
+
+    ID3D11VertexShader* FontVertexShader = nullptr;
+    ID3D11PixelShader* FontPixelShader = nullptr;
+    ID3D11InputLayout* FontInputLayout = nullptr;
 
     uint32 TextureStride;
     struct FSubUVConstant
@@ -98,8 +103,14 @@ public://텍스쳐용 기능 추가
     ID3D11Buffer* SubUVConstantBuffer = nullptr;
 
 public:
+    void CreateFontShader();
+    void ReleaseFontShader();
+
+    void PrepareFontShader() const;
+    
     void CreateTextureShader();
     void ReleaseTextureShader();
+    
     void PrepareTextureShader() const;
     ID3D11Buffer* CreateVertexTextureBuffer(FVertexTexture* vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexTextureBuffer(uint32* indices, UINT byteWidth) const;
@@ -143,9 +154,11 @@ public: // line shader
     void RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderTexts(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
 private:
     TArray<UStaticMeshComponent*> StaticMeshObjs;
     TArray<UGizmoBaseComponent*> GizmoObjs;
+    TArray<UPrimitiveComponent*> TextObjs;
     TArray<UBillboardComponent*> BillboardObjs;
     TArray<ULightComponentBase*> LightObjs;
 

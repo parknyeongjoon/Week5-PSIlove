@@ -2,7 +2,7 @@
 #include "World.h"
 #include "Math/JungleMath.h"
 #include "UObject/ObjectFactory.h"
-#include "TextUUIDComponent.h"
+#include "TextRenderComponent.h"
 USceneComponent::USceneComponent() :RelativeLocation(FVector(0.f, 0.f, 0.f)), RelativeRotation(FVector(0.f, 0.f, 0.f)), RelativeScale3D(FVector(1.f, 1.f, 1.f))
 {
 }

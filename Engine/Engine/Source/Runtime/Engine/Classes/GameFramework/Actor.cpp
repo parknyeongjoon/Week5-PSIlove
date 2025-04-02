@@ -2,7 +2,7 @@
 
 #include "World.h"
 
-#include "Components/TextUUIDComponent.h"
+#include "Components/TextBillboardComponent.h"
 
 AActor::AActor()
 {
@@ -10,20 +10,30 @@ AActor::AActor()
 
 void AActor::BeginPlay()
 {
+    InitUUIDBillboard();
+    
     // TODO: 나중에 삭제를 Pending으로 하던가 해서 복사비용 줄이기
     const auto CopyComponents = OwnedComponents;
     for (UActorComponent* Comp : CopyComponents)
     {
         Comp->BeginPlay();
     }
+}
 
-    UUIDComponent = AddComponent<UTextUUIDComponent>();
+void AActor::InitUUIDBillboard()
+{
+    UUIDComponent = AddComponent<UTextBillboardComponent>();
     if (UUIDComponent)
     {
-        UUIDComponent->SetUUID(GetUUID());
+        UUIDComponent->SetScale(FVector(0.1f, 0.25f, 0.25f));
+        UUIDComponent->SetLocation(FVector(0.0f, 0.0f, 1.5f));
+        UUIDComponent->SetTexture(L"Assets/Texture/UUID_Font.png");
+        UUIDComponent->SetRowColumnCount(1, 11);
+        UUIDComponent->SetText(std::to_wstring(GetUUID()));
         UUIDComponent->SetupAttachment(RootComponent);
     }
 }
+
 
 void AActor::Tick(float DeltaTime)
 {

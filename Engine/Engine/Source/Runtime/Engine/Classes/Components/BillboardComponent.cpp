@@ -61,12 +61,6 @@ void UBillboardComponent::SetTexture(FWString _fileName)
 	Texture = FEngineLoop::resourceMgr.GetTexture(_fileName);
 }
 
-void UBillboardComponent::SetUUIDParent(USceneComponent* _parent)
-{
-	m_parent = _parent;
-}
-
-
 FMatrix UBillboardComponent::CreateBillboardMatrix()
 {
 	FMatrix CameraView = GetEngine().GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix();

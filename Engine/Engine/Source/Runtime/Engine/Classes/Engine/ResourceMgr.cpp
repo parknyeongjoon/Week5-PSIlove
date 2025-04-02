@@ -8,7 +8,13 @@
 #include "DirectXTK/Include/DDSTextureLoader.h"
 #include "DirectXTK/Include/WICTextureLoader.h"
 
-void FResourceMgr::Initialize(FRenderer* renderer, FGraphicsDevice* device) {}
+void FResourceMgr::Initialize(FRenderer* renderer, FGraphicsDevice* device)
+{
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/Pawn_64x.png");
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/PointLight_64x.png");
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/SpotLight_64x.png");
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/S_Actor.png");
+}
 
 void FResourceMgr::Release(FRenderer* renderer)
 {
@@ -51,6 +57,20 @@ std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& name)
         return *textureMap.Find(name);
     }
     return TempValue ? *TempValue : nullptr;
+}
+
+TSet<FString> FResourceMgr::GetAllTextureKeys() const
+{
+    TSet<FString> Keys;
+    for (const auto& Pair : textureMap)
+    {
+        const wchar_t* wstr = Pair.Key.c_str();
+        int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
+        char* str = new char[size_needed];
+        WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, size_needed, nullptr, nullptr);
+        Keys.Add(str);
+    }
+    return Keys;
 }
 
 HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* filename)
@@ -143,7 +163,7 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* f
 	device->CreateSamplerState(&samplerDesc, &SamplerState);
 	FWString name = FWString(filename);
 
-	textureMap[name] = std::make_shared<FTexture>(TextureSRV, Texture2D, SamplerState, width, height);
+	textureMap[name] = std::make_shared<FTexture>(name, TextureSRV, Texture2D, SamplerState, width, height);
 
 	Console::GetInstance().AddLog(LogLevel::Warning, "Texture File Load Successs");
 	return hr;
@@ -198,7 +218,7 @@ HRESULT FResourceMgr::LoadTextureFromDDS(ID3D11Device* device, ID3D11DeviceConte
 
 	FWString name = FWString(filename);
 
-	textureMap[name] = std::make_shared<FTexture>(textureView, texture2D, SamplerState, width, height);
+	textureMap[name] = std::make_shared<FTexture>(name, textureView, texture2D, SamplerState, width, height);
 
 	Console::GetInstance().AddLog(LogLevel::Warning, "Texture File Load Successs");
 
