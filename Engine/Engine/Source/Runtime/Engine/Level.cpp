@@ -163,6 +163,12 @@ bool ULevel::DestroyActor(AActor* ThisActor)
     return true;
 }
 
+void ULevel::AddActor(AActor* NewActor)
+{
+    ActorsArray.Add(NewActor);
+    PendingBeginPlayActors.Add(NewActor);
+}
+
 void ULevel::SetPickingGizmo(UObject* Object)
 {
 	pickingGizmo = Cast<USceneComponent>(Object);

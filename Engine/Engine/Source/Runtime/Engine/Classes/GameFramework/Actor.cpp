@@ -146,6 +146,7 @@ void AActor::DuplicateSubObjects()
             {
                 USceneComponent* NewRootComp = Comp->Duplicate<USceneComponent>();
                 RootComponent = NewRootComp;
+                RootComponent->Owner = this;
             }
         }
         TSet<UActorComponent*> NewOwnedComps;
@@ -178,4 +179,11 @@ void AActor::DuplicateObject(const UObject* SourceObject)
         RootComponent = SourceActor->GetRootComponent();
         OwnedComponents = SourceActor->GetComponents();
     }
+}
+
+AActor* AActor::DuplicateAndAdd()
+{
+    AActor* NewActor = Duplicate<AActor>();
+    GetLevel()->AddActor(NewActor);
+    return NewActor;
 }

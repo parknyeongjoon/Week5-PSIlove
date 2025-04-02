@@ -138,8 +138,8 @@ void USceneComponent::DuplicateSubObjects()
         USceneComponent* NewChild = Child->Duplicate<USceneComponent>();
         NewChild->SetupAttachment(this);
     }
-    UTextUUID* NewUUIDText = uuidText->Duplicate<UTextUUID>();
-    uuidText = NewUUIDText;
+    //UTextUUID* NewUUIDText = uuidText->Duplicate<UTextUUID>();
+    //uuidText = NewUUIDText;
 }
 
 void USceneComponent::DuplicateObject(const UObject* SourceObject)
@@ -148,6 +148,7 @@ void USceneComponent::DuplicateObject(const UObject* SourceObject)
 
     if (USceneComponent* SourceSceneComp = Cast<USceneComponent>(SourceObject)) 
     {
+        Super::DuplicateObject(SourceObject);
         RelativeLocation = SourceSceneComp->RelativeLocation;
         RelativeRotation = SourceSceneComp->RelativeRotation;
         RelativeScale3D = SourceSceneComp->RelativeScale3D;
