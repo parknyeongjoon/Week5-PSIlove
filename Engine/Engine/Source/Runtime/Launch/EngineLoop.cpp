@@ -232,10 +232,10 @@ void FEngineLoop::Input()
             bTestInput = true;
             if (LevelEditor->IsMultiViewport())
             {
-                LevelEditor->OffMultiViewport();
+                LevelEditor->DisableMultiViewport();
             }
             else
-                LevelEditor->OnMultiViewport();
+                LevelEditor->EnableMultiViewport();
         }
     }
     else

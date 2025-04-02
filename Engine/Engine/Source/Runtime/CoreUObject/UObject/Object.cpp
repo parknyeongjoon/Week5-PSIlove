@@ -10,6 +10,27 @@ UClass* UObject::StaticClass()
     return &ClassInfo;
 }
 
+UObject* UObject::Duplicate()
+{
+    // 새 객체 생성
+    UObject* NewObject = new UObject(*this); // 얕은 복사 수행
+
+    // 서브 오브젝트는 깊은 복사로 별도 처리
+    NewObject->DuplicateSubObjects();
+
+    return NewObject;
+}
+
+void UObject::DuplicateSubObjects()
+{
+    // TODO: 
+}
+
+void UObject::DuplicateObjects()
+{
+    // TODO:
+}
+
 UObject::UObject()
     : UUID(0)
     // TODO: Object를 생성할 때 직접 설정하기

@@ -18,9 +18,10 @@ public:
     void SelectViewport(POINT point);
     void OnResize();
     void ResizeViewports();
-    void OnMultiViewport();
-    void OffMultiViewport();
-    bool IsMultiViewport();
+    void EnableMultiViewport();
+    void DisableMultiViewport();
+    bool IsMultiViewport() const;
+    
 private:
     bool bInitialize;
     SSplitterH* HSplitter;

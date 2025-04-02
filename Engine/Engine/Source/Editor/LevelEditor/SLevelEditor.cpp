@@ -36,6 +36,15 @@ void SLevelEditor::Initialize()
     HSplitter->OnDrag(FPoint(0, 0));
     LoadConfig();
     bInitialize = true;
+
+    if (bMultiViewportMode)
+    {
+        EnableMultiViewport();
+    }
+    else
+    {
+        DisableMultiViewport();
+    }
 }
 
 void SLevelEditor::Tick(double deltaTime)
@@ -176,18 +185,18 @@ void SLevelEditor::ResizeViewports()
     }
 }
 
-void SLevelEditor::OnMultiViewport()
+void SLevelEditor::EnableMultiViewport()
 {
     bMultiViewportMode = true;
     ResizeViewports();
 }
 
-void SLevelEditor::OffMultiViewport()
+void SLevelEditor::DisableMultiViewport()
 {
     bMultiViewportMode = false;
 }
 
-bool SLevelEditor::IsMultiViewport()
+bool SLevelEditor::IsMultiViewport() const
 {
     return bMultiViewportMode;
 }

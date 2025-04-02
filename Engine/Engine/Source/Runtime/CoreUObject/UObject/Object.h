@@ -22,6 +22,13 @@ public:
 
     static UClass* StaticClass();
 
+    // 현재 오브젝트를 복제하는 함수
+    virtual UObject* Duplicate();
+
+protected:
+    virtual void DuplicateSubObjects();
+    virtual void DuplicateObjects();
+
 private:
     friend class FObjectFactory;
     friend class FSceneMgr;
