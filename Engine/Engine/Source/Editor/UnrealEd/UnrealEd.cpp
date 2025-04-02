@@ -25,6 +25,11 @@ void UnrealEd::Render() const
     }
 }
 
+void UnrealEd::RenderPIE() const
+{
+    Panels["ControlPanel"]->Render();
+}
+
 void UnrealEd::AddEditorPanel(const FString& PanelId, const std::shared_ptr<UEditorPanel>& EditorPanel)
 {
     Panels[PanelId] = EditorPanel;

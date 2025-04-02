@@ -44,8 +44,15 @@ void ControlEditorPanel::Render()
     ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
     
     /* Render Start */
+        
     ImGui::Begin("Control Panel", nullptr, PanelFlags);
     
+    if (GEngineLoop.GetWorldType() == EWorldType::PIE)
+    {
+        TogglePIEMode();
+        ImGui::End();
+        return;
+    }
     CreateMenuButton(IconSize, IconFont);
     
     ImGui::SameLine();
@@ -58,6 +65,9 @@ void ControlEditorPanel::Render()
 
     ImGui::SameLine();
 
+    TogglePIEMode();
+    ImGui::SameLine();
+
     /* Get Window Content Region */
     float ContentWidth = ImGui::GetWindowContentRegionMax().x;
 
@@ -67,6 +77,7 @@ void ControlEditorPanel::Render()
     ImGui::PushFont(IconFont);
     CreateSRTButton(IconSize);
     ImGui::PopFont();
+
     
     ImGui::End();
 }
@@ -483,6 +494,62 @@ uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
     return flags;
 }
 
+void ControlEditorPanel::TogglePIEMode() const
+{
+
+    // 버튼 스타일 설정
+    ImGui::PushStyleColor(ImGuiCol_Button, GEngineLoop.GetWorldType() == EWorldType::Editor ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f) : ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, GEngineLoop.GetWorldType() == EWorldType::Editor ? ImVec4(0.3f, 0.9f, 0.3f, 1.0f) : ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+    
+    // 삼각형 모양의 재생 버튼 (또는 일시정지 바)
+    if (ImGui::Button("##PlayButton", ImVec2(30, 30))) {
+        GEngineLoop.bTestInput2 = true;
+    }
+    
+    // 버튼 위에 아이콘 그리기
+    float buttonWidth = 30;
+    float buttonHeight = 30;
+    ImVec2 buttonPos = ImGui::GetItemRectMin();
+    
+    if (GEngineLoop.GetWorldType() == EWorldType::PIE) {
+        // 일시정지 아이콘 (두 개의 수직 막대)
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        float pauseBarWidth = 4.0f;
+        float pauseBarHeight = 15.0f;
+        float spacing = 4.0f;
+        
+        drawList->AddRectFilled(
+            ImVec2(buttonPos.x + (buttonWidth / 2) - spacing - pauseBarWidth, buttonPos.y + (buttonHeight - pauseBarHeight) / 2),
+            ImVec2(buttonPos.x + (buttonWidth / 2) - spacing, buttonPos.y + (buttonHeight + pauseBarHeight) / 2),
+            IM_COL32(255, 255, 255, 255)
+        );
+        
+        drawList->AddRectFilled(
+            ImVec2(buttonPos.x + (buttonWidth / 2) + spacing, buttonPos.y + (buttonHeight - pauseBarHeight) / 2),
+            ImVec2(buttonPos.x + (buttonWidth / 2) + spacing + pauseBarWidth, buttonPos.y + (buttonHeight + pauseBarHeight) / 2),
+            IM_COL32(255, 255, 255, 255)
+        );
+    } else {
+        // 재생 아이콘 (삼각형)
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 trianglePoints[3];
+        float triangleHeight = 15.0f;
+        float triangleWidth = 12.0f;
+        
+        trianglePoints[0] = ImVec2(buttonPos.x + (buttonWidth - triangleWidth) / 2 + 5, buttonPos.y + (buttonHeight - triangleHeight) / 2);
+        trianglePoints[1] = ImVec2(buttonPos.x + (buttonWidth - triangleWidth) / 2 + 5, buttonPos.y + (buttonHeight + triangleHeight) / 2);
+        trianglePoints[2] = ImVec2(buttonPos.x + (buttonWidth + triangleWidth) / 2 + 5, buttonPos.y + buttonHeight / 2);
+        
+        drawList->AddTriangleFilled(
+            trianglePoints[0],
+            trianglePoints[1],
+            trianglePoints[2],
+            IM_COL32(255, 255, 255, 255)
+        );
+    }
+    
+    ImGui::PopStyleColor(2);
+}
 
 void ControlEditorPanel::OnResize(HWND hWnd)
 {
