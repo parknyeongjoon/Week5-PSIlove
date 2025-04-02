@@ -2,6 +2,8 @@
 #include "Components/ActorComponent.h"
 #include "UnrealEd/EditorPanel.h"
 
+class UTextRenderComponent;
+class UTextBillboardComponent;
 class UBillboardComponent;
 class UStaticMeshComponent;
 
@@ -24,8 +26,12 @@ private:
     void RenderMaterialView(UMaterial* Material);
     void RenderCreateMaterialView();
 
+    /* Text Settings */
+    void RenderForTextRender(UTextRenderComponent* TextRenderComp);
+    void RenderForTextBillboard(UTextBillboardComponent* TextBillboardComp);
+
     /* Billboard Settings */
-    void RenderForBillboard(UBillboardComponent* BillboardComponent);
+    void RenderForBillboard(UBillboardComponent* BillboardComp);
     
 private:
     float Width = 0, Height = 0;

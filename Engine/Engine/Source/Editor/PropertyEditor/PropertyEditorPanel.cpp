@@ -5,6 +5,7 @@
 #include "Components/LightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextBillboardComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Math/MathUtility.h"
 #include "UnrealEd/ImGuiWidget.h"
@@ -154,38 +155,13 @@ void PropertyEditorPanel::Render()
             }
             ImGui::PopStyleColor();
         }
-        else if (UTextBillboardComponent* textOBj = Cast<UTextBillboardComponent>(PickedActor->GetRootComponent()))
+        else if (UTextBillboardComponent* TextComp = Cast<UTextBillboardComponent>(PickedActor->GetRootComponent()))
         {
-            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-            if (ImGui::TreeNodeEx("Text Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
-            {
-                if (textOBj) {
-                    textOBj->SetTexture(L"Assets/Texture/font.png");
-                    textOBj->SetRowColumnCount(106, 106);
-                    FWString wText = textOBj->GetText();
-                    int len = WideCharToMultiByte(CP_UTF8, 0, wText.c_str(), -1, nullptr, 0, nullptr, nullptr);
-                    std::string u8Text(len, '\0');
-                    WideCharToMultiByte(CP_UTF8, 0, wText.c_str(), -1, u8Text.data(), len, nullptr, nullptr);
-
-                    static char buf[256];
-                    strcpy_s(buf, u8Text.c_str());
-
-                    ImGui::Text("Text: ", buf);
-                    ImGui::SameLine();
-                    ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
-                    if (ImGui::InputText("##Text", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue))
-                    {
-                        textOBj->ClearText();
-                        int wlen = MultiByteToWideChar(CP_UTF8, 0, buf, -1, nullptr, 0);
-                        FWString newWText(wlen, L'\0');
-                        MultiByteToWideChar(CP_UTF8, 0, buf, -1, newWText.data(), wlen);
-                        textOBj->SetText(newWText);
-                    }
-                    ImGui::PopItemFlag();
-                }
-                ImGui::TreePop();
-            }
-            ImGui::PopStyleColor();
+            RenderForTextBillboard(TextComp);
+        }
+        else if (UTextRenderComponent* TextComp = Cast<UTextRenderComponent>(PickedActor->GetRootComponent()))
+        {
+            RenderForTextRender(TextComp);
         }
         else if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(PickedActor->GetRootComponent()))
         {
@@ -565,9 +541,77 @@ void PropertyEditorPanel::RenderCreateMaterialView()
     ImGui::End();
 }
 
-void PropertyEditorPanel::RenderForBillboard(UBillboardComponent* BillboardComponent)
+void PropertyEditorPanel::RenderForTextRender(UTextRenderComponent* TextRenderComp)
 {
-    if (BillboardComponent->Texture == nullptr)
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::TreeNodeEx("Text Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
+    {
+        if (TextRenderComp) {
+            TextRenderComp->SetTexture(L"Assets/Texture/font.png");
+            TextRenderComp->SetRowColumnCount(106, 106);
+            FWString wText = TextRenderComp->GetText();
+            int len = WideCharToMultiByte(CP_UTF8, 0, wText.c_str(), -1, nullptr, 0, nullptr, nullptr);
+            std::string u8Text(len, '\0');
+            WideCharToMultiByte(CP_UTF8, 0, wText.c_str(), -1, u8Text.data(), len, nullptr, nullptr);
+
+            static char buf[256];
+            strcpy_s(buf, u8Text.c_str());
+
+            ImGui::Text("Text: ", buf);
+            ImGui::SameLine();
+            ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
+            if (ImGui::InputText("##Text", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+            {
+                TextRenderComp->ClearText();
+                int wlen = MultiByteToWideChar(CP_UTF8, 0, buf, -1, nullptr, 0);
+                FWString newWText(wlen, L'\0');
+                MultiByteToWideChar(CP_UTF8, 0, buf, -1, newWText.data(), wlen);
+                TextRenderComp->SetText(newWText);
+            }
+            ImGui::PopItemFlag();
+        }
+        ImGui::TreePop();
+    }
+    ImGui::PopStyleColor();
+}
+
+void PropertyEditorPanel::RenderForTextBillboard(UTextBillboardComponent* TextBillboardComp)
+{
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::TreeNodeEx("Text Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
+    {
+        if (TextBillboardComp) {
+            TextBillboardComp->SetTexture(L"Assets/Texture/font.png");
+            TextBillboardComp->SetRowColumnCount(106, 106);
+            FWString wText = TextBillboardComp->GetText();
+            int len = WideCharToMultiByte(CP_UTF8, 0, wText.c_str(), -1, nullptr, 0, nullptr, nullptr);
+            std::string u8Text(len, '\0');
+            WideCharToMultiByte(CP_UTF8, 0, wText.c_str(), -1, u8Text.data(), len, nullptr, nullptr);
+
+            static char buf[256];
+            strcpy_s(buf, u8Text.c_str());
+
+            ImGui::Text("Text: ", buf);
+            ImGui::SameLine();
+            ImGui::PushItemFlag(ImGuiItemFlags_NoNavDefaultFocus, true);
+            if (ImGui::InputText("##Text", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+            {
+                TextBillboardComp->ClearText();
+                int wlen = MultiByteToWideChar(CP_UTF8, 0, buf, -1, nullptr, 0);
+                FWString newWText(wlen, L'\0');
+                MultiByteToWideChar(CP_UTF8, 0, buf, -1, newWText.data(), wlen);
+                TextBillboardComp->SetText(newWText);
+            }
+            ImGui::PopItemFlag();
+        }
+        ImGui::TreePop();
+    }
+    ImGui::PopStyleColor();
+}
+
+void PropertyEditorPanel::RenderForBillboard(UBillboardComponent* BillboardComp)
+{
+    if (BillboardComp->Texture == nullptr)
     {
         return;
     }
@@ -578,7 +622,7 @@ void PropertyEditorPanel::RenderForBillboard(UBillboardComponent* BillboardCompo
         ImGui::Text("Sprite");
         ImGui::SameLine();
 
-        const wchar_t* wstr = BillboardComponent->Texture->Name.c_str();
+        const wchar_t* wstr = BillboardComp->Texture->Name.c_str();
         int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
         char* str = new char[size_needed];
         WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, size_needed, nullptr, nullptr);
@@ -591,7 +635,7 @@ void PropertyEditorPanel::RenderForBillboard(UBillboardComponent* BillboardCompo
             {
                 if (ImGui::Selectable(*Name, false))
                 {
-                    BillboardComponent->SetTexture(Name.ToWideString());
+                    BillboardComp->SetTexture(Name.ToWideString());
                 }
             }
 

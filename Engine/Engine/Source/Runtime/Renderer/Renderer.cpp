@@ -1286,7 +1286,28 @@ void FRenderer::RenderTexts(UWorld* World, std::shared_ptr<FEditorViewportClient
         }
         else if (UTextRenderComponent* Text = Cast<UTextRenderComponent>(TextComps))
         {
+            UpdateSubUVConstant(Text->finalIndexU, Text->finalIndexV);
+
+            FMatrix Model = JungleMath::CreateModelMatrix(
+                Text->GetWorldLocation(),
+                Text->GetWorldRotation(),
+                Text->GetWorldScale()
+            );
+            Model = Model * FMatrix::CreateRotation(90.f, 0.f, 0.f);
+
+            // 최종 MVP 행렬
+            FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+            FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
+            FVector4 UUIDColor = TextComps->EncodeUUID() / 255.0f;
+            if (TextComps == World->GetPickingGizmo())
+                UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
+            else
+                UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
             
+            FEngineLoop::renderer.RenderTextPrimitive(
+                Text->vertexTextBuffer, Text->numTextVertices,
+                Text->Texture->TextureSRV, Text->Texture->SamplerState
+            );
         }
     }
     PrepareShader();
