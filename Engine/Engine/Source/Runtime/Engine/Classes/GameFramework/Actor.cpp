@@ -1,6 +1,6 @@
 ﻿#include "Actor.h"
 
-#include "World.h"
+#include "Level.h"
 
 void AActor::BeginPlay()
 {
@@ -46,9 +46,9 @@ bool AActor::Destroy()
 {
     if (!IsActorBeingDestroyed())
     {
-        if (UWorld* World = GetWorld())
+        if (ULevel* level = GetLevel())
         {
-            World->DestroyActor(this);
+            level->DestroyActor(this);
             bActorIsBeingDestroyed = true;
         }
     }

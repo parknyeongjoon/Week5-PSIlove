@@ -6,7 +6,7 @@
 
 class UnrealEd;
 class UImGuiManager;
-class UWorld;
+class ULevel;
 class FEditorViewportClient;
 class SSplitterV;
 class SSplitterH;
@@ -34,21 +34,21 @@ public:
     static FResourceMgr resourceMgr;
     static uint32 TotalAllocationBytes;
     static uint32 TotalAllocationCount;
-
-
+    
     HWND hWnd;
 
 private:
     UImGuiManager* UIMgr;
-    UWorld* GWorld;
+    ULevel* GLevel;
     SLevelEditor* LevelEditor;
     UnrealEd* UnrealEditor;
     bool bIsExit = false;
     const int32 targetFPS = 60;
     bool bTestInput = false;
+    TArray<FWorldContext> WorldContexts;
 
 public:
-    UWorld* GetWorld() const { return GWorld; }
+    ULevel* GetLevel() const { return GLevel; }
     SLevelEditor* GetLevelEditor() const { return LevelEditor; }
     UnrealEd* GetUnrealEditor() const { return UnrealEditor; }
 };

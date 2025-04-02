@@ -3,7 +3,7 @@
 #include "Container/Map.h"
 class SSplitterH;
 class SSplitterV;
-class UWorld;
+class ULevel;
 class FEditorViewportClient;
 class SLevelEditor
 {
@@ -26,7 +26,7 @@ private:
     bool bInitialize;
     SSplitterH* HSplitter;
     SSplitterV* VSplitter;
-    UWorld* World;
+    ULevel* Level;
     std::shared_ptr<FEditorViewportClient> viewportClients[4];
     std::shared_ptr<FEditorViewportClient> ActiveViewportClient;
 

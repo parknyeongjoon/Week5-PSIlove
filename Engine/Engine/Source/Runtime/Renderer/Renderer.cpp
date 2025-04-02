@@ -1,7 +1,7 @@
 #include "Renderer.h"
 #include <d3dcompiler.h>
 
-#include "World.h"
+#include "Level.h"
 #include "Actors/Player.h"
 #include "BaseGizmos/GizmoBaseComponent.h"
 #include "Components/LightComponent.h"
@@ -1001,7 +1001,7 @@ void FRenderer::ClearRenderArr()
     LightObjs.Empty();
 }
 
-void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
@@ -1010,16 +1010,16 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
 
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
-        RenderStaticMeshes(World, ActiveViewport);
-    RenderGizmos(World, ActiveViewport);
+        RenderStaticMeshes(Level, ActiveViewport);
+    RenderGizmos(Level, ActiveViewport);
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
-        RenderBillboards(World, ActiveViewport);
-    RenderLight(World, ActiveViewport);
+        RenderBillboards(Level, ActiveViewport);
+    RenderLight(Level, ActiveViewport);
     
     ClearRenderArr();
 }
 
-void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     PrepareShader();
     for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
@@ -1034,7 +1034,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         // 노말 회전시 필요 행렬
         FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
         FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
-        if (World->GetSelectedActor() == StaticMeshComp->GetOwner())
+        if (Level->GetSelectedActor() == StaticMeshComp->GetOwner())
         {
             UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
         }
@@ -1069,9 +1069,9 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
     }
 }
 
-void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
+void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
-    if (!World->GetSelectedActor())
+    if (!Level->GetSelectedActor())
     {
         return;
     }
@@ -1090,17 +1090,17 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
         if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowX ||
             GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowY ||
             GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowZ)
-            && World->GetEditorPlayer()->GetControlMode() != CM_TRANSLATION)
+            && Level->GetEditorPlayer()->GetControlMode() != CM_TRANSLATION)
             continue;
         else if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleX ||
             GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleY ||
             GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleZ)
-            && World->GetEditorPlayer()->GetControlMode() != CM_SCALE)
+            && Level->GetEditorPlayer()->GetControlMode() != CM_SCALE)
             continue;
         else if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleX ||
             GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleY ||
             GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleZ)
-            && World->GetEditorPlayer()->GetControlMode() != CM_ROTATION)
+            && Level->GetEditorPlayer()->GetControlMode() != CM_ROTATION)
             continue;
         FMatrix Model = JungleMath::CreateModelMatrix(GizmoComp->GetWorldLocation(),
             GizmoComp->GetWorldRotation(),
@@ -1111,7 +1111,7 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
 
         FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
 
-        if (GizmoComp == World->GetPickingGizmo())
+        if (GizmoComp == Level->GetPickingGizmo())
             UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
         else
             UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
@@ -1132,7 +1132,7 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
 #pragma endregion GizmoDepth
 }
 
-void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderBillboards(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     PrepareTextureShader();
     PrepareSubUVConstant();
@@ -1146,7 +1146,7 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
         FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
         FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
         FVector4 UUIDColor = BillboardComp->EncodeUUID() / 255.0f;
-        if (BillboardComp == World->GetPickingGizmo())
+        if (BillboardComp == Level->GetPickingGizmo())
             UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
         else
             UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
@@ -1176,7 +1176,7 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
     PrepareShader();
 }
 
-void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     for (auto Light : LightObjs)
     {

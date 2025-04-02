@@ -1,6 +1,6 @@
 #include "Components/StaticMeshComponent.h"
 
-#include "World.h"
+#include "Level.h"
 #include "Launch/EngineLoop.h"
 #include "UObject/ObjectFactory.h"
 #include "UnrealEd/PrimitiveBatch.h"

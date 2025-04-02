@@ -89,7 +89,7 @@ public:
     ~FEditorViewportClient();
 
     virtual void        Draw(FViewport* Viewport) override;
-    virtual UWorld*     GetWorld() const { return NULL; };
+    virtual ULevel*     GetLevel() const { return NULL; };
     void Initialize(int32 viewportIndex);
     void Tick(float DeltaTime);
     void Release();

@@ -18,6 +18,8 @@
 
 #include "UserInterface/Console.h"
 
+class UWorld;
+
 struct FVertexSimple
 {
     float x, y, z;    // Position
@@ -106,6 +108,22 @@ struct FObjMaterialInfo
     FString AlphaTextureName;    // map_d : Alpha texture
     FWString AlphaTexturePath;
 };
+enum class EWorldType
+{
+    Editor,
+    EditorPreview,
+    PIE,
+    Game,
+};
+
+struct FWorldContext
+{
+    UWorld* World;
+    EWorldType worldType;
+    
+};
+
+
 
 // Cooked Data
 namespace OBJ
