@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
 
@@ -9,6 +9,6 @@ public:
     UWorld() = default;
     ULevel* Level;
 
-    void DuplicateObject(const UObject* SourceObject) override;
+    void Duplicate(const UObject* SourceObject) override;
     void DuplicateSubObjects() override;
 };

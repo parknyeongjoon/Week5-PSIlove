@@ -25,9 +25,9 @@ void UParticleSubUVComp::DuplicateSubObjects()
     // deepcopy 대상 없음.
 }
 
-void UParticleSubUVComp::DuplicateObject(const UObject* SourceObject)
+void UParticleSubUVComp::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (UParticleSubUVComp* ParticleSubUVComp = Cast<UParticleSubUVComp>(SourceObject))
     {

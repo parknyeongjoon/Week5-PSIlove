@@ -10,9 +10,9 @@ void UStaticMeshComponent::DuplicateSubObjects()
 {
 }
 
-void UStaticMeshComponent::DuplicateObject(const UObject* SourceObject)
+void UStaticMeshComponent::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(SourceObject))
     {

@@ -3,12 +3,12 @@
 
 void UMaterial::DuplicateSubObjects()
 {
-    // DuplicateObject에서 다 끝남.
+    // Duplicate에서 다 끝남.
 }
 
-void UMaterial::DuplicateObject(const UObject* SourceObject)
+void UMaterial::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (UMaterial* SourceMaterial = Cast<UMaterial>(SourceObject))
     {

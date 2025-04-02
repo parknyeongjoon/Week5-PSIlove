@@ -13,7 +13,7 @@ public:
     virtual ~UStaticMesh() override;
 
     virtual void DuplicateSubObjects() override;
-    virtual void DuplicateObject(const UObject* SourceObject) override;
+    virtual void Duplicate(const UObject* SourceObject) override;
 
 public:
     const TArray<FStaticMaterial*>& GetMaterials() const { return materials; }

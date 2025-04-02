@@ -18,9 +18,9 @@ void ULightComponentBase::DuplicateSubObjects()
 {
     this->texture2D = this->texture2D->Duplicate<UBillboardComponent>();
 }
-void ULightComponentBase::DuplicateObject(const UObject* SourceObject)
+void ULightComponentBase::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (ULightComponentBase* LightComponentBase = Cast<ULightComponentBase>(SourceObject))
     {

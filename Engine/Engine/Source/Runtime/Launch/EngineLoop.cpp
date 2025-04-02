@@ -255,7 +255,7 @@ void FEngineLoop::PIETick(double elapsedTime)
     GLevel->Tick(elapsedTime);
     for (auto& actor : GLevel->GetActors())
     {
-        actor->SetActorRotation(actor->GetActorRotation() + FVector(0.1,0.1,0.1));
+        actor->SetActorRotation(actor->GetActorRotation() + FVector(1,1,1));
     }
     Render();
 

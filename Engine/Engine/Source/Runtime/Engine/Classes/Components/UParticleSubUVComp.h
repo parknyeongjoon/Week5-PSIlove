@@ -10,7 +10,7 @@ public:
     virtual ~UParticleSubUVComp() override;
 
     virtual void DuplicateSubObjects() override;
-    virtual void DuplicateObject(const UObject* SourceObject) override;
+    virtual void Duplicate(const UObject* SourceObject) override;
 
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;

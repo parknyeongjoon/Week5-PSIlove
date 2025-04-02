@@ -35,9 +35,9 @@ void UBillboardComponent::DuplicateSubObjects()
     // deepcopy 대상 없음.
 }
 
-void UBillboardComponent::DuplicateObject(const UObject* SourceObject)
+void UBillboardComponent::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(SourceObject))
     {

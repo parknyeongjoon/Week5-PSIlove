@@ -49,10 +49,19 @@ public:
     void SetupAttachment(USceneComponent* InParent);
 
     virtual void DuplicateSubObjects() override;
-    virtual void DuplicateObject(const UObject* SourceObject) override;
+    virtual UObject* Duplicate() override;
 
 private:
     class UTextUUID* uuidText = nullptr;
 
 public:
+    const TArray<USceneComponent*>& GetAttachChildren() const; // ���������� ���� children�� ��ȯ
+    void GetChildrenComponents(TSet<USceneComponent*>& Children) const; // ��ͷ� �Ʒ��� ��� children ��ȯ
+    USceneComponent* GetAttachParent() const;
+    void GetParentComponents(TArray<USceneComponent*>& Parents) const; // ��ͷ� root���� ��ȯ
+
+    void SetupAttachment(TArray<USceneComponent*>& Children); // �ڽ� ���� ���� ����
+
+    // �θ��ڽ� ���踦 ������ ���ϴ� �� �Լ� ����
+    bool AttachToComponent(USceneComponent* Parent); // �θ� ���� ���������� false
 };

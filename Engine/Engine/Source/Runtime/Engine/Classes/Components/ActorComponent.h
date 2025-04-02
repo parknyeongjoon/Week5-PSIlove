@@ -57,7 +57,7 @@ public:
     void Deactivate();
 
     virtual void DuplicateSubObjects() override;
-    virtual void DuplicateObject(const UObject* SourceObject) override;
+    virtual UObject* Duplicate() override;
 
 private:
     AActor* Owner;

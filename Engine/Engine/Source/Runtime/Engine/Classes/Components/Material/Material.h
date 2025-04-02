@@ -10,7 +10,7 @@ public:
     ~UMaterial() {}
 
     virtual void DuplicateSubObjects();
-    virtual void DuplicateObject(const UObject* SourceObject);
+    virtual void Duplicate(const UObject* SourceObject);
 
 public:
     FObjMaterialInfo& GetMaterialInfo() { return materialInfo; }

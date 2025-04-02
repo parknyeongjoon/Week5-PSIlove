@@ -1,9 +1,9 @@
 #include "World.h"
 #include "Level.h"
 #include "GameFramework/Actor.h"
-void UWorld::DuplicateObject(const UObject* SourceObject)
+void UWorld::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     UWorld* sourceWorld = Cast<UWorld>(SourceObject);
     Level = sourceWorld->GetLevel();

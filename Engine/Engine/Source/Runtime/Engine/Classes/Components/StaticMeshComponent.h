@@ -10,7 +10,7 @@ public:
     UStaticMeshComponent() = default;
 
     virtual void DuplicateSubObjects() override;
-    virtual void DuplicateObject(const UObject* SourceObject) override;
+    virtual void Duplicate(const UObject* SourceObject) override;
 
 public:
     PROPERTY(int, selectedSubMeshIndex);

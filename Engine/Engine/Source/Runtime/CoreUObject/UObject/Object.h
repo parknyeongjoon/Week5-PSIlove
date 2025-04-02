@@ -24,13 +24,10 @@ public:
     static UClass* StaticClass();
 
     // 현재 오브젝트를 복제하는 함수
-    template<typename T>
-        requires std::derived_from<T, UObject>
-    T* Duplicate();
+    UObject* Duplicate();
 
 protected:
     virtual void DuplicateSubObjects();
-    virtual void DuplicateObject(const UObject* SourceObject);
 
 private:
     friend class FObjectFactory;
@@ -110,12 +107,4 @@ public:
 private:
 };
 
-template <typename T> requires std::derived_from<T, UObject>
-T* UObject::Duplicate()
-{
-    // 새 객체 생성 및 얕은 복사
-    T* NewObject = FObjectFactory::DuplicateObject(*dynamic_cast<T*>(this));
-    // 서브 오브젝트는 깊은 복사로 별도 처리
-    NewObject->DuplicateSubObjects();
-    return NewObject;
-}
+

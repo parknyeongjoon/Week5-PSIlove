@@ -136,25 +136,51 @@ void USceneComponent::DuplicateSubObjects()
     AttachChildren.Empty();
     for (const auto& Child : NewChildren) 
     {
-        USceneComponent* NewChild = Child->Duplicate<USceneComponent>();
+        USceneComponent* NewChild = Cast<USceneComponent>(Child->Duplicate());
         NewChild->SetupAttachment(this);
+        AttachChildren.Add(NewChild);
     }
-    //UTextUUID* NewUUIDText = uuidText->Duplicate<UTextUUID>();
-    //uuidText = NewUUIDText;
 }
 
-void USceneComponent::DuplicateObject(const UObject* SourceObject)
+UObject* USceneComponent::Duplicate()
 {
-    Super::DuplicateObject(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<USceneComponent>(this);
 
-    if (USceneComponent* SourceSceneComp = Cast<USceneComponent>(SourceObject)) 
+    Cast<USceneComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
+
+
+const TArray<USceneComponent*>& USceneComponent::GetAttachChildren() const
+{
+    return AttachChildren;
+}
+
+void USceneComponent::GetChildrenComponents(TSet<USceneComponent*>& Children) const
+{
+    Children.Empty();
+    for (auto& child : Children)
     {
-        Super::DuplicateObject(SourceObject);
-        RelativeLocation = SourceSceneComp->RelativeLocation;
-        RelativeRotation = SourceSceneComp->RelativeRotation;
-        RelativeScale3D = SourceSceneComp->RelativeScale3D;
-        QuatRotation = SourceSceneComp->QuatRotation;
-        AttachChildren = SourceSceneComp->AttachChildren;
-        uuidText = SourceSceneComp->uuidText;
+        TSet<USceneComponent*> childComponents;
+        child->GetChildrenComponents(childComponents);
+        Children.Emplace(childComponents);
+    }
+}
+
+USceneComponent* USceneComponent::GetAttachParent() const
+{
+    return AttachParent;
+}
+
+void USceneComponent::GetParentComponents(TArray<USceneComponent*>& Parents) const
+{
+    Parents.Empty();
+
+    // �𸮾� �ҽ��ڵ� /Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h ����
+    USceneComponent* ParentIterator = GetAttachParent();
+    while (ParentIterator != nullptr)
+    {
+        Parents.Add(ParentIterator);
+        ParentIterator = ParentIterator->GetAttachParent();
     }
 }

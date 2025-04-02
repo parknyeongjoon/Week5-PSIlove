@@ -26,9 +26,9 @@ void UCubeComp::DuplicateSubObjects()
 {
 }
 
-void UCubeComp::DuplicateObject(const UObject* SourceObject)
+void UCubeComp::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     // 없음.
 }

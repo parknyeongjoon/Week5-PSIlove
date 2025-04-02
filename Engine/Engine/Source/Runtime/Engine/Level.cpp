@@ -91,12 +91,17 @@ void ULevel::Release()
     GUObjectArray.ProcessPendingDestroyObjects();
 }
 
-void ULevel::DuplicateObject(const UObject* SourceObject)
+void ULevel::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     ULevel* sourceLevel = Cast<ULevel>(SourceObject);
     ActorsArray = sourceLevel->GetActors();
+}
+
+UObject* ULevel::Duplicate()
+{
+    return nullptr;
 }
 
 void ULevel::DuplicateSubObjects()

@@ -7,9 +7,9 @@ void UMeshComponent::DuplicateSubObjects()
     // override가 된 UMaterial 자체는 복사가 되지 않음
 }
 
-void UMeshComponent::DuplicateObject(const UObject* SourceObject)
+void UMeshComponent::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (UMeshComponent* MeshComponent = Cast<UMeshComponent>(SourceObject))
     {

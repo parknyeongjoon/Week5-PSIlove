@@ -13,13 +13,13 @@ void UPrimitiveComponent::DuplicateSubObjects()
 {
 }
 
-void UPrimitiveComponent::DuplicateObject(const UObject* SourceObject)
+void UPrimitiveComponent::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(SourceObject))
     {
-        Super::DuplicateObject(SourceObject);
+        Super::Duplicate(SourceObject);
         this->AABB = PrimitiveComponent->AABB;
         this->m_Type = PrimitiveComponent->m_Type;
     }

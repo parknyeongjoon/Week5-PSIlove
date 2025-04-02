@@ -22,9 +22,9 @@ void USkySphereComponent::DuplicateSubObjects()
     // deepcopy 대상 없음.
 }
 
-void USkySphereComponent::DuplicateObject(const UObject* SourceObject)
+void USkySphereComponent::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (USkySphereComponent* SkySphereComponent = Cast<USkySphereComponent>(SourceObject))
     {

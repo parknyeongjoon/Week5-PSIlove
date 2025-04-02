@@ -30,9 +30,9 @@ void UStaticMesh::DuplicateSubObjects()
     // 만약 material을 변경하면 동일한 material을 가진 다른 오브젝트에게도 영향이 감.
 }
 
-void UStaticMesh::DuplicateObject(const UObject* SourceObject)
+void UStaticMesh::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
     if (UStaticMesh* SourceStaticMesh = Cast<UStaticMesh>(SourceObject))
     {

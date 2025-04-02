@@ -22,9 +22,9 @@ void USphereComp::DuplicateSubObjects()
 {
 }
 
-void USphereComp::DuplicateObject(const UObject* SourceObject)
+void USphereComp::Duplicate(const UObject* SourceObject)
 {
-    Super::DuplicateObject(SourceObject);
+    Super::Duplicate(SourceObject);
 
 }
 

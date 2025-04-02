@@ -89,18 +89,14 @@ void UActorComponent::Deactivate()
 void UActorComponent::DuplicateSubObjects()
 {
     Super::DuplicateSubObjects();
+
+    // 할거없음.
 }
 
-void UActorComponent::DuplicateObject(const UObject* SourceObject)
+UObject* UActorComponent::Duplicate()
 {
-    Super::DuplicateObject(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<UActorComponent>(this);
 
-    if (UActorComponent* SourceActorComp = Cast<UActorComponent>(SourceObject))
-    {
-        bHasBeenInitialized = false;
-        bHasBegunPlay = false;
-        bIsBeingDestroyed = false;
-        bIsActive = SourceActorComp->bIsActive;
-        bAutoActive = SourceActorComp->bAutoActive;
-    }
+    Cast<UActorComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }

@@ -1,6 +1,7 @@
 #include "Actor.h"
 
 #include "Level.h"
+#include "Components/StaticMeshComponent.h"
 
 void AActor::BeginPlay()
 {
@@ -138,41 +139,34 @@ bool AActor::SetActorScale(const FVector& NewScale)
 
 void AActor::DuplicateSubObjects()
 {
-    if (OwnedComponents.Num() > 0)
-    {
-        OwnedComponents.Remove(RootComponent);
-        RootComponent = RootComponent->Duplicate<USceneComponent>();
+    if (OwnedComponents.Num() == 0)
+        return;
 
-        TSet<UActorComponent*> NewOwnedComps;
-        for (const auto& Comp : OwnedComponents) 
-        {
-            UActorComponent* NewComp = Comp->Duplicate<UActorComponent>();
-            NewComp->Owner = this;
-            if (USceneComponent* NewSceneComp = Cast<USceneComponent>(Comp))
-            {
-                if (NewSceneComp != RootComponent)
-                {
-                    NewSceneComp->SetupAttachment(RootComponent);
-                }
-            }
-            NewComp->InitializeComponent();
-            NewOwnedComps.Add(NewComp);
-        }
-        OwnedComponents = NewOwnedComps;
+    OwnedComponents.Remove(RootComponent);
+    
+    RootComponent = Cast<USceneComponent>(RootComponent->Duplicate());
+    // RootComponent 아래있는 모든 scenecomponent가 생성됨
+    // tree구조 완성되었지만
+    // owner는 그대로
+
+    TSet<USceneComponent*> NewSceneComponents;
+    RootComponent->GetChildrenComponents(NewSceneComponents);
+    NewSceneComponents.Add(RootComponent);
+    // Owner 바꿔주기
+    for (auto& s : NewSceneComponents)
+    {
+        Cast<UActorComponent>(s)->Owner = this;
+        OwnedComponents.Add(Cast<UActorComponent>(s));
     }
 }
 
-void AActor::DuplicateObject(const UObject* SourceObject)
+UObject* AActor::Duplicate()
 {
-    Super::DuplicateObject(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<AActor>(this);
 
-    if (AActor* SourceActor = Cast<AActor>(SourceObject)) 
-    {
-        bActorIsBeingDestroyed = false;
-        SetActorLabel(SourceActor->GetActorLabel());
-        RootComponent = SourceActor->GetRootComponent();
-        OwnedComponents = SourceActor->GetComponents();
-    }
+    // 서브 오브젝트는 깊은 복사로 별도 처리
+    Cast<AActor>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 AActor* AActor::DuplicateAndAdd()
