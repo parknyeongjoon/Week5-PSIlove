@@ -34,8 +34,7 @@ public:
     static FResourceMgr resourceMgr;
     static uint32 TotalAllocationBytes;
     static uint32 TotalAllocationCount;
-
-
+    
     HWND hWnd;
 
 private:
@@ -46,6 +45,7 @@ private:
     bool bIsExit = false;
     const int32 targetFPS = 60;
     bool bTestInput = false;
+    TArray<FWorldContext> WorldContexts;
 
 public:
     ULevel* GetLevel() const { return GLevel; }

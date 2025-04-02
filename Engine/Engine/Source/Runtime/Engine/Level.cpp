@@ -6,7 +6,6 @@
 #include "LevelEditor/SLevelEditor.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
-#include "Engine/StaticMeshActor.h"
 #include "Components/SkySphereComponent.h"
 
 
@@ -110,6 +109,22 @@ void ULevel::Release()
 	ReleaseBaseObject();
 
     GUObjectArray.ProcessPendingDestroyObjects();
+}
+
+void ULevel::DuplicateObject(const UObject* SourceObject)
+{
+    ULevel* sourceLevel = Cast<ULevel>(SourceObject);
+    ActorsArray = sourceLevel->GetActors();
+}
+
+void ULevel::DuplicateSubObjects()
+{
+    TSet<AActor*> duplicatedActors;
+    // for (auto* actor : ActorsArray)
+    // {
+    //     duplicatedActors.Add(actor->Duplicate<AActor>());
+    // }
+    ActorsArray = duplicatedActors;
 }
 
 bool ULevel::DestroyActor(AActor* ThisActor)

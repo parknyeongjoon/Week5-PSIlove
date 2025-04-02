@@ -124,8 +124,10 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
 
-    GLevel = new ULevel;
+    GLevel = FObjectFactory::ConstructObject<ULevel>();
     GLevel->Initialize();
+
+    GLevel = GLevel->Duplicate<ULevel>();
 
     return 0;
 }

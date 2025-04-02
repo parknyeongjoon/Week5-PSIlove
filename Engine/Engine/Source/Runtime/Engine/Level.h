@@ -20,12 +20,14 @@ class ULevel : public UObject
 
 public:
     ULevel() = default;
-
     void Initialize();
     void CreateBaseObject();
     void ReleaseBaseObject();
     void Tick(float DeltaTime);
     void Release();
+
+    void DuplicateObject(const UObject* SourceObject) override;
+    void DuplicateSubObjects() override;
 
     /**
      * World에 Actor를 Spawn합니다.
