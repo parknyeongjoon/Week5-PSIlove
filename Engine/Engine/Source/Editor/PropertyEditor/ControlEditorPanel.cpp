@@ -536,9 +536,9 @@ void ControlEditorPanel::TogglePIEMode() const
         float triangleHeight = 15.0f;
         float triangleWidth = 12.0f;
         
-        trianglePoints[0] = ImVec2(buttonPos.x + (buttonWidth - triangleWidth) / 2 + 5, buttonPos.y + (buttonHeight - triangleHeight) / 2);
-        trianglePoints[1] = ImVec2(buttonPos.x + (buttonWidth - triangleWidth) / 2 + 5, buttonPos.y + (buttonHeight + triangleHeight) / 2);
-        trianglePoints[2] = ImVec2(buttonPos.x + (buttonWidth + triangleWidth) / 2 + 5, buttonPos.y + buttonHeight / 2);
+        trianglePoints[0] = ImVec2(buttonPos.x + (buttonWidth - triangleWidth) / 2 + 2, buttonPos.y + (buttonHeight - triangleHeight) / 2);
+        trianglePoints[1] = ImVec2(buttonPos.x + (buttonWidth - triangleWidth) / 2 + 2, buttonPos.y + (buttonHeight + triangleHeight) / 2);
+        trianglePoints[2] = ImVec2(buttonPos.x + (buttonWidth + triangleWidth) / 2 + 2, buttonPos.y + buttonHeight / 2);
         
         drawList->AddTriangleFilled(
             trianglePoints[0],
