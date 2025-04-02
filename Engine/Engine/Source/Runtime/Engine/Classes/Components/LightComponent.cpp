@@ -16,19 +16,15 @@ ULightComponentBase::~ULightComponentBase()
 }
 void ULightComponentBase::DuplicateSubObjects()
 {
-    this->texture2D = this->texture2D->Duplicate<UBillboardComponent>();
+    Super::DuplicateSubObjects();
+    this->texture2D = Cast<UBillboardComponent>(this->texture2D->Duplicate());
 }
-void ULightComponentBase::Duplicate(const UObject* SourceObject)
+UObject* ULightComponentBase::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<ULightComponentBase>(this);
 
-    if (ULightComponentBase* LightComponentBase = Cast<ULightComponentBase>(SourceObject))
-    {
-        this->color = LightComponentBase->color;
-        this->radius = LightComponentBase->radius;
-        this->AABB = LightComponentBase->AABB;
-        this->texture2D = LightComponentBase->texture2D;
-    }
+    Cast<ULightComponentBase>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 void ULightComponentBase::SetColor(FVector4 newColor)
 {

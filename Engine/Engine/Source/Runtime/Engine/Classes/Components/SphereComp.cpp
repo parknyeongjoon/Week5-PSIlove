@@ -20,12 +20,15 @@ USphereComp::~USphereComp()
 
 void USphereComp::DuplicateSubObjects()
 {
+    Super::DuplicateSubObjects();
 }
 
-void USphereComp::Duplicate(const UObject* SourceObject)
+UObject* USphereComp::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<USphereComp>(this);
 
+    Cast<USphereComp>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void USphereComp::InitializeComponent()

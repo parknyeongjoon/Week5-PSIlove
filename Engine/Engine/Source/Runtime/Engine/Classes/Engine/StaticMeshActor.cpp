@@ -10,15 +10,14 @@ AStaticMeshActor::AStaticMeshActor()
 
 void AStaticMeshActor::DuplicateSubObjects()
 {
-    this->StaticMeshComponent = this->StaticMeshComponent->Duplicate<UStaticMeshComponent>();
+    Super::DuplicateSubObjects();
+    this->StaticMeshComponent = Cast<UStaticMeshComponent>(this->StaticMeshComponent->Duplicate());
 }
 
-void AStaticMeshActor::Duplicate(const UObject* SourceObject)
+UObject* AStaticMeshActor::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<AStaticMeshActor>(this);
 
-    if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(SourceObject))
-    {
-        this->StaticMeshComponent = StaticMeshActor->StaticMeshComponent;
-    }
+    Cast<AStaticMeshActor>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }

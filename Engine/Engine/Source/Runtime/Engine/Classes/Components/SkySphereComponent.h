@@ -12,7 +12,7 @@ public:
     virtual ~USkySphereComponent() override;
 
     virtual void DuplicateSubObjects() override;
-    virtual void Duplicate(const UObject* SourceObject) override;
+    virtual UObject* Duplicate() override;
 
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;

@@ -35,20 +35,12 @@ void UBillboardComponent::DuplicateSubObjects()
     // deepcopy 대상 없음.
 }
 
-void UBillboardComponent::Duplicate(const UObject* SourceObject)
+UObject* UBillboardComponent::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<UBillboardComponent>(this);
 
-    if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(SourceObject))
-    {
-        this->vertexTextureBuffer = BillboardComponent->vertexTextureBuffer;
-        this->indexTextureBuffer = BillboardComponent->indexTextureBuffer;
-        this->numVertices = BillboardComponent->numVertices;
-        this->numIndices = BillboardComponent->numIndices;
-        this->finalIndexU = BillboardComponent->finalIndexU;
-        this->finalIndexV = BillboardComponent->finalIndexV;
-        this->Texture = BillboardComponent->Texture;
-    }
+    Cast<UBillboardComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void UBillboardComponent::InitializeComponent()

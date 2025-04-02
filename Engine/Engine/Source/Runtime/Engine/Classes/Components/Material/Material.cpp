@@ -4,14 +4,13 @@
 void UMaterial::DuplicateSubObjects()
 {
     // Duplicate에서 다 끝남.
+    Super::DuplicateSubObjects();
 }
 
-void UMaterial::Duplicate(const UObject* SourceObject)
+UObject* UMaterial::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<UMaterial>(this);
 
-    if (UMaterial* SourceMaterial = Cast<UMaterial>(SourceObject))
-    {
-        this->materialInfo = SourceMaterial->materialInfo;
-    }
+    Cast<UMaterial>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }

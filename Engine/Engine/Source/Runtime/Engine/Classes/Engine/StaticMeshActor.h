@@ -10,7 +10,7 @@ public:
     AStaticMeshActor();
 
     virtual void DuplicateSubObjects();
-    virtual void Duplicate(const UObject* SourceObject);
+    virtual UObject* Duplicate();
 
 public:
     UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }

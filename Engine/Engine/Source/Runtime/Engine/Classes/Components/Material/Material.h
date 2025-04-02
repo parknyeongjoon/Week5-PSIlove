@@ -9,8 +9,8 @@ public:
     UMaterial() {}
     ~UMaterial() {}
 
-    virtual void DuplicateSubObjects();
-    virtual void Duplicate(const UObject* SourceObject);
+    virtual void DuplicateSubObjects() override;
+    virtual UObject* Duplicate() override;
 
 public:
     FObjMaterialInfo& GetMaterialInfo() { return materialInfo; }

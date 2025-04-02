@@ -24,13 +24,15 @@ UCubeComp::~UCubeComp()
 
 void UCubeComp::DuplicateSubObjects()
 {
+    Super::DuplicateSubObjects();
 }
 
-void UCubeComp::Duplicate(const UObject* SourceObject)
+UObject* UCubeComp::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<UCubeComp>(this);
 
-    // 없음.
+    Cast<UCubeComp>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void UCubeComp::InitializeComponent()

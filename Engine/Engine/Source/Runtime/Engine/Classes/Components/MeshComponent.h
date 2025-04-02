@@ -9,7 +9,7 @@ public:
     UMeshComponent() = default;
 
     virtual void DuplicateSubObjects() override;
-    virtual void Duplicate(const UObject* SourceObject) override;
+    virtual UObject* Duplicate() override;
 
 public:
 #pragma region Material

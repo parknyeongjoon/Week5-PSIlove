@@ -10,15 +10,12 @@ void UStaticMeshComponent::DuplicateSubObjects()
 {
 }
 
-void UStaticMeshComponent::Duplicate(const UObject* SourceObject)
+UObject* UStaticMeshComponent::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<UStaticMeshComponent>(this);
 
-    if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(SourceObject))
-    {
-        this->staticMesh = StaticMeshComp->staticMesh;
-        this->selectedSubMeshIndex = StaticMeshComp->selectedSubMeshIndex;
-    }
+    Cast<UStaticMeshComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 uint32 UStaticMeshComponent::GetNumMaterials() const

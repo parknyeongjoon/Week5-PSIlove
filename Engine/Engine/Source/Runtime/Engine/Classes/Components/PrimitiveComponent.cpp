@@ -11,18 +11,15 @@ UPrimitiveComponent::~UPrimitiveComponent()
 
 void UPrimitiveComponent::DuplicateSubObjects()
 {
+    Super::DuplicateSubObjects();
 }
 
-void UPrimitiveComponent::Duplicate(const UObject* SourceObject)
+UObject* UPrimitiveComponent::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<UPrimitiveComponent>(this);
 
-    if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(SourceObject))
-    {
-        Super::Duplicate(SourceObject);
-        this->AABB = PrimitiveComponent->AABB;
-        this->m_Type = PrimitiveComponent->m_Type;
-    }
+    Cast<UPrimitiveComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void UPrimitiveComponent::InitializeComponent()
