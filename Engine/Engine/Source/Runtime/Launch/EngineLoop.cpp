@@ -152,7 +152,7 @@ void FEngineLoop::Render()
             // renderer.PrepareShader();
             // renderer.UpdateLightBuffer();
             // RenderWorld();
-            renderer.PrepareRender();
+            renderer.PrepareRender(GLevel);
             renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
@@ -165,7 +165,7 @@ void FEngineLoop::Render()
         // renderer.PrepareShader();
         // renderer.UpdateLightBuffer();
         // RenderWorld();
-        renderer.PrepareRender();
+        renderer.PrepareRender(GLevel);
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
 }
@@ -248,7 +248,7 @@ void FEngineLoop::PIETick(double elapsedTime)
     GLevel->Tick(elapsedTime);
     for (auto& actor : GLevel->GetActors())
     {
-        actor->SetActorRotation(actor->GetActorRotation() + FVector(1,1,1));
+        actor->SetActorRotation(actor->GetActorRotation() + FVector(0.1,0.1,0.1));
     }
     Render();
 
@@ -268,7 +268,7 @@ void FEngineLoop::TogglePIE()
     curWorldContextIndex == 0 ? curWorldContextIndex = 1 : curWorldContextIndex = 0;
     if (curWorldContextIndex == 1)
     {
-        WorldContexts[1] = {Cast<UWorld>(GWorld->Duplicate()), EWorldType::PIE};
+        WorldContexts[1] = {Cast<UWorld>(WorldContexts[0].World->Duplicate()), EWorldType::PIE};
         WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
         uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() & 14;
         LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);

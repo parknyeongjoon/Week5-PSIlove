@@ -1,4 +1,4 @@
-﻿#include "ControlEditorPanel.h"
+#include "ControlEditorPanel.h"
 
 #include "Level.h"
 #include "Actors/Player.h"
@@ -75,7 +75,6 @@ void ControlEditorPanel::Render()
     ImGui::SetCursorPosX(ContentWidth - (IconSize.x * 3.0f + 16.0f));
     
     ImGui::PushFont(IconFont);
-    CreateSRTButton(IconSize);
     ImGui::PopFont();
 
     

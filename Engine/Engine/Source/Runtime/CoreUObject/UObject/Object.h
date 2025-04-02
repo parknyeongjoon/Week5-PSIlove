@@ -12,10 +12,10 @@ class ULevel;
 class UObject
 {
 private:
-    UObject(const UObject&) = delete;
-    UObject& operator=(const UObject&) = delete;
-    UObject(UObject&&) = delete;
-    UObject& operator=(UObject&&) = delete;
+    //UObject(const UObject&) = delete;
+    //UObject& operator=(const UObject&) = delete;
+    //UObject(UObject&&) = delete;
+    //UObject& operator=(UObject&&) = delete;
 
 public:
     using Super = UObject;

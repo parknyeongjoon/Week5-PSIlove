@@ -59,7 +59,12 @@ bool AActor::Destroy()
 
 void AActor::RemoveOwnedComponent(UActorComponent* Component)
 {
-    OwnedComponents.Remove(Component);
+    OwnedComponents.Empty();
+    return;
+    if (OwnedComponents.Contains(Component))
+    {
+        OwnedComponents.Remove(Component);
+    }
 }
 
 void AActor::InitializeComponents()
@@ -142,7 +147,12 @@ void AActor::DuplicateSubObjects()
     if (OwnedComponents.Num() == 0)
         return;
 
-    OwnedComponents.Remove(RootComponent);
+    if (OwnedComponents.Contains(RootComponent))
+    {
+        OwnedComponents.Empty();
+        //OwnedComponents.Remove(RootComponent);
+
+    }
     
     RootComponent = Cast<USceneComponent>(RootComponent->Duplicate());
     // RootComponent 아래있는 모든 scenecomponent가 생성됨

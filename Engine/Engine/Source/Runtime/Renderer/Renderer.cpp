@@ -969,9 +969,17 @@ void FRenderer::RenderBatch(
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void FRenderer::PrepareRender()
+void FRenderer::PrepareRender(ULevel* Level)
 {
-    for (const auto iter : TObjectRange<USceneComponent>())
+    TArray<USceneComponent*> Ss;
+    for (const auto& A : Level->GetActors())
+    {
+        Ss.Add(A->GetRootComponent());
+        TArray<USceneComponent*> temp;
+        A->GetRootComponent()->GetChildrenComponents(temp);
+        Ss + temp;
+    }
+    for (const auto iter : Ss)
     {
         if (UStaticMeshComponent* pStaticMeshComp = Cast<UStaticMeshComponent>(iter))
         {

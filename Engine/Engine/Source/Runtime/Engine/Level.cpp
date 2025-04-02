@@ -103,6 +103,7 @@ UObject* ULevel::Duplicate()
 
 void ULevel::DuplicateSubObjects()
 {
+    Super::DuplicateSubObjects();
     TArray<AActor*> duplicatedActors;
 
     for (auto* actor : ActorsArray)
@@ -147,7 +148,8 @@ bool ULevel::DestroyActor(AActor* ThisActor)
     }
 
     // World에서 제거
-    ActorsArray.Remove(ThisActor);
+    ActorsArray.Empty();
+    //ActorsArray.Remove(ThisActor);
 
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);

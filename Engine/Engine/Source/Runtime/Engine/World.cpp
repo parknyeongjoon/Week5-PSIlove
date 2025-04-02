@@ -12,5 +12,6 @@ UObject* UWorld::Duplicate()
 
 void UWorld::DuplicateSubObjects()
 {
+    Super::DuplicateSubObjects();
     Level = Cast<ULevel>(Level->Duplicate());
 }
