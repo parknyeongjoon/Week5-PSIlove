@@ -4,7 +4,7 @@
 #include "GizmoCircleComponent.h"
 #include "Actors/Player.h"
 #include "GizmoRectangleComponent.h"
-#include "World.h"
+#include "Level.h"
 #include "Engine/FLoaderOBJ.h"
 
 UTransformGizmo::UTransformGizmo()
@@ -82,15 +82,15 @@ void UTransformGizmo::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-    if (const AActor* PickedActor = GetWorld()->GetSelectedActor())
+    if (const AActor* PickedActor = GetLevel()->GetSelectedActor())
     {
         SetActorLocation(PickedActor->GetActorLocation());
-        if (GetWorld()->GetEditorPlayer()->GetCoordiMode() == CoordiMode::CDM_LOCAL)
+        if (GetLevel()->GetEditorPlayer()->GetCoordiMode() == CoordiMode::CDM_LOCAL)
         {
             // TODO: 임시로 RootComponent의 정보로 사용
             SetActorRotation(PickedActor->GetActorRotation());
         }
-        else if (GetWorld()->GetEditorPlayer()->GetCoordiMode() == CoordiMode::CDM_WORLD)
+        else if (GetLevel()->GetEditorPlayer()->GetCoordiMode() == CoordiMode::CDM_WORLD)
             SetActorRotation(FVector(0.0f, 0.0f, 0.0f));
     }
 }

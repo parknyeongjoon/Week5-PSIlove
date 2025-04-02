@@ -1,6 +1,6 @@
 #include "EngineLoop.h"
 #include "ImGuiManager.h"
-#include "World.h"
+#include "Level.h"
 #include "Camera/CameraComponent.h"
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "UnrealEd/EditorViewportClient.h"
@@ -96,7 +96,7 @@ uint32 FEngineLoop::TotalAllocationCount = 0;
 FEngineLoop::FEngineLoop()
     : hWnd(nullptr)
     , UIMgr(nullptr)
-    , GWorld(nullptr)
+    , GLevel(nullptr)
     , LevelEditor(nullptr)
     , UnrealEditor(nullptr)
 {
@@ -124,8 +124,8 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
 
-    GWorld = new UWorld;
-    GWorld->Initialize();
+    GLevel = new ULevel;
+    GLevel->Initialize();
 
     return 0;
 }
@@ -147,7 +147,7 @@ void FEngineLoop::Render()
             // renderer.UpdateLightBuffer();
             // RenderWorld();
             renderer.PrepareRender();
-            renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
+            renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
@@ -160,7 +160,7 @@ void FEngineLoop::Render()
         // renderer.UpdateLightBuffer();
         // RenderWorld();
         renderer.PrepareRender();
-        renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
+        renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
 }
 
@@ -192,7 +192,7 @@ void FEngineLoop::Tick()
         }
 
         Input();
-        GWorld->Tick(elapsedTime);
+        GLevel->Tick(elapsedTime);
         LevelEditor->Tick(elapsedTime);
         Render();
         UIMgr->BeginFrame();
@@ -247,8 +247,8 @@ void FEngineLoop::Input()
 void FEngineLoop::Exit()
 {
     LevelEditor->Release();
-    GWorld->Release();
-    delete GWorld;
+    GLevel->Release();
+    delete GLevel;
     UIMgr->Shutdown();
     delete UIMgr;
     resourceMgr.Release(&renderer);

@@ -1,7 +1,7 @@
 ﻿#include "Player.h"
 
 #include "UnrealClient.h"
-#include "World.h"
+#include "Level.h"
 #include "BaseGizmos/GizmoArrowComponent.h"
 #include "BaseGizmos/GizmoCircleComponent.h"
 #include "BaseGizmos/GizmoRectangleComponent.h"
@@ -69,7 +69,7 @@ void AEditorPlayer::Input()
         if (bLeftMouseDown)
         {
             bLeftMouseDown = false; // ���콺 ������ ��ư�� ���� ���� �ʱ�ȭ
-            GetWorld()->SetPickingGizmo(nullptr);
+            GetLevel()->SetPickingGizmo(nullptr);
         }
     }
     if (GetAsyncKeyState(VK_SPACE) & 0x8000)
@@ -118,11 +118,11 @@ void AEditorPlayer::Input()
 
     if (GetAsyncKeyState(VK_DELETE) & 0x8000)
     {
-        UWorld* World = GetWorld();
-        if (AActor* PickedActor = World->GetSelectedActor())
+        ULevel* level = GetLevel();
+        if (AActor* PickedActor = level->GetSelectedActor())
         {
-            World->DestroyActor(PickedActor);
-            World->SetPickedActor(nullptr);
+            level->DestroyActor(PickedActor);
+            level->SetPickedActor(nullptr);
         }
     }
 }
@@ -130,11 +130,11 @@ void AEditorPlayer::Input()
 bool AEditorPlayer::PickGizmo(FVector& pickPosition)
 {
     bool isPickedGizmo = false;
-    if (GetWorld()->GetSelectedActor())
+    if (GetLevel()->GetSelectedActor())
     {
         if (cMode == CM_TRANSLATION)
         {
-            for (auto iter : GetWorld()->LocalGizmo->GetArrowArr())
+            for (auto iter : GetLevel()->LocalGizmo->GetArrowArr())
             {
                 int maxIntersect = 0;
                 float minDistance = FLT_MAX;
@@ -147,13 +147,13 @@ bool AEditorPlayer::PickGizmo(FVector& pickPosition)
                     {
                         minDistance = Distance;
                         maxIntersect = currentIntersectCount;
-                        GetWorld()->SetPickingGizmo(iter);
+                        GetLevel()->SetPickingGizmo(iter);
                         isPickedGizmo = true;
                     }
                     else if (abs(Distance - minDistance) < FLT_EPSILON && currentIntersectCount > maxIntersect)
                     {
                         maxIntersect = currentIntersectCount;
-                        GetWorld()->SetPickingGizmo(iter);
+                        GetLevel()->SetPickingGizmo(iter);
                         isPickedGizmo = true;
                     }
                 }
@@ -161,7 +161,7 @@ bool AEditorPlayer::PickGizmo(FVector& pickPosition)
         }
         else if (cMode == CM_ROTATION)
         {
-            for (auto iter : GetWorld()->LocalGizmo->GetDiscArr())
+            for (auto iter : GetLevel()->LocalGizmo->GetDiscArr())
             {
                 int maxIntersect = 0;
                 float minDistance = FLT_MAX;
@@ -175,13 +175,13 @@ bool AEditorPlayer::PickGizmo(FVector& pickPosition)
                     {
                         minDistance = Distance;
                         maxIntersect = currentIntersectCount;
-                        GetWorld()->SetPickingGizmo(iter);
+                        GetLevel()->SetPickingGizmo(iter);
                         isPickedGizmo = true;
                     }
                     else if (abs(Distance - minDistance) < FLT_EPSILON && currentIntersectCount > maxIntersect)
                     {
                         maxIntersect = currentIntersectCount;
-                        GetWorld()->SetPickingGizmo(iter);
+                        GetLevel()->SetPickingGizmo(iter);
                         isPickedGizmo = true;
                     }
                 }
@@ -189,7 +189,7 @@ bool AEditorPlayer::PickGizmo(FVector& pickPosition)
         }
         else if (cMode == CM_SCALE)
         {
-            for (auto iter : GetWorld()->LocalGizmo->GetScaleArr())
+            for (auto iter : GetLevel()->LocalGizmo->GetScaleArr())
             {
                 int maxIntersect = 0;
                 float minDistance = FLT_MAX;
@@ -202,13 +202,13 @@ bool AEditorPlayer::PickGizmo(FVector& pickPosition)
                     {
                         minDistance = Distance;
                         maxIntersect = currentIntersectCount;
-                        GetWorld()->SetPickingGizmo(iter);
+                        GetLevel()->SetPickingGizmo(iter);
                         isPickedGizmo = true;
                     }
                     else if (abs(Distance - minDistance) < FLT_EPSILON && currentIntersectCount > maxIntersect)
                     {
                         maxIntersect = currentIntersectCount;
-                        GetWorld()->SetPickingGizmo(iter);
+                        GetLevel()->SetPickingGizmo(iter);
                         isPickedGizmo = true;
                     }
                 }
@@ -259,7 +259,7 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     }
     if (Possible)
     {
-        GetWorld()->SetPickedActor(Possible->GetOwner());
+        GetLevel()->SetPickedActor(Possible->GetOwner());
     }
 }
 
@@ -349,7 +349,7 @@ int AEditorPlayer::RayIntersectsObject(const FVector& pickPosition, USceneCompon
 
 void AEditorPlayer::PickedObjControl()
 {
-    if (GetWorld()->GetSelectedActor() && GetWorld()->GetPickingGizmo())
+    if (GetLevel()->GetSelectedActor() && GetLevel()->GetPickingGizmo())
     {
         POINT currentMousePos;
         GetCursorPos(&currentMousePos);
@@ -357,8 +357,8 @@ void AEditorPlayer::PickedObjControl()
         int32 deltaY = currentMousePos.y - m_LastMousePos.y;
 
         // USceneComponent* pObj = GetWorld()->GetPickingObj();
-        AActor* PickedActor = GetWorld()->GetSelectedActor();
-        UGizmoBaseComponent* Gizmo = static_cast<UGizmoBaseComponent*>(GetWorld()->GetPickingGizmo());
+        AActor* PickedActor = GetLevel()->GetSelectedActor();
+        UGizmoBaseComponent* Gizmo = static_cast<UGizmoBaseComponent*>(GetLevel()->GetPickingGizmo());
         switch (cMode)
         {
         case CM_TRANSLATION:
@@ -380,9 +380,9 @@ void AEditorPlayer::PickedObjControl()
 
 void AEditorPlayer::ControlRotation(USceneComponent* pObj, UGizmoBaseComponent* Gizmo, int32 deltaX, int32 deltaY)
 {
-    FVector cameraForward = GetWorld()->GetCamera()->GetForwardVector();
-    FVector cameraRight = GetWorld()->GetCamera()->GetRightVector();
-    FVector cameraUp = GetWorld()->GetCamera()->GetUpVector();
+    FVector cameraForward = GetLevel()->GetCamera()->GetForwardVector();
+    FVector cameraRight = GetLevel()->GetCamera()->GetRightVector();
+    FVector cameraUp = GetLevel()->GetCamera()->GetUpVector();
 
     FQuat currentRotation = pObj->GetQuat();
 

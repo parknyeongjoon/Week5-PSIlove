@@ -1,4 +1,4 @@
-#include "Engine/Source/Runtime/Engine/World.h"
+#include "Engine/Source/Runtime/Engine/Level.h"
 
 #include "Actors/Player.h"
 #include "BaseGizmos/TransformGizmo.h"
@@ -10,7 +10,7 @@
 #include "Components/SkySphereComponent.h"
 
 
-void UWorld::Initialize()
+void ULevel::Initialize()
 {
     // TODO: Load Scene
     CreateBaseObject();
@@ -24,7 +24,7 @@ void UWorld::Initialize()
     skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
 }
 
-void UWorld::CreateBaseObject()
+void ULevel::CreateBaseObject()
 {
     if (EditorPlayer == nullptr)
     {
@@ -44,7 +44,7 @@ void UWorld::CreateBaseObject()
     }
 }
 
-void UWorld::ReleaseBaseObject()
+void ULevel::ReleaseBaseObject()
 {
     if (LocalGizmo)
     {
@@ -72,7 +72,7 @@ void UWorld::ReleaseBaseObject()
 
 }
 
-void UWorld::Tick(float DeltaTime)
+void ULevel::Tick(float DeltaTime)
 {
 	camera->TickComponent(DeltaTime);
 	EditorPlayer->Tick(DeltaTime);
@@ -92,7 +92,7 @@ void UWorld::Tick(float DeltaTime)
 	}
 }
 
-void UWorld::Release()
+void ULevel::Release()
 {
 	for (AActor* Actor : ActorsArray)
 	{
@@ -112,9 +112,9 @@ void UWorld::Release()
     GUObjectArray.ProcessPendingDestroyObjects();
 }
 
-bool UWorld::DestroyActor(AActor* ThisActor)
+bool ULevel::DestroyActor(AActor* ThisActor)
 {
-    if (ThisActor->GetWorld() == nullptr)
+    if (ThisActor->GetLevel() == nullptr)
     {
         return false;
     }
@@ -146,7 +146,7 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     return true;
 }
 
-void UWorld::SetPickingGizmo(UObject* Object)
+void ULevel::SetPickingGizmo(UObject* Object)
 {
 	pickingGizmo = Cast<USceneComponent>(Object);
 }

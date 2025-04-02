@@ -1,6 +1,6 @@
 #include "GizmoBaseComponent.h"
 
-#include "World.h"
+#include "Level.h"
 #include "GameFramework/Actor.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "UnrealEd/EditorViewportClient.h"
@@ -56,7 +56,7 @@ void UGizmoBaseComponent::TickComponent(float DeltaTime)
 {
     Super::TickComponent(DeltaTime);
 
-    if (AActor* PickedActor = GetWorld()->GetSelectedActor())
+    if (AActor* PickedActor = GetLevel()->GetSelectedActor())
     {
         std::shared_ptr<FEditorViewportClient> activeViewport = GetEngine().GetLevelEditor()->GetActiveViewportClient();
         if (activeViewport->IsPerspective())

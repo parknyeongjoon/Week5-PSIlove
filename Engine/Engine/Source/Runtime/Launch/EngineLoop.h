@@ -6,7 +6,7 @@
 
 class UnrealEd;
 class UImGuiManager;
-class UWorld;
+class ULevel;
 class FEditorViewportClient;
 class SSplitterV;
 class SSplitterH;
@@ -40,7 +40,7 @@ public:
 
 private:
     UImGuiManager* UIMgr;
-    UWorld* GWorld;
+    ULevel* GLevel;
     SLevelEditor* LevelEditor;
     UnrealEd* UnrealEditor;
     bool bIsExit = false;
@@ -48,7 +48,7 @@ private:
     bool bTestInput = false;
 
 public:
-    UWorld* GetWorld() const { return GWorld; }
+    ULevel* GetLevel() const { return GLevel; }
     SLevelEditor* GetLevelEditor() const { return LevelEditor; }
     UnrealEd* GetUnrealEditor() const { return UnrealEditor; }
 };

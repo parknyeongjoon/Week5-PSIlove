@@ -14,12 +14,12 @@ class USceneComponent;
 class UTransformGizmo;
 
 
-class UWorld : public UObject
+class ULevel : public UObject
 {
-    DECLARE_CLASS(UWorld, UObject)
+    DECLARE_CLASS(ULevel, UObject)
 
 public:
-    UWorld() = default;
+    ULevel() = default;
 
     void Initialize();
     void CreateBaseObject();
@@ -79,7 +79,7 @@ public:
 
 template <typename T>
     requires std::derived_from<T, AActor>
-T* UWorld::SpawnActor()
+T* ULevel::SpawnActor()
 {
     T* Actor = FObjectFactory::ConstructObject<T>();
     // TODO: 일단 AddComponent에서 Component마다 초기화

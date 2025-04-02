@@ -6,7 +6,7 @@
 extern FEngineLoop GEngineLoop;
 
 class UClass;
-class UWorld;
+class ULevel;
 
 
 class UObject
@@ -47,9 +47,9 @@ public:
     UObject();
     virtual ~UObject() = default;
 
-    UWorld* GetWorld()
+    ULevel* GetLevel()
     {
-        return GEngineLoop.GetWorld();
+        return GEngineLoop.GetLevel();
     }
 
     FEngineLoop& GetEngine()
