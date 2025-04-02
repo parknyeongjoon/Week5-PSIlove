@@ -8,6 +8,11 @@ class UMeshComponent : public UPrimitiveComponent
 public:
     UMeshComponent() = default;
 
+protected:
+    virtual void DuplicateSubObjects() override;
+    virtual void DuplicateObject(const UObject* SourceObject) override;
+
+public:
 #pragma region Material
     virtual uint32 GetNumMaterials() const { return 0; }
     virtual UMaterial* GetMaterial(uint32 ElementIndex) const;

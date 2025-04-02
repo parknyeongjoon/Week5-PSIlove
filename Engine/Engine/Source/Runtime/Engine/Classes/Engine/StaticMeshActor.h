@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "GameFramework/Actor.h"
 
 
@@ -9,6 +9,11 @@ class AStaticMeshActor : public AActor
 public:
     AStaticMeshActor();
 
+protected:
+    virtual void DuplicateSubObjects();
+    virtual void DuplicateObject(const UObject* SourceObject);
+
+public:
     UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
 
 private:

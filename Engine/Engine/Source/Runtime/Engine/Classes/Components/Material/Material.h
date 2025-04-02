@@ -8,6 +8,12 @@ class UMaterial : public UObject {
 public:
     UMaterial() {}
     ~UMaterial() {}
+
+protected:
+    virtual void DuplicateSubObjects();
+    virtual void DuplicateObject(const UObject* SourceObject);
+
+public:
     FObjMaterialInfo& GetMaterialInfo() { return materialInfo; }
     void SetMaterialInfo(FObjMaterialInfo value) { materialInfo = value; }
 

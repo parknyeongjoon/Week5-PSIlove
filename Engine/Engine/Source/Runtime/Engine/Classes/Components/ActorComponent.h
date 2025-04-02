@@ -2,6 +2,7 @@
 #include "Engine/EngineTypes.h"
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
+#include "CoreUObject/UObject/Casts.h"
 
 class AActor;
 
