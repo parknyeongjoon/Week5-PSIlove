@@ -56,7 +56,7 @@ private:
 
 public:
     const TArray<USceneComponent*>& GetAttachChildren() const; // ���������� ���� children�� ��ȯ
-    void GetChildrenComponents(TSet<USceneComponent*>& Children) const; // ��ͷ� �Ʒ��� ��� children ��ȯ
+    void GetChildrenComponents(TArray<USceneComponent*>& Children) const; // ��ͷ� �Ʒ��� ��� children ��ȯ
     USceneComponent* GetAttachParent() const;
     void GetParentComponents(TArray<USceneComponent*>& Parents) const; // ��ͷ� root���� ��ȯ
 

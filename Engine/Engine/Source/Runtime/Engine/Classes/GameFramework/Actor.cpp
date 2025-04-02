@@ -64,7 +64,7 @@ void AActor::RemoveOwnedComponent(UActorComponent* Component)
 
 void AActor::InitializeComponents()
 {
-    TSet<UActorComponent*> Components = GetComponents();
+    TArray<UActorComponent*> Components = GetComponents();
     for (UActorComponent* ActorComp : Components)
     {
         if (ActorComp->bAutoActive && !ActorComp->IsActive())
@@ -81,7 +81,7 @@ void AActor::InitializeComponents()
 
 void AActor::UninitializeComponents()
 {
-    TSet<UActorComponent*> Components = GetComponents();
+    TArray<UActorComponent*> Components = GetComponents();
     for (UActorComponent* ActorComp : Components)
     {
         if (ActorComp->HasBeenInitialized())
@@ -149,7 +149,7 @@ void AActor::DuplicateSubObjects()
     // tree구조 완성되었지만
     // owner는 그대로
 
-    TSet<USceneComponent*> NewSceneComponents;
+    TArray<USceneComponent*> NewSceneComponents;
     RootComponent->GetChildrenComponents(NewSceneComponents);
     NewSceneComponents.Add(RootComponent);
     // Owner 바꿔주기

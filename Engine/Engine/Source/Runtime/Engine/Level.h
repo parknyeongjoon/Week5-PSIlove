@@ -45,7 +45,7 @@ private:
     const FString defaultMapName = "Default";
 
     /** World에서 관리되는 모든 Actor의 목록 */
-    TSet<AActor*> ActorsArray;
+    TArray<AActor*> ActorsArray;
 
     /** Actor가 Spawn되었고, 아직 BeginPlay가 호출되지 않은 Actor들 */
     TArray<AActor*> PendingBeginPlayActors;
@@ -58,7 +58,7 @@ private:
 public:
     UObject* worldGizmo = nullptr;
 
-    const TSet<AActor*>& GetActors() const { return ActorsArray; }
+    const TArray<AActor*>& GetActors() const { return ActorsArray; }
     void AddActor(AActor* NewActor);
 
     UTransformGizmo* LocalGizmo = nullptr;

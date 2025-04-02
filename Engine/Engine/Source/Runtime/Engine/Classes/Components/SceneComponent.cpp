@@ -4,6 +4,7 @@
 #include "UObject/ObjectFactory.h"
 #include "UTextUUID.h"
 #include "Engine/Classes/Components/SkySphereComponent.h"
+#include "Core/Container/Array.h"
 
 #include "UObject/Casts.h"
 
@@ -156,14 +157,14 @@ const TArray<USceneComponent*>& USceneComponent::GetAttachChildren() const
     return AttachChildren;
 }
 
-void USceneComponent::GetChildrenComponents(TSet<USceneComponent*>& Children) const
+void USceneComponent::GetChildrenComponents(TArray<USceneComponent*>& Children) const
 {
     Children.Empty();
     for (auto& child : Children)
     {
-        TSet<USceneComponent*> childComponents;
+        TArray<USceneComponent*> childComponents;
         child->GetChildrenComponents(childComponents);
-        Children.Emplace(childComponents);
+        Children + childComponents;
     }
 }
 

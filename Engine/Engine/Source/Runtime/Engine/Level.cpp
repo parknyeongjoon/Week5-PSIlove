@@ -76,7 +76,7 @@ void ULevel::Release()
 	for (AActor* Actor : ActorsArray)
 	{
 		Actor->EndPlay(EEndPlayReason::WorldTransition);
-        TSet<UActorComponent*> Components = Actor->GetComponents();
+        TArray<UActorComponent*> Components = Actor->GetComponents();
 	    for (UActorComponent* Component : Components)
 	    {
 	        GUObjectArray.MarkRemoveObject(Component);
@@ -103,7 +103,7 @@ UObject* ULevel::Duplicate()
 
 void ULevel::DuplicateSubObjects()
 {
-    TSet<AActor*> duplicatedActors;
+    TArray<AActor*> duplicatedActors;
 
     for (auto* actor : ActorsArray)
     {
@@ -140,7 +140,7 @@ bool ULevel::DestroyActor(AActor* ThisActor)
         ThisActor->SetOwner(nullptr);
     }
 
-    TSet<UActorComponent*> Components = ThisActor->GetComponents();
+    TArray<UActorComponent*> Components = ThisActor->GetComponents();
     for (UActorComponent* Component : Components)
     {
         Component->DestroyComponent();

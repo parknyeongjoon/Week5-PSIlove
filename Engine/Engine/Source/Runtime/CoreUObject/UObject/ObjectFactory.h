@@ -34,7 +34,7 @@ public:
         FString Name = T::StaticClass()->GetName() + "_" + std::to_string(id);
 
         T* Obj = new T;  // TODO: FPlatformMemory::Malloc으로 변경, placement new 사용시 Free방법 생각하기
-        obj = InObject;
+        Obj = InObject;
         Obj->ClassPrivate = T::StaticClass();
         Obj->NamePrivate = Name;
         Obj->UUID = id;
