@@ -8,6 +8,7 @@
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "World.h"
+#include "GameFramework/Actor.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -130,9 +131,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GWorld->Level =GLevel;
     GLevel->Initialize(EWorldType::Editor);
 
-    WorldContexts.Add({GWorld->Duplicate<UWorld>(), EWorldType::PIE});
-    WorldContexts[1].World->Level = GLevel->Duplicate<ULevel>();
-    WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
+    WorldContexts.Add({});
 
     return 0;
 }
@@ -211,6 +210,12 @@ void FEngineLoop::Tick()
         if (bTestInput2)
         {
             curWorldContextIndex == 0 ? curWorldContextIndex = 1 : curWorldContextIndex = 0;
+            if (curWorldContextIndex == 1)
+            {
+                WorldContexts[1] = {GWorld->Duplicate<UWorld>(), EWorldType::PIE};
+                WorldContexts[1].World->Level = GLevel->Duplicate<ULevel>();
+                WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
+            }
             GWorld = WorldContexts[curWorldContextIndex].World;
             GLevel = GWorld->Level;
         }
@@ -248,6 +253,10 @@ void FEngineLoop::PIETick(double elapsedTime)
 {
     Input();
     GLevel->Tick(elapsedTime);
+    for (auto& actor : GLevel->GetActors())
+    {
+        actor->SetActorRotation(actor->GetActorRotation() + FVector(0.1,0.1,0.1));
+    }
     Render();
 
     // Pending 처리된 오브젝트 제거
