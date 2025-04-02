@@ -2,6 +2,12 @@
 
 #include "World.h"
 
+#include "Components/UTextUUID.h"
+
+AActor::AActor()
+{
+}
+
 void AActor::BeginPlay()
 {
     // TODO: 나중에 삭제를 Pending으로 하던가 해서 복사비용 줄이기
@@ -9,6 +15,13 @@ void AActor::BeginPlay()
     for (UActorComponent* Comp : CopyComponents)
     {
         Comp->BeginPlay();
+    }
+
+    UUIDComponent = AddComponent<UTextUUID>();
+    if (UUIDComponent)
+    {
+        UUIDComponent->SetUUID(GetUUID());
+        UUIDComponent->SetupAttachment(RootComponent);
     }
 }
 

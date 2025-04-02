@@ -44,10 +44,10 @@ void UText::ClearText()
 {
     vertexTextureArr.Empty();
 }
-void UText::SetRowColumnCount(int _cellsPerRow, int _cellsPerColumn) 
+void UText::SetRowColumnCount(int32 InRowCount, int32 InColumnCount) 
 {
-    RowCount = _cellsPerRow;
-    ColumnCount = _cellsPerColumn;
+    RowCount = InRowCount;
+    ColumnCount = InColumnCount;
 }
 
 int UText::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)

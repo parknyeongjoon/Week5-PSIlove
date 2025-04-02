@@ -14,7 +14,7 @@ public:
     void ClearText();
     void SetText(FWString _text);
     FWString GetText() { return text; }
-    void SetRowColumnCount(int _cellsPerRow, int _cellsPerColumn);
+    void SetRowColumnCount(int32 InRowCount, int32 InColumnCount);
     virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
 
     ID3D11Buffer* vertexTextBuffer;

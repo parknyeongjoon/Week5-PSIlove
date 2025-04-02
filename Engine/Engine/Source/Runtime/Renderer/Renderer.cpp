@@ -687,6 +687,9 @@ void FRenderer::RenderTextPrimitive(
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Graphics->DeviceContext->PSSetShaderResources(0, 1, &_TextureSRV);
     Graphics->DeviceContext->PSSetSamplers(0, 1, &_SamplerState);
+    
+    ID3D11DepthStencilState* DepthStateDisable = Graphics->DepthStateDisable;
+    Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
 
     // ��ο� ȣ�� (6���� �ε��� ���)
     Graphics->DeviceContext->Draw(numVertices, 0);

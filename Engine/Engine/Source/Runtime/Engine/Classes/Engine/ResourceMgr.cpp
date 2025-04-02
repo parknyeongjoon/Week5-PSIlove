@@ -1,16 +1,17 @@
 #include "ResourceMgr.h"
 #include <fstream>
-#include <sstream>
 #include <wincodec.h>
 #include <ranges>
 #include "Define.h"
 #include "Components/SkySphereComponent.h"
 #include "D3D11RHI/GraphicDevice.h"
 #include "DirectXTK/Include/DDSTextureLoader.h"
+#include "DirectXTK/Include/WICTextureLoader.h"
 
 void FResourceMgr::Initialize(FRenderer* renderer, FGraphicsDevice* device) {}
 
-void FResourceMgr::Release(FRenderer* renderer) {
+void FResourceMgr::Release(FRenderer* renderer)
+{
 	for (const auto& Pair : textureMap)
     {
 		FTexture* texture =	Pair.Value.get();
@@ -21,13 +22,16 @@ void FResourceMgr::Release(FRenderer* renderer) {
 
 #include <unordered_map>
 
-struct PairHash {
+struct PairHash
+{
 	template <typename T1, typename T2>
 	std::size_t operator()(const std::pair<T1, T2>& pair) const {
 		return std::hash<T1>()(pair.first) ^ (std::hash<T2>()(pair.second) << 1);
 	}
 };
-struct TupleHash {
+
+struct TupleHash
+{
 	template <typename T1, typename T2, typename T3>
 	std::size_t operator()(const std::tuple<T1, T2, T3>& tuple) const {
 		std::size_t h1 = std::hash<T1>()(std::get<0>(tuple));
@@ -43,13 +47,13 @@ std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& name)
     auto* TempValue = textureMap.Find(name);
     if (!TempValue)
     {
-        LoadTextureFromFile(GEngineLoop.graphicDevice.Device, nullptr, name.c_str());
+        LoadTextureFromFile(FEngineLoop::graphicDevice.Device, name.c_str());
         return *textureMap.Find(name);
     }
     return TempValue ? *TempValue : nullptr;
 }
 
-HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* filename)
+HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* filename)
 {
 	IWICImagingFactory* wicFactory = nullptr;
 	IWICBitmapDecoder* decoder = nullptr;

@@ -388,7 +388,7 @@ struct FLoaderOBJ
             return true;
         }
 
-        HRESULT hr = FEngineLoop::resourceMgr.LoadTextureFromFile(FEngineLoop::graphicDevice.Device, FEngineLoop::graphicDevice.DeviceContext, Filename.c_str());
+        HRESULT hr = FEngineLoop::resourceMgr.LoadTextureFromFile(FEngineLoop::graphicDevice.Device, Filename.c_str());
 
         if (FAILED(hr))
         {
@@ -681,7 +681,7 @@ public:
             {
                 if (FEngineLoop::resourceMgr.GetTexture(Texture) == nullptr)
                 {
-                    FEngineLoop::resourceMgr.LoadTextureFromFile(FEngineLoop::graphicDevice.Device, FEngineLoop::graphicDevice.DeviceContext, Texture.c_str());
+                    FEngineLoop::resourceMgr.LoadTextureFromFile(FEngineLoop::graphicDevice.Device, Texture.c_str());
                 }
             }
         }
