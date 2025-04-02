@@ -139,20 +139,20 @@ bool AActor::SetActorScale(const FVector& NewScale)
 void AActor::DuplicateSubObjects()
 {
     if (Owner) {
-        AActor* NewOwner = FObjectFactory::DuplicateObject<AActor>(*Owner);
+        AActor* NewOwner = Owner->Duplicate<AActor>();
         Owner = NewOwner;
     }
     if (OwnedComponents.Num() > 0) {
         for (const auto& Comp : OwnedComponents) {
             if (Comp == Cast<UActorComponent>(RootComponent)) {
-                USceneComponent* NewRootComp = FObjectFactory::DuplicateObject<USceneComponent>(*Cast<USceneComponent>(Comp));
+                USceneComponent* NewRootComp = Comp->Duplicate<USceneComponent>();
                 RootComponent = NewRootComp;
             }
         }
         TSet<UActorComponent*> NewOwnedComps = OwnedComponents;
         OwnedComponents.Empty();
         for (const auto& Comp : NewOwnedComps) {
-            UActorComponent* NewComp = FObjectFactory::DuplicateObject<UActorComponent>(*Comp);
+            UActorComponent* NewComp = Comp->Duplicate<UActorComponent>();
             OwnedComponents.Add(NewComp);
             NewComp->Owner = this;
             if (USceneComponent* NewSceneComp = Cast<USceneComponent>(Comp))
@@ -162,7 +162,7 @@ void AActor::DuplicateSubObjects()
                     NewSceneComp->SetupAttachment(RootComponent);
                 }
             }
-            Comp->InitializeComponent();
+            NewComp->InitializeComponent();
         }
     }
 }
