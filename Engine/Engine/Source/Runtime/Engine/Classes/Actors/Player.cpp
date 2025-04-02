@@ -380,9 +380,9 @@ void AEditorPlayer::PickedObjControl()
 
 void AEditorPlayer::ControlRotation(USceneComponent* pObj, UGizmoBaseComponent* Gizmo, int32 deltaX, int32 deltaY)
 {
-    FVector cameraForward = GetLevel()->GetCamera()->GetForwardVector();
-    FVector cameraRight = GetLevel()->GetCamera()->GetRightVector();
-    FVector cameraUp = GetLevel()->GetCamera()->GetUpVector();
+    FVector cameraForward = FVector(1,0,0);// GetLevel()->GetCamera()->GetForwardVector();
+    FVector cameraRight = FVector(0,1,0);//GetLevel()->GetCamera()->GetRightVector();
+    FVector cameraUp = FVector(0,0,1);//GetLevel()->GetCamera()->GetUpVector();
 
     FQuat currentRotation = pObj->GetQuat();
 

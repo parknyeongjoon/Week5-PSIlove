@@ -21,6 +21,8 @@ public:
     int32 Init(HINSTANCE hInstance);
     void Render();
     void Tick();
+    void EditorTick(double elapsedTime);
+    void PIETick(double elapsedTime);
     void Exit();
     float GetAspectRatio(IDXGISwapChain* swapChain) const;
     void Input();
@@ -40,12 +42,16 @@ public:
 private:
     UImGuiManager* UIMgr;
     ULevel* GLevel;
+    UWorld* GWorld;
     SLevelEditor* LevelEditor;
     UnrealEd* UnrealEditor;
     bool bIsExit = false;
     const int32 targetFPS = 60;
     bool bTestInput = false;
+    bool bTestInput2 = false;
+    bool bTestInput3 = false;
     TArray<FWorldContext> WorldContexts;
+    int curWorldContextIndex = 0;
 
 public:
     ULevel* GetLevel() const { return GLevel; }

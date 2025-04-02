@@ -20,8 +20,8 @@ class ULevel : public UObject
 
 public:
     ULevel() = default;
-    void Initialize();
-    void CreateBaseObject();
+    void Initialize(EWorldType worldType);
+    void CreateBaseObject(EWorldType worldType);
     void ReleaseBaseObject();
     void Tick(float DeltaTime);
     void Release();
@@ -53,7 +53,6 @@ private:
     AActor* SelectedActor = nullptr;
 
     USceneComponent* pickingGizmo = nullptr;
-    UCameraComponent* camera = nullptr;
     AEditorPlayer* EditorPlayer = nullptr;
 
 public:
@@ -63,7 +62,6 @@ public:
     void AddActor(AActor* NewActor);
 
     UTransformGizmo* LocalGizmo = nullptr;
-    UCameraComponent* GetCamera() const { return camera; }
     AEditorPlayer* GetEditorPlayer() const { return EditorPlayer; }
 
 

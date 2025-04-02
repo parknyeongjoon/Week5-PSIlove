@@ -9,37 +9,23 @@
 #include "Components/SkySphereComponent.h"
 
 
-void ULevel::Initialize()
+void ULevel::Initialize(EWorldType worldType)
 {
     // TODO: Load Scene
-    CreateBaseObject();
+    CreateBaseObject(worldType);
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
-
     FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
-    AActor* SpawnedActor = SpawnActor<AActor>();
-    USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
-    skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
-    skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
-
-    SpawnedActor->DuplicateAndAdd();
 }
 
-void ULevel::CreateBaseObject()
+void ULevel::CreateBaseObject(EWorldType worldType)
 {
-    if (EditorPlayer == nullptr)
+    if (EditorPlayer == nullptr && worldType == EWorldType::Editor)
     {
         EditorPlayer = FObjectFactory::ConstructObject<AEditorPlayer>();
     }
 
-    if (camera == nullptr)
-    {
-        camera = FObjectFactory::ConstructObject<UCameraComponent>();
-        camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
-        camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
-    }
-
-    if (LocalGizmo == nullptr)
+    if (LocalGizmo == nullptr && worldType == EWorldType::Editor)
     {
         LocalGizmo = FObjectFactory::ConstructObject<UTransformGizmo>();
     }
@@ -59,25 +45,17 @@ void ULevel::ReleaseBaseObject()
         worldGizmo = nullptr;
     }
 
-    if (camera)
-    {
-        delete camera;
-        camera = nullptr;
-    }
-
     if (EditorPlayer)
     {
         delete EditorPlayer;
         EditorPlayer = nullptr;
     }
-
 }
 
 void ULevel::Tick(float DeltaTime)
 {
-	camera->TickComponent(DeltaTime);
-	EditorPlayer->Tick(DeltaTime);
-	LocalGizmo->Tick(DeltaTime);
+	if (EditorPlayer) EditorPlayer->Tick(DeltaTime);
+	if (LocalGizmo) LocalGizmo->Tick(DeltaTime);
 
     // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
     for (AActor* Actor : PendingBeginPlayActors)
@@ -124,10 +102,10 @@ void ULevel::DuplicateObject(const UObject* SourceObject)
 void ULevel::DuplicateSubObjects()
 {
     TSet<AActor*> duplicatedActors;
-    // for (auto* actor : ActorsArray)
-    // {
-    //     duplicatedActors.Add(actor->Duplicate<AActor>());
-    // }
+    for (auto* actor : ActorsArray)
+    {
+        duplicatedActors.Add(actor->Duplicate<AActor>()); //TODO: 클래스 구별
+    }
     ActorsArray = duplicatedActors;
 }
 
