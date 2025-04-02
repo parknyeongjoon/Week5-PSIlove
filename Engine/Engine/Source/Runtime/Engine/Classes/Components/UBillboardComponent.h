@@ -10,6 +10,9 @@ public:
     UBillboardComponent();
     virtual ~UBillboardComponent() override;
 
+    virtual void DuplicateSubObjects() override;
+    virtual void DuplicateObject(const UObject* SourceObject) override;
+
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;
     virtual int CheckRayIntersection(
@@ -29,9 +32,6 @@ public:
     float finalIndexV = 0.0f;
     std::shared_ptr<FTexture> Texture;
 protected:
-
-
-
     USceneComponent* m_parent = nullptr;
 
     bool CheckPickingOnNDC(const TArray<FVector>& checkQuad, float& hitDistance);

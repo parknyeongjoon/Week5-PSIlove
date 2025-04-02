@@ -11,6 +11,9 @@ public:
     USkySphereComponent();
     virtual ~USkySphereComponent() override;
 
+    virtual void DuplicateSubObjects() override;
+    virtual void DuplicateObject(const UObject* SourceObject) override;
+
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;
     float UOffset = 0;

@@ -6,6 +6,19 @@
 #include "UnrealEd/PrimitiveBatch.h"
 
 
+void UStaticMeshComponent::DuplicateSubObjects()
+{
+}
+
+void UStaticMeshComponent::DuplicateObject(const UObject* SourceObject)
+{
+    if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(SourceObject))
+    {
+        this->staticMesh = StaticMeshComp->staticMesh;
+        this->selectedSubMeshIndex = StaticMeshComp->selectedSubMeshIndex;
+    }
+}
+
 uint32 UStaticMeshComponent::GetNumMaterials() const
 {
     if (staticMesh == nullptr) return 0;

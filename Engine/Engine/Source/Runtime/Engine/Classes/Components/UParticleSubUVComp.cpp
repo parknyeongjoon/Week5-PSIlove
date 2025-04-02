@@ -20,6 +20,28 @@ UParticleSubUVComp::~UParticleSubUVComp()
 	}
 }
 
+void UParticleSubUVComp::DuplicateSubObjects()
+{
+    // deepcopy 대상 없음.
+}
+
+void UParticleSubUVComp::DuplicateObject(const UObject* SourceObject)
+{
+    if (UParticleSubUVComp* ParticleSubUVComp = Cast<UParticleSubUVComp>(SourceObject))
+    {
+        this->vertexSubUVBuffer = ParticleSubUVComp->vertexSubUVBuffer;
+        this->numTextVertices = ParticleSubUVComp->numTextVertices;
+        this->bIsLoop = ParticleSubUVComp->bIsLoop;
+        this->vertexSubUVBuffer = ParticleSubUVComp->vertexSubUVBuffer;
+        this->vertexSubUVBuffer = ParticleSubUVComp->vertexSubUVBuffer;
+        this->indexU = ParticleSubUVComp->indexU;
+        this->indexV = ParticleSubUVComp->indexV;
+        this->second = ParticleSubUVComp->second;
+        this->CellsPerRow = ParticleSubUVComp->CellsPerRow;
+        this->CellsPerColumn = ParticleSubUVComp->CellsPerColumn;
+   }
+}
+
 void UParticleSubUVComp::InitializeComponent()
 {
 	Super::InitializeComponent();

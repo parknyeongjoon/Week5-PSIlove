@@ -18,6 +18,14 @@ USphereComp::~USphereComp()
 {
 }
 
+void USphereComp::DuplicateSubObjects()
+{
+}
+
+void USphereComp::DuplicateObject(const UObject* SourceObject)
+{
+}
+
 void USphereComp::InitializeComponent()
 {
     Super::InitializeComponent();

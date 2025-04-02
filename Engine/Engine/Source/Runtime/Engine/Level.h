@@ -59,6 +59,7 @@ public:
     UObject* worldGizmo = nullptr;
 
     const TSet<AActor*>& GetActors() const { return ActorsArray; }
+    void AddActor(AActor* NewActor);
 
     UTransformGizmo* LocalGizmo = nullptr;
     AEditorPlayer* GetEditorPlayer() const { return EditorPlayer; }

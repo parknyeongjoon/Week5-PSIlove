@@ -1,6 +1,7 @@
 #include "StaticMesh.h"
 #include "Engine/FLoaderOBJ.h"
 #include "UObject/ObjectFactory.h"
+#include "CoreUObject/UObject/Casts.h"
 
 UStaticMesh::UStaticMesh()
 {
@@ -19,6 +20,22 @@ UStaticMesh::~UStaticMesh()
     if (staticMeshRenderData->IndexBuffer) {
         staticMeshRenderData->IndexBuffer->Release();
         staticMeshRenderData->IndexBuffer = nullptr;
+    }
+}
+
+void UStaticMesh::DuplicateSubObjects()
+{
+    // FStaticMaterial이 UMaterial*을 갖고 있긴 하지만, shallow copy만 필요하기 때문에 별도로 신경 쓸필요 없음.
+    // UMaterial을 복사해서 변경하는건 다른데서 해야함...
+    // 만약 material을 변경하면 동일한 material을 가진 다른 오브젝트에게도 영향이 감.
+}
+
+void UStaticMesh::DuplicateObject(const UObject* SourceObject)
+{
+    if (UStaticMesh* SourceStaticMesh = Cast<UStaticMesh>(SourceObject))
+    {
+        this->staticMeshRenderData = SourceStaticMesh->staticMeshRenderData;
+        this->materials = SourceStaticMesh->materials;
     }
 }
 
