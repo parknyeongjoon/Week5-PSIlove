@@ -17,6 +17,20 @@ USkySphereComponent::~USkySphereComponent()
 {
 }
 
+void USkySphereComponent::DuplicateSubObjects()
+{
+    // deepcopy 대상 없음.
+}
+
+void USkySphereComponent::DuplicateObject(const UObject* SourceObject)
+{
+    if (USkySphereComponent* SkySphereComponent = Cast<USkySphereComponent>(SourceObject))
+    {
+        this->UOffset = SkySphereComponent->UOffset;
+        this->VOffset = SkySphereComponent->VOffset;
+    }
+}
+
 void USkySphereComponent::InitializeComponent()
 {
     Super::InitializeComponent();

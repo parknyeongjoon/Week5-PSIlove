@@ -14,6 +14,20 @@ ULightComponentBase::~ULightComponentBase()
 {
     delete texture2D;
 }
+void ULightComponentBase::DuplicateSubObjects()
+{
+    this->texture2D = this->texture2D->Duplicate<UBillboardComponent>();
+}
+void ULightComponentBase::DuplicateObject(const UObject* SourceObject)
+{
+    if (ULightComponentBase* LightComponentBase = Cast<ULightComponentBase>(SourceObject))
+    {
+        this->color = LightComponentBase->color;
+        this->radius = LightComponentBase->radius;
+        this->AABB = LightComponentBase->AABB;
+        this->texture2D = LightComponentBase->texture2D;
+    }
+}
 void ULightComponentBase::SetColor(FVector4 newColor)
 {
     color = newColor;

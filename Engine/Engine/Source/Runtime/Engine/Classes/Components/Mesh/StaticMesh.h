@@ -12,7 +12,6 @@ public:
     UStaticMesh();
     virtual ~UStaticMesh() override;
 
-protected:
     virtual void DuplicateSubObjects() override;
     virtual void DuplicateObject(const UObject* SourceObject) override;
 

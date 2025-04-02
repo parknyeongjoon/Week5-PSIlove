@@ -9,7 +9,6 @@ public:
     UMaterial() {}
     ~UMaterial() {}
 
-protected:
     virtual void DuplicateSubObjects();
     virtual void DuplicateObject(const UObject* SourceObject);
 

@@ -30,6 +30,25 @@ UBillboardComponent::~UBillboardComponent()
 	}
 }
 
+void UBillboardComponent::DuplicateSubObjects()
+{
+    // deepcopy 대상 없음.
+}
+
+void UBillboardComponent::DuplicateObject(const UObject* SourceObject)
+{
+    if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(SourceObject))
+    {
+        this->vertexTextureBuffer = BillboardComponent->vertexTextureBuffer;
+        this->indexTextureBuffer = BillboardComponent->indexTextureBuffer;
+        this->numVertices = BillboardComponent->numVertices;
+        this->numIndices = BillboardComponent->numIndices;
+        this->finalIndexU = BillboardComponent->finalIndexU;
+        this->finalIndexV = BillboardComponent->finalIndexV;
+        this->Texture = BillboardComponent->Texture;
+    }
+}
+
 void UBillboardComponent::InitializeComponent()
 {
     Super::InitializeComponent();
@@ -87,9 +106,8 @@ FMatrix UBillboardComponent::CreateBillboardMatrix()
 	CameraView.M[2][2] = -CameraView.M[2][2];
 	FMatrix LookAtCamera = FMatrix::Transpose(CameraView);
 	
-	FVector worldLocation = RelativeLocation;
-	if (m_parent) worldLocation = RelativeLocation + m_parent->GetWorldLocation();
-	FVector worldScale = RelativeScale3D;
+	FVector worldLocation = GetWorldLocation();
+	FVector worldScale = GetWorldLocation();
 	FMatrix S = FMatrix::CreateScale(worldScale.x, worldScale.y, worldScale.z);
 	FMatrix R = LookAtCamera;
 	FMatrix T = FMatrix::CreateTranslationMatrix(worldLocation);

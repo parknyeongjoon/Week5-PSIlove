@@ -9,7 +9,6 @@ class AStaticMeshActor : public AActor
 public:
     AStaticMeshActor();
 
-protected:
     virtual void DuplicateSubObjects();
     virtual void DuplicateObject(const UObject* SourceObject);
 

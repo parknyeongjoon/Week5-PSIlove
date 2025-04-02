@@ -10,6 +10,7 @@ AStaticMeshActor::AStaticMeshActor()
 
 void AStaticMeshActor::DuplicateSubObjects()
 {
+    this->StaticMeshComponent = this->StaticMeshComponent->Duplicate<UStaticMeshComponent>();
 }
 
 void AStaticMeshActor::DuplicateObject(const UObject* SourceObject)

@@ -8,6 +8,19 @@ UPrimitiveComponent::~UPrimitiveComponent()
 {
 }
 
+void UPrimitiveComponent::DuplicateSubObjects()
+{
+}
+
+void UPrimitiveComponent::DuplicateObject(const UObject* SourceObject)
+{
+    if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(SourceObject))
+    {
+        this->AABB = PrimitiveComponent->AABB;
+        this->m_Type = PrimitiveComponent->m_Type;
+    }
+}
+
 void UPrimitiveComponent::InitializeComponent()
 {
 	Super::InitializeComponent();

@@ -9,7 +9,6 @@ class UStaticMeshComponent : public UMeshComponent
 public:
     UStaticMeshComponent() = default;
 
-protected:
     virtual void DuplicateSubObjects() override;
     virtual void DuplicateObject(const UObject* SourceObject) override;
 
