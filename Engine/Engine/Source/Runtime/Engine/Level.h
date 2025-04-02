@@ -42,7 +42,7 @@ public:
     bool DestroyActor(AActor* ThisActor);
 
 private:
-    const FString defaultMapName = "Default";
+    FString defaultMapName = "Default";
 
     /** World에서 관리되는 모든 Actor의 목록 */
     TArray<AActor*> ActorsArray;
