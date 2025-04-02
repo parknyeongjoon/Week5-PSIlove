@@ -26,9 +26,11 @@ public:
     void Exit();
     float GetAspectRatio(IDXGISwapChain* swapChain) const;
     void Input();
+    EWorldType GetWorldType() const {return WorldContexts[curWorldContextIndex].worldType;}
 
 private:
     void WindowInit(HINSTANCE hInstance);
+    void TogglePIE();
 
 public:
     static FGraphicsDevice graphicDevice;
@@ -36,10 +38,12 @@ public:
     static FResourceMgr resourceMgr;
     static uint32 TotalAllocationBytes;
     static uint32 TotalAllocationCount;
+    bool bTestInput2 = false;
     
     HWND hWnd;
 
 private:
+    TArray<FWorldContext> WorldContexts;
     UImGuiManager* UIMgr;
     ULevel* GLevel;
     UWorld* GWorld;
@@ -48,9 +52,6 @@ private:
     bool bIsExit = false;
     const int32 targetFPS = 60;
     bool bTestInput = false;
-    bool bTestInput2 = false;
-    bool bTestInput3 = false;
-    TArray<FWorldContext> WorldContexts;
     int curWorldContextIndex = 0;
 
 public:

@@ -207,16 +207,10 @@ void FEngineLoop::Tick()
             break;
         }
 
-        if (bTestInput2)
+        if (bTestInput2 == true)
         {
-            curWorldContextIndex == 0 ? curWorldContextIndex = 1 : curWorldContextIndex = 0;
-            if (curWorldContextIndex == 1)
-            {
-                WorldContexts[1] = {Cast<UWorld>(GWorld->Duplicate()), EWorldType::PIE};
-                WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
-            }
-            GWorld = WorldContexts[curWorldContextIndex].World;
-            GLevel = GWorld->Level;
+            TogglePIE();
+            bTestInput2 = false;
         }
 
         do
@@ -258,10 +252,35 @@ void FEngineLoop::PIETick(double elapsedTime)
     }
     Render();
 
+    UIMgr->BeginFrame();
+    UnrealEditor->RenderPIE();
+
+    UIMgr->EndFrame();
+
     // Pending 처리된 오브젝트 제거
     GUObjectArray.ProcessPendingDestroyObjects();
 
     graphicDevice.SwapBuffer();
+}
+
+void FEngineLoop::TogglePIE()
+{
+    curWorldContextIndex == 0 ? curWorldContextIndex = 1 : curWorldContextIndex = 0;
+    if (curWorldContextIndex == 1)
+    {
+        WorldContexts[1] = {GWorld->Duplicate<UWorld>(), EWorldType::PIE};
+        WorldContexts[1].World->Level = GLevel->Duplicate<ULevel>();
+        WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
+        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() & 14;
+        LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
+    }
+    else
+    {
+        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() | 1;
+        LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
+    }
+    GWorld = WorldContexts[curWorldContextIndex].World;
+    GLevel = GWorld->Level;
 }
 
 float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
@@ -289,17 +308,6 @@ void FEngineLoop::Input()
     else
     {
         bTestInput = false;
-    }
-    if (GetAsyncKeyState('Z') & 0x8000)
-    {
-        if (!bTestInput2)
-        {
-            bTestInput2 = true;
-        }
-    }
-    else
-    {
-        bTestInput2 = false;
     }
 }
 

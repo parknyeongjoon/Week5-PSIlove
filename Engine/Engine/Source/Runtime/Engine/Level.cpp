@@ -21,14 +21,14 @@ void ULevel::Initialize(EWorldType worldType)
 void ULevel::CreateBaseObject(EWorldType worldType)
 {
     if (EditorPlayer == nullptr && worldType == EWorldType::Editor)
-    {
         EditorPlayer = FObjectFactory::ConstructObject<AEditorPlayer>();
-    }
-
     if (LocalGizmo == nullptr && worldType == EWorldType::Editor)
-    {
         LocalGizmo = FObjectFactory::ConstructObject<UTransformGizmo>();
-    }
+
+    if (LocalGizmo != nullptr && worldType == EWorldType::PIE)
+        LocalGizmo = nullptr;
+    if (EditorPlayer != nullptr && worldType == EWorldType::PIE)
+        EditorPlayer = nullptr;
 }
 
 void ULevel::ReleaseBaseObject()
