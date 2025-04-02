@@ -7,33 +7,8 @@
 #include "Components/SkySphereComponent.h"
 #include "D3D11RHI/GraphicDevice.h"
 #include "DirectXTK/Include/DDSTextureLoader.h"
-#include "Engine/FLoaderOBJ.h"
 
-void FResourceMgr::Initialize(FRenderer* renderer, FGraphicsDevice* device)
-{
-    //RegisterMesh(renderer, "Quad", quadVertices, sizeof(quadVertices) / sizeof(FVertexSimple), quadInices, sizeof(quadInices)/sizeof(uint32));
-
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisArrowX.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisArrowY.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisArrowZ.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisScaleArrowX.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisScaleArrowY.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisScaleArrowZ.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets//AxisCircleX.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets//AxisCircleY.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets//AxisCircleZ.obj");
-    // FManagerOBJ::LoadObjStaticMeshAsset("Assets/helloBlender.obj");
-
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/ocean_sky.jpg");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/font.png");
-	LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/font.dds");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/emart.png");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/T_Explosion_SubUV.png");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/UUID_Font.png");
-	LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/UUID_Font.dds");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/Wooden Crate_Crate_BaseColor.png");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/spotLight.png");
-}
+void FResourceMgr::Initialize(FRenderer* renderer, FGraphicsDevice* device) {}
 
 void FResourceMgr::Release(FRenderer* renderer) {
 	for (const auto& Pair : textureMap)
@@ -63,9 +38,14 @@ struct TupleHash {
 	}
 };
 
-std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& name) const
+std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& name)
 {
     auto* TempValue = textureMap.Find(name);
+    if (!TempValue)
+    {
+        LoadTextureFromFile(GEngineLoop.graphicDevice.Device, nullptr, name.c_str());
+        return *textureMap.Find(name);
+    }
     return TempValue ? *TempValue : nullptr;
 }
 
@@ -193,8 +173,8 @@ HRESULT FResourceMgr::LoadTextureFromDDS(ID3D11Device* device, ID3D11DeviceConte
 	// 🔹 텍스처 크기 가져오기
 	D3D11_TEXTURE2D_DESC texDesc;
 	texture2D->GetDesc(&texDesc);
-	uint32 width = static_cast<uint32>(texDesc.Width);
-	uint32 height = static_cast<uint32>(texDesc.Height);
+	uint32 width = texDesc.Width;
+	uint32 height = texDesc.Height;
 
 #pragma endregion WidthHeight
 
