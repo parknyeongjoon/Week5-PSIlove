@@ -429,7 +429,7 @@ uint32 FGraphicsDevice::GetPixelUUID(POINT pt)
         return DecodeUUIDColor(UUIDColor);
 
     // 3. 특정 좌표만 복사
-    DeviceContext->CopySubresourceRegion(
+   DeviceContext->CopySubresourceRegion(
         stagingTexture, // 대상 텍스처
         0,              // 대상 서브리소스
         0, 0, 0,        // 대상 좌표 (x, y, z)

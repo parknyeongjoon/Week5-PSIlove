@@ -1,41 +1,23 @@
 #include "ResourceMgr.h"
 #include <fstream>
-#include <sstream>
 #include <wincodec.h>
 #include <ranges>
 #include "Define.h"
 #include "Components/SkySphereComponent.h"
 #include "D3D11RHI/GraphicDevice.h"
 #include "DirectXTK/Include/DDSTextureLoader.h"
-#include "Engine/FLoaderOBJ.h"
+#include "DirectXTK/Include/WICTextureLoader.h"
 
 void FResourceMgr::Initialize(FRenderer* renderer, FGraphicsDevice* device)
 {
-    //RegisterMesh(renderer, "Quad", quadVertices, sizeof(quadVertices) / sizeof(FVertexSimple), quadInices, sizeof(quadInices)/sizeof(uint32));
-
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisArrowX.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisArrowY.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisArrowZ.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisScaleArrowX.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisScaleArrowY.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets/AxisScaleArrowZ.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets//AxisCircleX.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets//AxisCircleY.obj");
-    //FManagerOBJ::LoadObjStaticMeshAsset("Assets//AxisCircleZ.obj");
-    // FManagerOBJ::LoadObjStaticMeshAsset("Assets/helloBlender.obj");
-
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/ocean_sky.jpg");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/font.png");
-	LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/font.dds");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/emart.png");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/T_Explosion_SubUV.png");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/UUID_Font.png");
-	LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/UUID_Font.dds");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/Wooden Crate_Crate_BaseColor.png");
-	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/spotLight.png");
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/Pawn_64x.png");
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/PointLight_64x.png");
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/SpotLight_64x.png");
+    LoadTextureFromFile(renderer->Graphics->Device, L"Editor/Icon/S_Actor.png");
 }
 
-void FResourceMgr::Release(FRenderer* renderer) {
+void FResourceMgr::Release(FRenderer* renderer)
+{
 	for (const auto& Pair : textureMap)
     {
 		FTexture* texture =	Pair.Value.get();
@@ -46,13 +28,16 @@ void FResourceMgr::Release(FRenderer* renderer) {
 
 #include <unordered_map>
 
-struct PairHash {
+struct PairHash
+{
 	template <typename T1, typename T2>
 	std::size_t operator()(const std::pair<T1, T2>& pair) const {
 		return std::hash<T1>()(pair.first) ^ (std::hash<T2>()(pair.second) << 1);
 	}
 };
-struct TupleHash {
+
+struct TupleHash
+{
 	template <typename T1, typename T2, typename T3>
 	std::size_t operator()(const std::tuple<T1, T2, T3>& tuple) const {
 		std::size_t h1 = std::hash<T1>()(std::get<0>(tuple));
@@ -63,13 +48,32 @@ struct TupleHash {
 	}
 };
 
-std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& name) const
+std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& name)
 {
     auto* TempValue = textureMap.Find(name);
+    if (!TempValue)
+    {
+        LoadTextureFromFile(FEngineLoop::graphicDevice.Device, name.c_str());
+        return *textureMap.Find(name);
+    }
     return TempValue ? *TempValue : nullptr;
 }
 
-HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* filename)
+TSet<FString> FResourceMgr::GetAllTextureKeys() const
+{
+    TSet<FString> Keys;
+    for (const auto& Pair : textureMap)
+    {
+        const wchar_t* wstr = Pair.Key.c_str();
+        int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
+        char* str = new char[size_needed];
+        WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, size_needed, nullptr, nullptr);
+        Keys.Add(str);
+    }
+    return Keys;
+}
+
+HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* filename)
 {
 	IWICImagingFactory* wicFactory = nullptr;
 	IWICBitmapDecoder* decoder = nullptr;
@@ -159,7 +163,7 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceCont
 	device->CreateSamplerState(&samplerDesc, &SamplerState);
 	FWString name = FWString(filename);
 
-	textureMap[name] = std::make_shared<FTexture>(TextureSRV, Texture2D, SamplerState, width, height);
+	textureMap[name] = std::make_shared<FTexture>(name, TextureSRV, Texture2D, SamplerState, width, height);
 
 	Console::GetInstance().AddLog(LogLevel::Warning, "Texture File Load Successs");
 	return hr;
@@ -193,8 +197,8 @@ HRESULT FResourceMgr::LoadTextureFromDDS(ID3D11Device* device, ID3D11DeviceConte
 	// 🔹 텍스처 크기 가져오기
 	D3D11_TEXTURE2D_DESC texDesc;
 	texture2D->GetDesc(&texDesc);
-	uint32 width = static_cast<uint32>(texDesc.Width);
-	uint32 height = static_cast<uint32>(texDesc.Height);
+	uint32 width = texDesc.Width;
+	uint32 height = texDesc.Height;
 
 #pragma endregion WidthHeight
 
@@ -214,7 +218,7 @@ HRESULT FResourceMgr::LoadTextureFromDDS(ID3D11Device* device, ID3D11DeviceConte
 
 	FWString name = FWString(filename);
 
-	textureMap[name] = std::make_shared<FTexture>(textureView, texture2D, SamplerState, width, height);
+	textureMap[name] = std::make_shared<FTexture>(name, textureView, texture2D, SamplerState, width, height);
 
 	Console::GetInstance().AddLog(LogLevel::Warning, "Texture File Load Successs");
 

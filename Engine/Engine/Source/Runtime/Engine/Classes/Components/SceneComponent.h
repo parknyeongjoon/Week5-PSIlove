@@ -52,7 +52,6 @@ public:
     virtual UObject* Duplicate() override;
 
 private:
-    class UTextUUID* uuidText = nullptr;
 
 public:
     const TArray<USceneComponent*>& GetAttachChildren() const; // ���������� ���� children�� ��ȯ

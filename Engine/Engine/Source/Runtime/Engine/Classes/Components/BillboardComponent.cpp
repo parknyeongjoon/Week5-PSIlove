@@ -1,4 +1,4 @@
-#include "UBillboardComponent.h"
+#include "BillboardComponent.h"
 #include "Actors/Player.h"
 #include "QuadTexture.h"
 #include "Define.h"
@@ -74,12 +74,6 @@ void UBillboardComponent::SetTexture(FWString _fileName)
 	Texture = FEngineLoop::resourceMgr.GetTexture(_fileName);
 }
 
-void UBillboardComponent::SetUUIDParent(USceneComponent* _parent)
-{
-	m_parent = _parent;
-}
-
-
 FMatrix UBillboardComponent::CreateBillboardMatrix()
 {
 	FMatrix CameraView = GetEngine().GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix();
@@ -101,7 +95,7 @@ FMatrix UBillboardComponent::CreateBillboardMatrix()
 	FMatrix LookAtCamera = FMatrix::Transpose(CameraView);
 	
 	FVector worldLocation = GetWorldLocation();
-	FVector worldScale = GetWorldLocation();
+	FVector worldScale = RelativeScale3D;
 	FMatrix S = FMatrix::CreateScale(worldScale.x, worldScale.y, worldScale.z);
 	FMatrix R = LookAtCamera;
 	FMatrix T = FMatrix::CreateTranslationMatrix(worldLocation);
