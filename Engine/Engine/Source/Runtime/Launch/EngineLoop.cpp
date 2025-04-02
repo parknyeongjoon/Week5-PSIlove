@@ -271,6 +271,13 @@ void FEngineLoop::TogglePIE()
         WorldContexts[1] = {GWorld->Duplicate<UWorld>(), EWorldType::PIE};
         WorldContexts[1].World->Level = GLevel->Duplicate<ULevel>();
         WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
+        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() & 14;
+        LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
+    }
+    else
+    {
+        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() | 1;
+        LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
     }
     GWorld = WorldContexts[curWorldContextIndex].World;
     GLevel = GWorld->Level;
