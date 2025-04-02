@@ -24,6 +24,8 @@ void USkySphereComponent::DuplicateSubObjects()
 
 void USkySphereComponent::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (USkySphereComponent* SkySphereComponent = Cast<USkySphereComponent>(SourceObject))
     {
         this->UOffset = SkySphereComponent->UOffset;

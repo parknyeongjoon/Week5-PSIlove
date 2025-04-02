@@ -24,6 +24,8 @@ void USphereComp::DuplicateSubObjects()
 
 void USphereComp::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
 }
 
 void USphereComp::InitializeComponent()

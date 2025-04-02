@@ -93,6 +93,8 @@ void UActorComponent::DuplicateSubObjects()
 
 void UActorComponent::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (UActorComponent* SourceActorComp = Cast<UActorComponent>(SourceObject))
     {
         bHasBeenInitialized = false;

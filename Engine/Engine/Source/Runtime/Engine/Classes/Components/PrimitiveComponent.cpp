@@ -14,6 +14,8 @@ void UPrimitiveComponent::DuplicateSubObjects()
 
 void UPrimitiveComponent::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(SourceObject))
     {
         this->AABB = PrimitiveComponent->AABB;

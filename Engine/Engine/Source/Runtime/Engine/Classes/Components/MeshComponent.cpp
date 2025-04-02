@@ -9,6 +9,8 @@ void UMeshComponent::DuplicateSubObjects()
 
 void UMeshComponent::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (UMeshComponent* MeshComponent = Cast<UMeshComponent>(SourceObject))
     {
         this->OverrideMaterials = MeshComponent->OverrideMaterials;

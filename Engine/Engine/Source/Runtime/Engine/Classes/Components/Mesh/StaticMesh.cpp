@@ -32,6 +32,8 @@ void UStaticMesh::DuplicateSubObjects()
 
 void UStaticMesh::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (UStaticMesh* SourceStaticMesh = Cast<UStaticMesh>(SourceObject))
     {
         this->staticMeshRenderData = SourceStaticMesh->staticMeshRenderData;

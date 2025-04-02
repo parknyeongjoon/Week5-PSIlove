@@ -8,6 +8,8 @@ void UMaterial::DuplicateSubObjects()
 
 void UMaterial::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (UMaterial* SourceMaterial = Cast<UMaterial>(SourceObject))
     {
         this->materialInfo = SourceMaterial->materialInfo;

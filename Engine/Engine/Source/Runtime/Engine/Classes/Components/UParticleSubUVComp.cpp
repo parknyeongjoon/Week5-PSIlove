@@ -27,6 +27,8 @@ void UParticleSubUVComp::DuplicateSubObjects()
 
 void UParticleSubUVComp::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (UParticleSubUVComp* ParticleSubUVComp = Cast<UParticleSubUVComp>(SourceObject))
     {
         this->vertexSubUVBuffer = ParticleSubUVComp->vertexSubUVBuffer;

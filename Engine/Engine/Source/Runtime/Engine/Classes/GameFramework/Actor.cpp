@@ -169,6 +169,8 @@ void AActor::DuplicateSubObjects()
 
 void AActor::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (AActor* SourceActor = Cast<AActor>(SourceObject)) 
     {
         bActorIsBeingDestroyed = false;

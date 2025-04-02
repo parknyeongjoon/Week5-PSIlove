@@ -144,6 +144,8 @@ void USceneComponent::DuplicateSubObjects()
 
 void USceneComponent::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (USceneComponent* SourceSceneComp = Cast<USceneComponent>(SourceObject)) 
     {
         RelativeLocation = SourceSceneComp->RelativeLocation;

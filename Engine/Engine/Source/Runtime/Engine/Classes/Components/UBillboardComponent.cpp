@@ -37,6 +37,8 @@ void UBillboardComponent::DuplicateSubObjects()
 
 void UBillboardComponent::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(SourceObject))
     {
         this->vertexTextureBuffer = BillboardComponent->vertexTextureBuffer;

@@ -1,4 +1,4 @@
-﻿#include "World.h"
+#include "World.h"
 #include "Level.h"
 #include "GameFramework/Actor.h"
 
@@ -15,6 +15,8 @@ void UWorld::WorldTick(float DeltaTime)
 
 void UWorld::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     UWorld* sourceWorld = Cast<UWorld>(SourceObject);
     Level = sourceWorld->GetLevel();
 }

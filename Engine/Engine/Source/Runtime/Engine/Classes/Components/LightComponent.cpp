@@ -20,6 +20,8 @@ void ULightComponentBase::DuplicateSubObjects()
 }
 void ULightComponentBase::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     if (ULightComponentBase* LightComponentBase = Cast<ULightComponentBase>(SourceObject))
     {
         this->color = LightComponentBase->color;

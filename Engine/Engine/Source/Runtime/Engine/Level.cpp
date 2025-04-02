@@ -113,6 +113,8 @@ void ULevel::Release()
 
 void ULevel::DuplicateObject(const UObject* SourceObject)
 {
+    Super::DuplicateObject(SourceObject);
+
     ULevel* sourceLevel = Cast<ULevel>(SourceObject);
     ActorsArray = sourceLevel->GetActors();
 }
