@@ -168,10 +168,3 @@ UObject* AActor::Duplicate()
     Cast<AActor>(NewObject)->DuplicateSubObjects();
     return NewObject;
 }
-
-AActor* AActor::DuplicateAndAdd()
-{
-    AActor* NewActor = Duplicate<AActor>();
-    GetLevel()->AddActor(NewActor);
-    return NewActor;
-}

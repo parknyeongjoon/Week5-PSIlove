@@ -91,26 +91,32 @@ void ULevel::Release()
     GUObjectArray.ProcessPendingDestroyObjects();
 }
 
-void ULevel::Duplicate(const UObject* SourceObject)
-{
-    Super::Duplicate(SourceObject);
-
-    ULevel* sourceLevel = Cast<ULevel>(SourceObject);
-    ActorsArray = sourceLevel->GetActors();
-}
-
 UObject* ULevel::Duplicate()
 {
-    return nullptr;
+    // 새 객체 생성 및 얕은 복사
+    UObject* NewObject = FObjectFactory::ConstructObject<ULevel>(this);
+
+    // 서브 오브젝트는 깊은 복사로 별도 처리
+    Cast<ULevel>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void ULevel::DuplicateSubObjects()
 {
     TSet<AActor*> duplicatedActors;
+
     for (auto* actor : ActorsArray)
     {
-        duplicatedActors.Add(actor->Duplicate<AActor>()); //TODO: 클래스 구별
+        duplicatedActors.Add(Cast<AActor>(actor->Duplicate())); //TODO: 클래스 구별
     }
+    PendingBeginPlayActors.Empty();
+
+    SelectedActor = nullptr;
+    pickingGizmo = nullptr;
+    EditorPlayer = nullptr;
+    worldGizmo = nullptr;
+    LocalGizmo = nullptr;
+
     ActorsArray = duplicatedActors;
 }
 

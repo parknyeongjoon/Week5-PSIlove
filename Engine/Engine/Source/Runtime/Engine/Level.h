@@ -26,7 +26,7 @@ public:
     void Tick(float DeltaTime);
     void Release();
 
-    UObject* Duplicate() override;
+    virtual UObject* Duplicate() override;
     void DuplicateSubObjects() override;
 
     /**

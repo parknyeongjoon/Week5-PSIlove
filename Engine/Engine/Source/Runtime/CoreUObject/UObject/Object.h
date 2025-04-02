@@ -24,7 +24,7 @@ public:
     static UClass* StaticClass();
 
     // 현재 오브젝트를 복제하는 함수
-    UObject* Duplicate();
+    virtual UObject* Duplicate();
 
 protected:
     virtual void DuplicateSubObjects();

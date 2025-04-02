@@ -9,6 +9,6 @@ public:
     UWorld() = default;
     ULevel* Level;
 
-    void Duplicate(const UObject* SourceObject) override;
+    virtual UObject* Duplicate() override;
     void DuplicateSubObjects() override;
 };

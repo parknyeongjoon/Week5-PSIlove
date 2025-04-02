@@ -1,15 +1,16 @@
 #include "World.h"
 #include "Level.h"
 #include "GameFramework/Actor.h"
-void UWorld::Duplicate(const UObject* SourceObject)
+UObject* UWorld::Duplicate()
 {
-    Super::Duplicate(SourceObject);
+    UObject* NewObject = FObjectFactory::ConstructObject<UWorld>(this);
 
-    UWorld* sourceWorld = Cast<UWorld>(SourceObject);
-    Level = sourceWorld->GetLevel();
+    // 서브 오브젝트는 깊은 복사로 별도 처리
+    Cast<UWorld>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void UWorld::DuplicateSubObjects()
 {
-    Level = Level->Duplicate<ULevel>();
+    Level = Cast<ULevel>(Level->Duplicate());
 }

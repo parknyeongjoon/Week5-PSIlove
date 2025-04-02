@@ -90,7 +90,6 @@ public:
 
     virtual void DuplicateSubObjects() override;
     virtual UObject* Duplicate() override;
-    AActor* DuplicateAndAdd();
 
 protected:
     USceneComponent* RootComponent = nullptr;
