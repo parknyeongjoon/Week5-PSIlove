@@ -1,4 +1,4 @@
-﻿#include "Actor.h"
+#include "Actor.h"
 
 #include "Level.h"
 
@@ -134,4 +134,46 @@ bool AActor::SetActorScale(const FVector& NewScale)
         return true;
     }
     return false;
+}
+
+void AActor::DuplicateSubObjects()
+{
+    if (OwnedComponents.Num() > 0)
+    {
+        for (const auto& Comp : OwnedComponents) 
+        {
+            if (Comp == Cast<UActorComponent>(RootComponent)) 
+            {
+                USceneComponent* NewRootComp = Comp->Duplicate<USceneComponent>();
+                RootComponent = NewRootComp;
+            }
+        }
+        TSet<UActorComponent*> NewOwnedComps;
+        for (const auto& Comp : OwnedComponents) 
+        {
+            UActorComponent* NewComp = Comp->Duplicate<UActorComponent>();
+            NewComp->Owner = this;
+            if (USceneComponent* NewSceneComp = Cast<USceneComponent>(Comp))
+            {
+                if (NewSceneComp != RootComponent)
+                {
+                    NewSceneComp->SetupAttachment(RootComponent);
+                }
+            }
+            NewComp->InitializeComponent();
+            NewOwnedComps.Add(NewComp);
+        }
+        OwnedComponents = NewOwnedComps;
+    }
+}
+
+void AActor::DuplicateObject(const UObject* SourceObject)
+{
+    if (AActor* SourceActor = Cast<AActor>(SourceObject)) 
+    {
+        bActorIsBeingDestroyed = false;
+        SetActorLabel(SourceActor->GetActorLabel());
+        RootComponent = SourceActor->GetRootComponent();
+        OwnedComponents = SourceActor->GetComponents();
+    }
 }

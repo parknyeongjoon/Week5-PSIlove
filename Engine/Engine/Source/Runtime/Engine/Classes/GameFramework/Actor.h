@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Components/SceneComponent.h"
 #include "Container/Set.h"
 #include "Engine/EngineTypes.h"
@@ -87,6 +87,9 @@ public:
     bool SetActorLocation(const FVector& NewLocation);
     bool SetActorRotation(const FVector& NewRotation);
     bool SetActorScale(const FVector& NewScale);
+
+    virtual void DuplicateSubObjects() override;
+    virtual void DuplicateObject(const UObject* SourceObject) override;
 
 protected:
     USceneComponent* RootComponent = nullptr;
