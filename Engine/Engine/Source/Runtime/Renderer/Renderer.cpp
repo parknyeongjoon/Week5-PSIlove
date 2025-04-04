@@ -1186,7 +1186,7 @@ void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorV
         Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
     #pragma endregion GizmoDepth
 
-    //  fill solid,  Wirframe 에서도 제대로 렌더링되기 위함
+    //  fill solid,  Wireframe 에서도 제대로 렌더링되기 위함
     Graphics->DeviceContext->RSSetState(FEngineLoop::graphicDevice.RasterizerStateSOLID);
     
     for (auto GizmoComp : GizmoObjs)
