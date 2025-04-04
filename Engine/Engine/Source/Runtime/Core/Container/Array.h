@@ -104,6 +104,8 @@ public:
 	/** Array의 Capacity를 Number로 설정합니다. */
     void Reserve(SizeType Number);
 
+    void Append(const TArray<T, Allocator>& OtherArray);
+
     void Sort();
     template <typename Compare>
         requires std::is_invocable_r_v<bool, Compare, const T&, const T&>
@@ -327,6 +329,12 @@ template <typename T, typename Allocator>
 void TArray<T, Allocator>::Reserve(SizeType Number)
 {
     ContainerPrivate.reserve(Number);
+}
+
+template <typename T, typename Allocator>
+void TArray<T, Allocator>::Append(const TArray<T, Allocator>& OtherArray)
+{
+    ContainerPrivate.insert(end(), OtherArray.begin(), OtherArray.end());
 }
 
 template <typename T, typename Allocator>

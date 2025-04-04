@@ -6,6 +6,7 @@
 #define _TCHAR_DEFINED
 #include <d3d11.h>
 
+#include "Define.h"
 #include "EngineBaseTypes.h"
 
 #include "Core/HAL/PlatformType.h"
@@ -51,10 +52,17 @@ public:
     void Prepare();
     void Prepare(D3D11_VIEWPORT* viewport);
     void OnResize(HWND hWindow);
-    ID3D11RasterizerState* GetCurrentRasterizer() { return CurrentRasterizer; }
+    ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
     void ChangeRasterizer(EViewModeIndex evi);
     void ChangeDepthStencilState(ID3D11DepthStencilState* newDetptStencil);
 
+    bool CreateGPUBuffer(const D3D11_BUFFER_DESC* pDesc, const D3D11_SUBRESOURCE_DATA* pInitialData, ID3D11Buffer** ppBuffer) const;
+    void BindVertexBuffer(const uint32 InStartSlot, const uint32 InNumBuffers, ID3D11Buffer* const* ppVertexBuffers, const uint32* pStrides, const uint32* pOffsets) const;
+    void BindIndexBuffer(ID3D11Buffer* pIndexBuffer, const DXGI_FORMAT InFormat, const uint32 Offset) const;
+    void SetDataToGPUBuffer(ID3D11Buffer* pBuffer, const void* pData, const uint32 InSize) const;
+    void BindConstantBuffer(const EShaderStage InShaderStage, const uint32 InSlot, ID3D11Buffer* pBuffer) const;
+    
+    
     uint32 GetPixelUUID(POINT pt);
     uint32 DecodeUUIDColor(FVector4 UUIDColor);
 private:

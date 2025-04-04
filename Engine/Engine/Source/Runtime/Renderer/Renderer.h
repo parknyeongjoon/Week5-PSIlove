@@ -5,9 +5,15 @@
 
 #define _TCHAR_DEFINED
 #include <d3d11.h>
+#include <wrl/client.h>
+
 #include "EngineBaseTypes.h"
 #include "Define.h"
+#include "Container/Map.h"
 #include "Container/Set.h"
+#include "D3D11RHI/GPUBuffer/ConstantDefine.h"
+#include "D3D11RHI/GPUBuffer/FConstantBuffer.h"
+#include "Math/Vector4.h"
 
 class UPrimitiveComponent;
 class ULightComponentBase;
@@ -37,10 +43,18 @@ public:
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
     ID3D11Buffer* TextureConstantBufer = nullptr;
 
+    TMap<Microsoft::WRL::ComPtr<ID3D11Buffer>, uint32> ConstantBufferSlot;
+
     FLighting lightingData;
 
     uint32 Stride;
     uint32 Stride2;
+
+public:
+    inline std::shared_ptr<FConstantBuffer> GetContantBuffer(const FName InConstantBufferName) { return ConstantBuffers[InConstantBufferName]; }
+    inline void AddConstantBuffer(const FName InConstantBufferName, const std::shared_ptr<FConstantBuffer>& InConstantBuffer) { ConstantBuffers.Add(InConstantBufferName, InConstantBuffer); }
+private:
+    TMap<FName, std::shared_ptr<FConstantBuffer>> ConstantBuffers;
 
 public:
     void Initialize(FGraphicsDevice* graphics);
@@ -95,11 +109,6 @@ public://텍스쳐용 기능 추가
     ID3D11InputLayout* FontInputLayout = nullptr;
 
     uint32 TextureStride;
-    struct FSubUVConstant
-    {
-        float indexU;
-        float indexV;
-    };
     ID3D11Buffer* SubUVConstantBuffer = nullptr;
 
 public:
