@@ -29,6 +29,27 @@ struct FVertexSimple
     uint32 MaterialIndex;
 };
 
+struct FLinearColor;
+struct FColor
+{
+    uint8 r;
+    uint8 g;
+    uint8 b;
+    uint8 a;
+
+    FLinearColor ConvertToFLinearColor() const;
+};
+
+struct FLinearColor
+{
+    float r;
+    float g;
+    float b;
+    float a;
+
+    FColor ConvertToFColor() const;
+};
+
 // Material Subset
 struct FMaterialSubset
 {
@@ -275,7 +296,7 @@ struct FCone
 
     FVector ConeBaseCenter; // 원뿔 밑면 중심
     float ConeHeight; // 원뿔 높이 (Apex와 BaseCenter 간 차이)
-    FVector4 Color;
+    FColor Color;
 
     int ConeSegmentCount; // 원뿔 밑면 분할 수
     float pad[3];

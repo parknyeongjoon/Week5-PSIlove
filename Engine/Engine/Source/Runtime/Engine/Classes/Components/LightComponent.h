@@ -8,26 +8,25 @@ class ULightComponentBase : public USceneComponent
 
 public:
     ULightComponentBase();
-    virtual ~ULightComponentBase() override;
 
     virtual void DuplicateSubObjects() override;
     virtual UObject* Duplicate() override;
 
     virtual void TickComponent(float DeltaTime) override;
-    virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance);
+    virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
     void InitializeLight();
-    void SetColor(FVector4 newColor);
-    FVector4 GetColor() const;
+    void SetColor(FColor newColor);
+    FColor GetColor() const;
     float GetRadius() const;
     void SetRadius(float r);
 
 private:
-    FVector4 color;
+    FColor color;
     float radius;
     FBoundingBox AABB;
     
 public:
     FBoundingBox GetBoundingBox() const {return AABB;}
     float GetRadius() {return radius;}
-    FVector4 GetColor() {return color;}
+    FColor GetColor() {return color;}
 };

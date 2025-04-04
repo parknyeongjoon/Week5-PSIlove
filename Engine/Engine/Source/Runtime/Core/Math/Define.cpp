@@ -214,3 +214,22 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 }
 
 
+FLinearColor FColor::ConvertToFLinearColor() const
+{
+    FLinearColor Result;
+    Result.r = r / 255.0f;
+    Result.g = g / 255.0f;
+    Result.b = b / 255.0f;
+    Result.a = a / 255.0f;
+    return Result;
+}
+
+FColor FLinearColor::ConvertToFColor() const
+{
+    FColor Result;
+    Result.r = static_cast<uint8>(r * 255.0f + 0.5f);
+    Result.g = static_cast<uint8>(g * 255.0f + 0.5f);
+    Result.b = static_cast<uint8>(b * 255.0f + 0.5f);
+    Result.a = static_cast<uint8>(a * 255.0f + 0.5f);
+    return Result;
+}

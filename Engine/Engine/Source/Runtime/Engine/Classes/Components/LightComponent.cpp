@@ -1,18 +1,10 @@
 #include "LightComponent.h"
-#include "BillboardComponent.h"
-#include "Math/JungleMath.h"
-#include "UnrealEd/PrimitiveBatch.h"
 
 ULightComponentBase::ULightComponentBase()
 {
-    // FString name = "SpotLight";
-    // SetName(name);
     InitializeLight();
 }
 
-ULightComponentBase::~ULightComponentBase()
-{
-}
 void ULightComponentBase::DuplicateSubObjects()
 {
     Super::DuplicateSubObjects();
@@ -24,12 +16,12 @@ UObject* ULightComponentBase::Duplicate()
     Cast<ULightComponentBase>(NewObject)->DuplicateSubObjects();
     return NewObject;
 }
-void ULightComponentBase::SetColor(FVector4 newColor)
+void ULightComponentBase::SetColor(FColor newColor)
 {
     color = newColor;
 }
 
-FVector4 ULightComponentBase::GetColor() const
+FColor ULightComponentBase::GetColor() const
 {
     return color;
 }
@@ -48,7 +40,7 @@ void ULightComponentBase::InitializeLight()
 {
     AABB.max = { 1.f,1.f,0.1f };
     AABB.min = { -1.f,-1.f,-0.1f };
-    color = { 1,1,1,1 };
+    color = { 1,1,1, 1 };
     radius = 5;
 }
 
@@ -60,7 +52,6 @@ void ULightComponentBase::TickComponent(float DeltaTime)
 
 int ULightComponentBase::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
 {
-    bool res =AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance);
-    return res;
+    return AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance);
 }
 
