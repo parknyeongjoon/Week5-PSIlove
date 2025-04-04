@@ -43,10 +43,24 @@ public:
     void SetLocation(FVector _newLoc) { RelativeLocation = _newLoc; }
     virtual void SetRotation(FVector _newRot);
     void SetRotation(FQuat _newRot) { QuatRotation = _newRot; }
-    void SetScale(FVector _newScale) { RelativeScale3D = _newScale; }
+    void SetScale(FVector _newScale) {
+        RelativeScale3D = _newScale; 
+    }
     void SetupAttachment(USceneComponent* InParent);
+
+    virtual void DuplicateSubObjects() override;
+    virtual UObject* Duplicate() override;
 
 private:
 
 public:
+    const TArray<USceneComponent*>& GetAttachChildren() const; // ���������� ���� children�� ��ȯ
+    void GetChildrenComponents(TArray<USceneComponent*>& Children) const; // ��ͷ� �Ʒ��� ��� children ��ȯ
+    USceneComponent* GetAttachParent() const;
+    void GetParentComponents(TArray<USceneComponent*>& Parents) const; // ��ͷ� root���� ��ȯ
+
+    void SetupAttachment(TArray<USceneComponent*>& Children); // �ڽ� ���� ���� ����
+
+    // �θ��ڽ� ���踦 ������ ���ϴ� �� �Լ� ����
+    bool AttachToComponent(USceneComponent* Parent); // �θ� ���� ���������� false
 };

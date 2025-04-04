@@ -11,6 +11,11 @@ class UStaticMesh : public UObject
 public:
     UStaticMesh();
     virtual ~UStaticMesh() override;
+
+    virtual void DuplicateSubObjects() override;
+    virtual UObject* Duplicate() override;
+
+public:
     const TArray<FStaticMaterial*>& GetMaterials() const { return materials; }
     uint32 GetMaterialIndex(FName MaterialSlotName) const;
     void GetUsedMaterials(TArray<UMaterial*>& Out) const;

@@ -20,19 +20,19 @@ class ULevel : public UObject
 
 public:
     ULevel() = default;
-    void Initialize();
-    void CreateBaseObject();
+    void Initialize(EWorldType worldType);
+    void CreateBaseObject(EWorldType worldType);
     void ReleaseBaseObject();
     void Tick(float DeltaTime);
     void Release();
 
-    void DuplicateObject(const UObject* SourceObject) override;
+    virtual UObject* Duplicate() override;
     void DuplicateSubObjects() override;
 
     /**
      * World에 Actor를 Spawn합니다.
      * @tparam T AActor를 상속받은 클래스
-     * @return Spawn된 Actor의 포인터
+     * @return Spawn된 Actor의 포인터cenec
      */
     template <typename T>
         requires std::derived_from<T, AActor>
@@ -42,10 +42,10 @@ public:
     bool DestroyActor(AActor* ThisActor);
 
 private:
-    const FString defaultMapName = "Default";
+    FString defaultMapName = "Default";
 
     /** World에서 관리되는 모든 Actor의 목록 */
-    TSet<AActor*> ActorsArray;
+    TArray<AActor*> ActorsArray;
 
     /** Actor가 Spawn되었고, 아직 BeginPlay가 호출되지 않은 Actor들 */
     TArray<AActor*> PendingBeginPlayActors;
@@ -53,16 +53,15 @@ private:
     AActor* SelectedActor = nullptr;
 
     USceneComponent* pickingGizmo = nullptr;
-    UCameraComponent* camera = nullptr;
     AEditorPlayer* EditorPlayer = nullptr;
 
 public:
     UObject* worldGizmo = nullptr;
 
-    const TSet<AActor*>& GetActors() const { return ActorsArray; }
+    const TArray<AActor*>& GetActors() const { return ActorsArray; }
+    void AddActor(AActor* NewActor);
 
     UTransformGizmo* LocalGizmo = nullptr;
-    UCameraComponent* GetCamera() const { return camera; }
     AEditorPlayer* GetEditorPlayer() const { return EditorPlayer; }
 
 

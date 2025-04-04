@@ -30,6 +30,19 @@ UBillboardComponent::~UBillboardComponent()
 	}
 }
 
+void UBillboardComponent::DuplicateSubObjects()
+{
+    // deepcopy 대상 없음.
+}
+
+UObject* UBillboardComponent::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<UBillboardComponent>(this);
+
+    Cast<UBillboardComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
+
 void UBillboardComponent::InitializeComponent()
 {
     Super::InitializeComponent();

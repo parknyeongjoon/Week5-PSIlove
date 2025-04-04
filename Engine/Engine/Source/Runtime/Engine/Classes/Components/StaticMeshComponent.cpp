@@ -6,6 +6,18 @@
 #include "UnrealEd/PrimitiveBatch.h"
 
 
+void UStaticMeshComponent::DuplicateSubObjects()
+{
+}
+
+UObject* UStaticMeshComponent::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<UStaticMeshComponent>(this);
+
+    Cast<UStaticMeshComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
+
 uint32 UStaticMeshComponent::GetNumMaterials() const
 {
     if (staticMesh == nullptr) return 0;

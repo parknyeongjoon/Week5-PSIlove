@@ -16,7 +16,8 @@ private:
     void CreateSRTButton(ImVec2 ButtonSize) const;
 
     uint64 ConvertSelectionToFlags(const bool selected[]) const;
-    
+    void TogglePIEMode() const;
+
 private:
     float Width = 300, Height = 100;
     bool bOpenMenu = false;

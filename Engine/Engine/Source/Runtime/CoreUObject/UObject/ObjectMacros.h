@@ -9,10 +9,6 @@
 // RTTI를 위한 클래스 매크로
 #define DECLARE_CLASS(TClass, TSuperClass) \
 private: \
-    TClass(const TClass&) = delete; \
-    TClass& operator=(const TClass&) = delete; \
-    TClass(TClass&&) = delete; \
-    TClass& operator=(TClass&&) = delete; \
 public: \
     using Super = TSuperClass; \
     using ThisClass = TClass; \

@@ -10,6 +10,9 @@ public:
     ULightComponentBase();
     virtual ~ULightComponentBase() override;
 
+    virtual void DuplicateSubObjects() override;
+    virtual UObject* Duplicate() override;
+
     virtual void TickComponent(float DeltaTime) override;
     virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance);
     void InitializeLight();

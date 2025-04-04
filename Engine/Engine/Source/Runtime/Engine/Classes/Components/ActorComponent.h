@@ -2,6 +2,7 @@
 #include "Engine/EngineTypes.h"
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
+#include "CoreUObject/UObject/Casts.h"
 
 class AActor;
 
@@ -54,6 +55,9 @@ public:
 
     void Activate();
     void Deactivate();
+
+    virtual void DuplicateSubObjects() override;
+    virtual UObject* Duplicate() override;
 
 private:
     AActor* Owner;

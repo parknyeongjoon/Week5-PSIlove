@@ -2,6 +2,11 @@
 #include "Level.h"
 #include "Math/JungleMath.h"
 #include "UObject/ObjectFactory.h"
+#include "Engine/Classes/Components/SkySphereComponent.h"
+#include "Core/Container/Array.h"
+
+#include "UObject/Casts.h"
+
 #include "TextRenderComponent.h"
 USceneComponent::USceneComponent() :RelativeLocation(FVector(0.f, 0.f, 0.f)), RelativeRotation(FVector(0.f, 0.f, 0.f)), RelativeScale3D(FVector(1.f, 1.f, 1.f))
 {
@@ -81,7 +86,7 @@ FVector USceneComponent::GetWorldRotation()
 
 FVector USceneComponent::GetWorldScale()
 {
-	if (AttachParent)
+	if (AttachParent && dynamic_cast<USkySphereComponent*>(this))
 	{
 		return FVector(AttachParent->GetWorldScale() + GetLocalScale());
 	}
@@ -112,13 +117,68 @@ void USceneComponent::SetRotation(FVector _newRot)
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent)
 {
-    if (InParent != AttachParent                                    // 설정하려는 Parent가 기존의 Parent와 다르거나
-        && InParent != this                                         // InParent가 본인이 아니고
-        && InParent != nullptr                                      // InParent가 유효한 포인터 이며
-        && (AttachParent == nullptr                                 // AttachParent도 유효하며
-            || !AttachParent->AttachChildren.Contains(this)))  // 이미 AttachParent의 자식이 아닌 경우
+    // if (InParent != AttachParent                                    // 설정하려는 Parent가 기존의 Parent와 다르거나
+    //     && InParent != this                                         // InParent가 본인이 아니고
+    //     && InParent != nullptr                                      // InParent가 유효한 포인터 이며
+    //     && (AttachParent == nullptr                                 // AttachParent도 유효하며
+    //         || !AttachParent->AttachChildren.Contains(this)))  // 이미 AttachParent의 자식이 아닌 경우
     {
         AttachParent = InParent;
         InParent->AttachChildren.AddUnique(this);
+    }
+}
+
+void USceneComponent::DuplicateSubObjects()
+{
+    TArray<USceneComponent*> NewChildren = AttachChildren;
+    AttachChildren.Empty();
+    for (const auto& Child : NewChildren) 
+    {
+        USceneComponent* NewChild = Cast<USceneComponent>(Child->Duplicate());
+        NewChild->SetupAttachment(this);
+        AttachChildren.Add(NewChild);
+    }
+}
+
+UObject* USceneComponent::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<USceneComponent>(this);
+
+    Cast<USceneComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
+
+
+const TArray<USceneComponent*>& USceneComponent::GetAttachChildren() const
+{
+    return AttachChildren;
+}
+
+void USceneComponent::GetChildrenComponents(TArray<USceneComponent*>& Children) const
+{
+    Children.Empty();
+    for (auto& child : Children)
+    {
+        TArray<USceneComponent*> childComponents;
+        child->GetChildrenComponents(childComponents);
+        Children + childComponents;
+    }
+}
+
+USceneComponent* USceneComponent::GetAttachParent() const
+{
+    return AttachParent;
+}
+
+void USceneComponent::GetParentComponents(TArray<USceneComponent*>& Parents) const
+{
+    Parents.Empty();
+
+    // �𸮾� �ҽ��ڵ� /Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h ����
+    USceneComponent* ParentIterator = GetAttachParent();
+    while (ParentIterator != nullptr)
+    {
+        Parents.Add(ParentIterator);
+        ParentIterator = ParentIterator->GetAttachParent();
     }
 }

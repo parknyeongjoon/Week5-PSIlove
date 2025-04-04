@@ -13,6 +13,17 @@ ULightComponentBase::ULightComponentBase()
 ULightComponentBase::~ULightComponentBase()
 {
 }
+void ULightComponentBase::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
+}
+UObject* ULightComponentBase::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<ULightComponentBase>(this);
+
+    Cast<ULightComponentBase>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
 void ULightComponentBase::SetColor(FVector4 newColor)
 {
     color = newColor;

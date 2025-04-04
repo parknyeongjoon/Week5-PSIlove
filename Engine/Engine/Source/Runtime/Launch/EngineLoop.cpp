@@ -1,13 +1,14 @@
 #include "EngineLoop.h"
 #include "ImGuiManager.h"
 #include "Level.h"
-#include "Camera/CameraComponent.h"
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/UnrealEd.h"
 #include "UnrealClient.h"
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
+#include "World.h"
+#include "GameFramework/Actor.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -124,10 +125,13 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
 
+    GWorld = FObjectFactory::ConstructObject<UWorld>();
+    WorldContexts.Add({GWorld, EWorldType::Editor});
     GLevel = FObjectFactory::ConstructObject<ULevel>();
-    GLevel->Initialize();
+    GWorld->Level =GLevel;
+    GLevel->Initialize(EWorldType::Editor);
 
-    // GLevel = GLevel->Duplicate<ULevel>();
+    WorldContexts.Add({});
 
     return 0;
 }
@@ -148,7 +152,7 @@ void FEngineLoop::Render()
             // renderer.PrepareShader();
             // renderer.UpdateLightBuffer();
             // RenderWorld();
-            renderer.PrepareRender();
+            renderer.PrepareRender(GLevel);
             renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
@@ -161,7 +165,7 @@ void FEngineLoop::Render()
         // renderer.PrepareShader();
         // renderer.UpdateLightBuffer();
         // RenderWorld();
-        renderer.PrepareRender();
+        renderer.PrepareRender(GLevel);
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
 }
@@ -193,21 +197,22 @@ void FEngineLoop::Tick()
             }
         }
 
-        Input();
-        GLevel->Tick(elapsedTime);
-        LevelEditor->Tick(elapsedTime);
-        Render();
-        UIMgr->BeginFrame();
-        UnrealEditor->Render();
+        switch (WorldContexts[curWorldContextIndex].worldType)
+        {
+        case EWorldType::Editor:
+            EditorTick(elapsedTime);
+            break;
+        case EWorldType::PIE:
+            PIETick(elapsedTime);
+            break;
+        }
 
-        Console::GetInstance().Draw();
+        if (bTestInput2 == true)
+        {
+            TogglePIE();
+            bTestInput2 = false;
+        }
 
-        UIMgr->EndFrame();
-
-        // Pending 처리된 오브젝트 제거
-        GUObjectArray.ProcessPendingDestroyObjects();
-
-        graphicDevice.SwapBuffer();
         do
         {
             Sleep(0);
@@ -216,6 +221,65 @@ void FEngineLoop::Tick()
         }
         while (elapsedTime < targetFrameTime);
     }
+}
+
+void FEngineLoop::EditorTick(double elapsedTime)
+{
+    Input();
+    GLevel->Tick(elapsedTime);
+    LevelEditor->Tick(elapsedTime);
+    Render();
+    UIMgr->BeginFrame();
+    UnrealEditor->Render();
+
+    Console::GetInstance().Draw();
+
+    UIMgr->EndFrame();
+
+    // Pending 처리된 오브젝트 제거
+    GUObjectArray.ProcessPendingDestroyObjects();
+
+    graphicDevice.SwapBuffer();
+}
+
+void FEngineLoop::PIETick(double elapsedTime)
+{
+    Input();
+    GLevel->Tick(elapsedTime);
+    for (auto& actor : GLevel->GetActors())
+    {
+        actor->SetActorRotation(actor->GetActorRotation() + FVector(0.1,0.1,0.1));
+    }
+    Render();
+
+    UIMgr->BeginFrame();
+    UnrealEditor->RenderPIE();
+
+    UIMgr->EndFrame();
+
+    // Pending 처리된 오브젝트 제거
+    GUObjectArray.ProcessPendingDestroyObjects();
+
+    graphicDevice.SwapBuffer();
+}
+
+void FEngineLoop::TogglePIE()
+{
+    curWorldContextIndex == 0 ? curWorldContextIndex = 1 : curWorldContextIndex = 0;
+    if (curWorldContextIndex == 1)
+    {
+        WorldContexts[1] = {Cast<UWorld>(WorldContexts[0].World->Duplicate()), EWorldType::PIE};
+        WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
+        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() & 14;
+        LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
+    }
+    else
+    {
+        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() | 1;
+        LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
+    }
+    GWorld = WorldContexts[curWorldContextIndex].World;
+    GLevel = GWorld->Level;
 }
 
 float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const

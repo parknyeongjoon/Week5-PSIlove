@@ -1,4 +1,5 @@
 #include "PrimitiveComponent.h"
+#include "UObject/Casts.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -6,6 +7,19 @@ UPrimitiveComponent::UPrimitiveComponent()
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
+}
+
+void UPrimitiveComponent::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
+}
+
+UObject* UPrimitiveComponent::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<UPrimitiveComponent>(this);
+
+    Cast<UPrimitiveComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void UPrimitiveComponent::InitializeComponent()

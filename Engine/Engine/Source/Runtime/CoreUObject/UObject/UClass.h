@@ -12,10 +12,10 @@ public:
     virtual ~UClass() override = default;
 
     // 복사 & 이동 생성자 제거
-    UClass(const UClass&) = delete;
-    UClass& operator=(const UClass&) = delete;
-    UClass(UClass&&) = delete;
-    UClass& operator=(UClass&&) = delete;
+    //UClass(const UClass&) = delete;
+    //UClass& operator=(const UClass&) = delete;
+    //UClass(UClass&&) = delete;
+    //UClass& operator=(UClass&&) = delete;
 
     uint32 GetClassSize() const { return ClassSize; }
     uint32 GetClassAlignment() const { return ClassAlignment; }

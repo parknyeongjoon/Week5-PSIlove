@@ -132,6 +132,7 @@ public: // line shader
     void CreateLineShader();
     void ReleaseLineShader() const;
     void RenderBatch(const FGridParameters& gridParam, ID3D11Buffer* pVertexBuffer, int boundingBoxCount, int coneCount, int coneSegmentCount, int obbCount) const;
+    void PrepareRender(ULevel* Level);
     void UpdateGridConstantBuffer(const FGridParameters& gridParams) const;
     void UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones) const;
     ID3D11Buffer* CreateStaticVerticesBuffer() const;
@@ -147,7 +148,6 @@ public: // line shader
     void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
 
     //Render Pass Demo
-    void PrepareRender();
     void ClearRenderArr();
     void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);

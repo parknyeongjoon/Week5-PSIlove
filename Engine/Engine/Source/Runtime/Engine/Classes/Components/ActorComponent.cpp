@@ -2,6 +2,8 @@
 
 #include "GameFramework/Actor.h"
 
+#include "UObject/Casts.h"
+
 
 void UActorComponent::InitializeComponent()
 {
@@ -82,4 +84,19 @@ void UActorComponent::Deactivate()
 {
     // TODO: Tick 멈추기
     bIsActive = false;
+}
+
+void UActorComponent::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
+
+    // 할거없음.
+}
+
+UObject* UActorComponent::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<UActorComponent>(this);
+
+    Cast<UActorComponent>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }

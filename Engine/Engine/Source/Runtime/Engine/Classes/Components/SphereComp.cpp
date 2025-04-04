@@ -18,6 +18,19 @@ USphereComp::~USphereComp()
 {
 }
 
+void USphereComp::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
+}
+
+UObject* USphereComp::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<USphereComp>(this);
+
+    Cast<USphereComp>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
+
 void USphereComp::InitializeComponent()
 {
     Super::InitializeComponent();

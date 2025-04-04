@@ -21,12 +21,16 @@ public:
     int32 Init(HINSTANCE hInstance);
     void Render();
     void Tick();
+    void EditorTick(double elapsedTime);
+    void PIETick(double elapsedTime);
     void Exit();
     float GetAspectRatio(IDXGISwapChain* swapChain) const;
     void Input();
+    EWorldType GetWorldType() const {return WorldContexts[curWorldContextIndex].worldType;}
 
 private:
     void WindowInit(HINSTANCE hInstance);
+    void TogglePIE();
 
 public:
     static FGraphicsDevice graphicDevice;
@@ -34,18 +38,21 @@ public:
     static FResourceMgr resourceMgr;
     static uint32 TotalAllocationBytes;
     static uint32 TotalAllocationCount;
+    bool bTestInput2 = false;
     
     HWND hWnd;
 
 private:
+    TArray<FWorldContext> WorldContexts;
     UImGuiManager* UIMgr;
     ULevel* GLevel;
+    UWorld* GWorld;
     SLevelEditor* LevelEditor;
     UnrealEd* UnrealEditor;
     bool bIsExit = false;
     const int32 targetFPS = 60;
     bool bTestInput = false;
-    TArray<FWorldContext> WorldContexts;
+    int curWorldContextIndex = 0;
 
 public:
     ULevel* GetLevel() const { return GLevel; }

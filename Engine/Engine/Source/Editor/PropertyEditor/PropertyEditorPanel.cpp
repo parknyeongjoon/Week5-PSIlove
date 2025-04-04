@@ -64,7 +64,7 @@ void PropertyEditorPanel::Render()
             PickedActor->SetActorLocation(Location);
             PickedActor->SetActorRotation(Rotation);
             PickedActor->SetActorScale(Scale);
-                
+
             std::string coordiButtonLabel;
             if (player->GetCoordiMode() == CoordiMode::CDM_WORLD)
                 coordiButtonLabel = "World";

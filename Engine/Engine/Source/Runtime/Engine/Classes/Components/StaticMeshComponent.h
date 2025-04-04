@@ -9,6 +9,10 @@ class UStaticMeshComponent : public UMeshComponent
 public:
     UStaticMeshComponent() = default;
 
+    virtual void DuplicateSubObjects() override;
+    virtual UObject* Duplicate() override;
+
+public:
     PROPERTY(int, selectedSubMeshIndex);
 
     virtual uint32 GetNumMaterials() const override;

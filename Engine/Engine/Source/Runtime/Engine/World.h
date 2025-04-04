@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
 
@@ -6,10 +6,9 @@ class UWorld : public UObject
 {
     DECLARE_CLASS(UWorld, UObject)
 public:
+    UWorld() = default;
     ULevel* Level;
 
-    void WorldTick(float DeltaTime);
-
-    void DuplicateObject(const UObject* SourceObject) override;
+    virtual UObject* Duplicate() override;
     void DuplicateSubObjects() override;
 };

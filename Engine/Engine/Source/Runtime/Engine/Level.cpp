@@ -9,38 +9,26 @@
 #include "Components/SkySphereComponent.h"
 
 
-void ULevel::Initialize()
+void ULevel::Initialize(EWorldType worldType)
 {
     // TODO: Load Scene
-    CreateBaseObject();
+    CreateBaseObject(worldType);
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
-
     FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
-    AActor* SpawnedActor = SpawnActor<AActor>();
-    USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
-    skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
-    skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
 }
 
-void ULevel::CreateBaseObject()
+void ULevel::CreateBaseObject(EWorldType worldType)
 {
-    if (EditorPlayer == nullptr)
-    {
+    if (EditorPlayer == nullptr && worldType == EWorldType::Editor)
         EditorPlayer = FObjectFactory::ConstructObject<AEditorPlayer>();
-    }
-
-    if (camera == nullptr)
-    {
-        camera = FObjectFactory::ConstructObject<UCameraComponent>();
-        camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
-        camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
-    }
-
-    if (LocalGizmo == nullptr)
-    {
+    if (LocalGizmo == nullptr && worldType == EWorldType::Editor)
         LocalGizmo = FObjectFactory::ConstructObject<UTransformGizmo>();
-    }
+
+    if (LocalGizmo != nullptr && worldType == EWorldType::PIE)
+        LocalGizmo = nullptr;
+    if (EditorPlayer != nullptr && worldType == EWorldType::PIE)
+        EditorPlayer = nullptr;
 }
 
 void ULevel::ReleaseBaseObject()
@@ -57,25 +45,17 @@ void ULevel::ReleaseBaseObject()
         worldGizmo = nullptr;
     }
 
-    if (camera)
-    {
-        delete camera;
-        camera = nullptr;
-    }
-
     if (EditorPlayer)
     {
         delete EditorPlayer;
         EditorPlayer = nullptr;
     }
-
 }
 
 void ULevel::Tick(float DeltaTime)
 {
-	camera->TickComponent(DeltaTime);
-	EditorPlayer->Tick(DeltaTime);
-	LocalGizmo->Tick(DeltaTime);
+	if (EditorPlayer) EditorPlayer->Tick(DeltaTime);
+	if (LocalGizmo) LocalGizmo->Tick(DeltaTime);
 
     // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
     for (AActor* Actor : PendingBeginPlayActors)
@@ -96,7 +76,7 @@ void ULevel::Release()
 	for (AActor* Actor : ActorsArray)
 	{
 		Actor->EndPlay(EEndPlayReason::WorldTransition);
-        TSet<UActorComponent*> Components = Actor->GetComponents();
+        TArray<UActorComponent*> Components = Actor->GetComponents();
 	    for (UActorComponent* Component : Components)
 	    {
 	        GUObjectArray.MarkRemoveObject(Component);
@@ -111,19 +91,33 @@ void ULevel::Release()
     GUObjectArray.ProcessPendingDestroyObjects();
 }
 
-void ULevel::DuplicateObject(const UObject* SourceObject)
+UObject* ULevel::Duplicate()
 {
-    ULevel* sourceLevel = Cast<ULevel>(SourceObject);
-    ActorsArray = sourceLevel->GetActors();
+    // 새 객체 생성 및 얕은 복사
+    UObject* NewObject = FObjectFactory::ConstructObject<ULevel>(this);
+
+    // 서브 오브젝트는 깊은 복사로 별도 처리
+    Cast<ULevel>(NewObject)->DuplicateSubObjects();
+    return NewObject;
 }
 
 void ULevel::DuplicateSubObjects()
 {
-    TSet<AActor*> duplicatedActors;
-    // for (auto* actor : ActorsArray)
-    // {
-    //     duplicatedActors.Add(actor->Duplicate<AActor>());
-    // }
+    Super::DuplicateSubObjects();
+    TArray<AActor*> duplicatedActors;
+
+    for (auto* actor : ActorsArray)
+    {
+        duplicatedActors.Add(Cast<AActor>(actor->Duplicate())); //TODO: 클래스 구별
+    }
+    PendingBeginPlayActors.Empty();
+
+    SelectedActor = nullptr;
+    pickingGizmo = nullptr;
+    EditorPlayer = nullptr;
+    worldGizmo = nullptr;
+    LocalGizmo = nullptr;
+
     ActorsArray = duplicatedActors;
 }
 
@@ -147,18 +141,25 @@ bool ULevel::DestroyActor(AActor* ThisActor)
         ThisActor->SetOwner(nullptr);
     }
 
-    TSet<UActorComponent*> Components = ThisActor->GetComponents();
+    TArray<UActorComponent*> Components = ThisActor->GetComponents();
     for (UActorComponent* Component : Components)
     {
         Component->DestroyComponent();
     }
 
     // World에서 제거
-    ActorsArray.Remove(ThisActor);
+    ActorsArray.Empty();
+    //ActorsArray.Remove(ThisActor);
 
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);
     return true;
+}
+
+void ULevel::AddActor(AActor* NewActor)
+{
+    ActorsArray.Add(NewActor);
+    PendingBeginPlayActors.Add(NewActor);
 }
 
 void ULevel::SetPickingGizmo(UObject* Object)

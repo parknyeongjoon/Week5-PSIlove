@@ -22,6 +22,19 @@ UCubeComp::~UCubeComp()
 {
 }
 
+void UCubeComp::DuplicateSubObjects()
+{
+    Super::DuplicateSubObjects();
+}
+
+UObject* UCubeComp::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<UCubeComp>(this);
+
+    Cast<UCubeComp>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
+
 void UCubeComp::InitializeComponent()
 {
     Super::InitializeComponent();

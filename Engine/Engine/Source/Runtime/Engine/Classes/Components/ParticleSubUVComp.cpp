@@ -20,6 +20,20 @@ UParticleSubUVComp::~UParticleSubUVComp()
 	}
 }
 
+void UParticleSubUVComp::DuplicateSubObjects()
+{
+    // deepcopy 대상 없음.
+    Super::DuplicateSubObjects();
+}
+
+UObject* UParticleSubUVComp::Duplicate()
+{
+    UObject* NewObject = FObjectFactory::ConstructObject<UParticleSubUVComp>(this);
+
+    Cast<UParticleSubUVComp>(NewObject)->DuplicateSubObjects();
+    return NewObject;
+}
+
 void UParticleSubUVComp::InitializeComponent()
 {
 	Super::InitializeComponent();
