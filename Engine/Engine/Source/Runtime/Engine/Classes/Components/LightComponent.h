@@ -15,18 +15,18 @@ public:
     virtual void TickComponent(float DeltaTime) override;
     virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
     void InitializeLight();
-    void SetColor(FColor newColor);
-    FColor GetColor() const;
+    void SetColor(FLinearColor newColor);
+    FLinearColor GetColor() const;
     float GetRadius() const;
     void SetRadius(float r);
 
 private:
-    FColor color;
+    FLinearColor color;
     float radius;
     FBoundingBox AABB;
     
 public:
     FBoundingBox GetBoundingBox() const {return AABB;}
     float GetRadius() {return radius;}
-    FColor GetColor() {return color;}
+    FLinearColor GetColor() {return color;}
 };

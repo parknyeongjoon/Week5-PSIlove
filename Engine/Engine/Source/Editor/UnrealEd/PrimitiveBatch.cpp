@@ -192,7 +192,7 @@ void UPrimitiveBatch::RenderOBB(const FBoundingBox& localAABB, const FVector& ce
 
 }
 
-void UPrimitiveBatch::AddCone(const FVector& center, float radius, float height, int segments, const FColor& color, const FMatrix& modelMatrix)
+void UPrimitiveBatch::AddCone(const FVector& center, float radius, float height, int segments, const FLinearColor& color, const FMatrix& modelMatrix)
 {
     ConeSegmentCount = segments;
     FVector localApex = FVector(0, 0, 0);

@@ -16,12 +16,12 @@ UObject* ULightComponentBase::Duplicate()
     Cast<ULightComponentBase>(NewObject)->DuplicateSubObjects();
     return NewObject;
 }
-void ULightComponentBase::SetColor(FColor newColor)
+void ULightComponentBase::SetColor(FLinearColor newColor)
 {
     color = newColor;
 }
 
-FColor ULightComponentBase::GetColor() const
+FLinearColor ULightComponentBase::GetColor() const
 {
     return color;
 }
