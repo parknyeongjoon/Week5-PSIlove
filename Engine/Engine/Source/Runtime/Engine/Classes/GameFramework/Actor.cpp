@@ -82,8 +82,6 @@ bool AActor::Destroy()
 
 void AActor::RemoveOwnedComponent(UActorComponent* Component)
 {
-    OwnedComponents.Empty();
-    return;
     if (OwnedComponents.Contains(Component))
     {
         OwnedComponents.Remove(Component);
@@ -121,7 +119,15 @@ void AActor::UninitializeComponents()
 
 bool AActor::SetRootComponent(USceneComponent* NewRootComponent)
 {
-    if (NewRootComponent == nullptr || NewRootComponent->GetOwner() == this)
+    if (NewRootComponent == nullptr)
+    {
+        if (RootComponent->GetAttachChildren().IsEmpty())
+            RootComponent = nullptr;
+        else
+            RootComponent = RootComponent->GetAttachChildren()[0];
+        return true;
+    }
+    if (NewRootComponent->GetOwner() == this)
     {
         if (RootComponent != NewRootComponent)
         {
