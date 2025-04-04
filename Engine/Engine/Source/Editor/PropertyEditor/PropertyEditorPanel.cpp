@@ -80,7 +80,7 @@ void PropertyEditorPanel::Render()
         ImGui::PopStyleColor();
 
         // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기
-        if (ULightComponentBase* lightObj = Cast<ULightComponentBase>(PickedActor->GetRootComponent()))
+        if (ULightComponent* lightObj = Cast<ULightComponent>(PickedActor->GetRootComponent()))
         {
             ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
             if (ImGui::TreeNodeEx("SpotLight Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
@@ -146,10 +146,10 @@ void PropertyEditorPanel::Render()
                 }
 
                 // Light Radius
-                float radiusVal = lightObj->GetRadius();
+                float radiusVal = lightObj->GetAttenuationRadius();
                 if (ImGui::SliderFloat("Radius", &radiusVal, 1.0f, 100.0f))
                 {
-                    lightObj->SetRadius(radiusVal);
+                    lightObj->SetAttenuationRadius(radiusVal);
                 }
                 ImGui::TreePop();
             }

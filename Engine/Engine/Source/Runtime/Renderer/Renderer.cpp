@@ -1061,7 +1061,7 @@ void FRenderer::PrepareRender(ULevel* Level)
         {
             TextObjs.Add(TextRenderComp);
         }
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
+        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
         {
             LightObjs.Add(pLightComp);
         }
@@ -1335,7 +1335,7 @@ void FRenderer::RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient
     for (auto Light : LightObjs)
     {
         FMatrix Model = JungleMath::CreateModelMatrix(Light->GetWorldLocation(), Light->GetWorldRotation(), {1, 1, 1});
-        UPrimitiveBatch::GetInstance().AddCone(Light->GetWorldLocation(), Light->GetRadius(), 15, 140, Light->GetColor(), Model);
+        UPrimitiveBatch::GetInstance().AddCone(Light->GetWorldLocation(), Light->GetAttenuationRadius(), 15, 140, Light->GetColor(), Model);
         UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
     }
 }
