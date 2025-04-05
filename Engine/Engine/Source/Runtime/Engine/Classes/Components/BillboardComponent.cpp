@@ -109,7 +109,10 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 	numVertices = sizeof(quadTextureVertices) / sizeof(FVertexTexture);
 	numIndices = sizeof(quadTextureInices) / sizeof(uint32);
 	vertexTextureBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(quadTextureVertices, numVertices);
+    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexTextureBuffer, sizeof(FVertexTexture));
+    
 	indexTextureBuffer = FEngineLoop::renderer.CreateIndexBuffer(quadTextureInices, numIndices);
+    FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexTextureBuffer, numIndices);
 
 	if (!vertexTextureBuffer) {
 		Console::GetInstance().AddLog(LogLevel::Warning, "Buffer Error");

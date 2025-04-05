@@ -35,7 +35,8 @@ void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
 
 void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection)
 {
-    FEngineLoop::renderer.PrepareLineShader();
+    //FEngineLoop::renderer.PrepareLineShader();
+    FEngineLoop::renderer.PrepareShader(TEXT("Line"));
 
     InitializeVertexBuffer();
 
@@ -56,7 +57,7 @@ void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection
     BoundingBoxes.Empty();
     Cones.Empty();
     OrientedBoundingBoxes.Empty();
-    FEngineLoop::renderer.PrepareShader();
+    FEngineLoop::renderer.PrepareShader(TEXT("StaticMesh"));
 }
 void UPrimitiveBatch::InitializeVertexBuffer()
 {
@@ -64,6 +65,7 @@ void UPrimitiveBatch::InitializeVertexBuffer()
     {
         FSimpleVertex vertices[2]{{0}, {0}};
         pVertexBuffer = FEngineLoop::renderer.CreateStaticVertexBuffer<FSimpleVertex>(vertices, 2);
+        FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Line"), pVertexBuffer, sizeof(FSimpleVertex));
     }
 }
 

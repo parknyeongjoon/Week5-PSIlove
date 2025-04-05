@@ -7,11 +7,6 @@ public:
     FShaderProgram(ID3D11VertexShader* InVertexShader, ID3D11PixelShader* InPixelShader, ID3D11InputLayout* InInputLayout, uint32 InStride)
         : VertexShader(InVertexShader), PixelShader(InPixelShader), InputLayout(InInputLayout), Stride(InStride)
     {}
-    
-    ID3D11VertexShader* VertexShader;
-    ID3D11PixelShader*  PixelShader;
-    ID3D11InputLayout*  InputLayout;
-
     // 생성자 (필요한 경우 초기화)
     FShaderProgram() = default;
 
@@ -23,5 +18,19 @@ public:
         context->PSSetShader(PixelShader, nullptr, 0);
     }
 
+    void SetVertexShader(ID3D11VertexShader* InVertexShader) { VertexShader = InVertexShader;}
+    void SetPixelShader(ID3D11PixelShader* InPixelShader) { PixelShader = InPixelShader;}
+    void SetInputLayout(ID3D11InputLayout* InInputLayout) { InputLayout = InInputLayout;}
+
+    ID3D11VertexShader* GetVertexShader() const { return VertexShader; }
+    ID3D11PixelShader* GetPixelShader() const { return PixelShader; }
+    ID3D11InputLayout* GetInputLayout() const { return InputLayout; }
+
+    void Release();
+
+private:
+    ID3D11VertexShader* VertexShader;
+    ID3D11PixelShader*  PixelShader;
+    ID3D11InputLayout*  InputLayout;
     uint32 Stride;
 };

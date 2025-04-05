@@ -286,6 +286,7 @@
     <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FGPUBuffer.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FIndexBuffer.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVertexBuffer.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVIBuffers.cpp" />
     <ClCompile Include="Engine\Source\ThirdParty\include\ImGUI\imgui.cpp" />
     <ClCompile Include="Engine\Source\ThirdParty\include\ImGUI\imgui_demo.cpp" />
     <ClCompile Include="Engine\Source\ThirdParty\include\ImGUI\imgui_draw.cpp" />
@@ -369,6 +370,7 @@
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FGPUBuffer.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FIndexBuffer.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVertexBuffer.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVIBuffers.h" />
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
     <ClInclude Include="Engine\Source\ThirdParty\tinyfiledialogs\tinyfiledialogs.h" />
     <ClInclude Include="Font\IconDefs.h" />

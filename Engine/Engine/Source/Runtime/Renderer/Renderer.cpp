@@ -24,6 +24,31 @@
 #include "Components/TextRenderComponent.h"
 #include "ImGUI/imgui_internal.h"
 
+void FRenderer::AddOrSetVertexShader(const FString& InName, ID3D11VertexShader* InShader)
+{
+    ShaderPrograms[InName].SetVertexShader(InShader);
+}
+
+void FRenderer::AddOrSetPixelShader(const FString& InName, ID3D11PixelShader* InShader)
+{
+    ShaderPrograms[InName].SetPixelShader(InShader);
+}
+
+void FRenderer::AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* InLayout)
+{
+    ShaderPrograms[InName].SetInputLayout(InLayout);
+}
+
+void FRenderer::AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 InStride)
+{
+    VIBuffers[InName].SetVertexBuffer(InBuffer, InStride);    
+}
+
+void FRenderer::AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 numIndices)
+{
+    VIBuffers[InName].SetIndexBuffer(InBuffer, numIndices);
+}
+
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -38,12 +63,49 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     UpdateLitUnlitConstant(1);
 }
 
+TArray<TPair<FString, uint32>> FRenderer::ExtractConstantBufferNames(ID3DBlob* shaderBlob)
+{
+    TArray<TPair<FString, uint32>> CBNames;
+
+    // 쉐이더 리플렉션 인터페이스 생성
+    ID3D11ShaderReflection* pReflector = nullptr;
+    HRESULT hr = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_ID3D11ShaderReflection,
+                            reinterpret_cast<void**>(&pReflector));
+    if (FAILED(hr) || pReflector == nullptr)
+    {
+        // 오류 처리: 빈 벡터 반환
+        return CBNames;
+    }
+    
+    // 쉐이더 설명 가져오기
+    D3D11_SHADER_DESC shaderDesc = {};
+    hr = pReflector->GetDesc(&shaderDesc);
+    assert(SUCCEEDED(hr));
+    
+    // 모든 상수 버퍼에 대해 이름을 추출
+    for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i)
+    {
+        ID3D11ShaderReflectionConstantBuffer* pCB = pReflector->GetConstantBufferByIndex(i);
+        if (pCB)
+        {
+            D3D11_SHADER_BUFFER_DESC cbDesc = {};
+            hr = pCB->GetDesc(&cbDesc);
+            if (SUCCEEDED(hr))
+            {
+                FString CBName = cbDesc.Name;
+                CBNames.Add(TPair(CBName, i));
+            }
+        }
+    }
+    
+    pReflector->Release();
+    return CBNames;
+}
+
 void FRenderer::Release()
 {
     ReleaseShader();
     ReleaseTextureShader();
-    ReleaseFontShader();
-    ReleaseLineShader();
     ReleaseConstantBuffer();
 }
 
@@ -52,6 +114,10 @@ void FRenderer::CreateShader()
     ID3DBlob* VertexShaderCSO;
     ID3DBlob* PixelShaderCSO;
 
+    ID3D11VertexShader* VertexShader;
+    ID3D11PixelShader* PixelShader;
+    ID3D11InputLayout* InputLayout;
+    
     Graphics->CreateVertexShader(TEXT("StaticMeshVertexShader.hlsl"), &VertexShaderCSO, &VertexShader);
     Graphics->CreatePixelShader(TEXT("StaticMeshPixelShader.hlsl"), &PixelShaderCSO, &PixelShader);
 
@@ -62,14 +128,28 @@ void FRenderer::CreateShader()
         {"TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
-
+    
     Graphics->Device->CreateInputLayout(
         layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
     );
     
-    Stride = sizeof(FVertexSimple);
+    const TArray<TPair<FString, uint32>> VertexStaticMeshConstant = ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<TPair<FString, uint32>> PixelStaticMeshConstant = ExtractConstantBufferNames(PixelShaderCSO);
+
+    TMap<FShaderConstantKey, uint32> ShaderStageToCB;
+
+    for (const auto item : VertexStaticMeshConstant)
+    {
+        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+    }
+
+    for (const auto item :PixelStaticMeshConstant)
+    {
+        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+    }
 
     ShaderPrograms.Add(TEXT("StaticMesh"), FShaderProgram(VertexShader, PixelShader, InputLayout, sizeof(FVertexSimple)));
+    ShaderConstantNames.Add(TEXT("StaticMesh"), ShaderStageToCB);
     
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
@@ -80,6 +160,10 @@ void FRenderer::CreateTextureShader()
     ID3DBlob* VertexShaderCSO;
     ID3DBlob* PixelShaderCSO;
 
+    ID3D11VertexShader* TextureVertexShader;
+    ID3D11PixelShader* TexturePixelShader;
+    ID3D11InputLayout* TextureInputLayout;
+    
     Graphics->CreateVertexShader(TEXT("TextureVertexShader.hlsl"), &VertexShaderCSO, &TextureVertexShader);
     Graphics->CreatePixelShader(TEXT("TexturePixelShader.hlsl"), &PixelShaderCSO, &TexturePixelShader);
 
@@ -92,8 +176,23 @@ void FRenderer::CreateTextureShader()
         layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &TextureInputLayout
     );
     
-    TextureStride = sizeof(FVertexTexture);
+    const TArray<TPair<FString, uint32>> VertexTextureMeshConstant = ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<TPair<FString, uint32>> PixelTextureMeshConstant = ExtractConstantBufferNames(PixelShaderCSO);
+
+    TMap<FShaderConstantKey, uint32> ShaderStageToCB;
+
+    for (const auto item : VertexTextureMeshConstant)
+    {
+        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+    }
+
+    for (const auto item :PixelTextureMeshConstant)
+    {
+        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+    }
+
     ShaderPrograms.Add(TEXT("Texture"), FShaderProgram(TextureVertexShader, TexturePixelShader, TextureInputLayout, sizeof(FVertexTexture)));
+    ShaderConstantNames.Add(TEXT("Texture"), ShaderStageToCB);
     
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
@@ -104,7 +203,12 @@ void FRenderer::CreateFontShader()
     ID3DBlob* VertexShaderCSO;
     ID3DBlob* PixelShaderCSO;
 
+    ID3D11VertexShader* FontVertexShader;
+    ID3D11PixelShader* FontPixelShader;
+    ID3D11InputLayout* FontInputLayout;
+    
     Graphics->CreateVertexShader(TEXT("FontVertexShader.hlsl"), &VertexShaderCSO, &FontVertexShader);
+
     Graphics->CreatePixelShader(TEXT("FontPixelShader.hlsl"), &PixelShaderCSO, &FontPixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
@@ -115,22 +219,40 @@ void FRenderer::CreateFontShader()
     Graphics->Device->CreateInputLayout(
         layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &FontInputLayout
     );
+    
+    const TArray<TPair<FString, uint32>> VertexFontMeshConstant = ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<TPair<FString, uint32>> PixelFontMeshConstant = ExtractConstantBufferNames(PixelShaderCSO);
 
-    TextureStride = sizeof(FVertexTexture);
+    TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
-    ShaderPrograms.Add(TEXT("Texture"), FShaderProgram(TextureVertexShader, TexturePixelShader, TextureInputLayout, sizeof(FVertexTexture)));
+    for (const auto item : VertexFontMeshConstant)
+    {
+        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+    }
 
+    for (const auto item :PixelFontMeshConstant)
+    {
+        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+    }
+
+    ShaderPrograms.Add(TEXT("Font"), FShaderProgram(FontVertexShader, FontPixelShader, FontInputLayout, sizeof(FVertexTexture)));
+    ShaderConstantNames.Add(TEXT("Font"), ShaderStageToCB);
+    
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
 }
 
 void FRenderer::CreateLineShader()
 {
-    ID3DBlob* VertexShaderLine;
-    ID3DBlob* PixelShaderLine;
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+
+    ID3D11VertexShader* VertexLineShader;
+    ID3D11PixelShader* PixelLineShader;
+    ID3D11InputLayout* LineInputLayout;
     
-    Graphics->CreateVertexShader(TEXT("ShaderLineVertexShader.hlsl"), &VertexShaderLine, &VertexLineShader);
-    Graphics->CreatePixelShader(TEXT("ShaderLinePixelShader.hlsl"), &PixelShaderLine, &PixelLineShader);
+    Graphics->CreateVertexShader(TEXT("ShaderLineVertexShader.hlsl"), &VertexShaderCSO, &VertexLineShader);
+    Graphics->CreatePixelShader(TEXT("ShaderLinePixelShader.hlsl"), &PixelShaderCSO, &PixelLineShader);
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
     {
@@ -140,53 +262,72 @@ void FRenderer::CreateLineShader()
         // 인스턴스 ID: 32비트 부호 없는 정수, 입력 슬로트 1, Per-Instance 데이터
         { "SV_InstanceID", 0, DXGI_FORMAT_R32_UINT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
     };
-
+    
     Graphics->Device->CreateInputLayout(
-    layoutDesc, ARRAYSIZE(layoutDesc), VertexShaderLine->GetBufferPointer(), VertexShaderLine->GetBufferSize(), &LineInputLayout
+    layoutDesc, ARRAYSIZE(layoutDesc), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &LineInputLayout
     );
     
+    const TArray<TPair<FString, uint32>> VertexLineConstant = ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<TPair<FString, uint32>> PixelLineConstant = ExtractConstantBufferNames(PixelShaderCSO);
+
+    TMap<FShaderConstantKey, uint32> ShaderStageToCB;
+
+    for (const auto item : VertexLineConstant)
+    {
+        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+    }
+
+    for (const auto item :PixelLineConstant)
+    {
+        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+    }
+
     ShaderPrograms.Add(TEXT("Line"), FShaderProgram(VertexLineShader, PixelLineShader, LineInputLayout, sizeof(FSimpleVertex)));
+    ShaderConstantNames.Add(TEXT("Line"), ShaderStageToCB);
     
-    VertexShaderLine->Release();
-    PixelShaderLine->Release();
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
 }
 
 void FRenderer::ReleaseShader()
 {
-    if (InputLayout)
+    for (auto item : ShaderPrograms)
     {
-        InputLayout->Release();
-        InputLayout = nullptr;
-    }
-
-    if (PixelShader)
-    {
-        PixelShader->Release();
-        PixelShader = nullptr;
-    }
-
-    if (VertexShader)
-    {
-        VertexShader->Release();
-        VertexShader = nullptr;
+        item.Value.Release();
     }
 }
 
-void FRenderer::PrepareShader() const
-{
-    Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
-    Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
-    Graphics->DeviceContext->IASetInputLayout(InputLayout);
+// void FRenderer::PrepareShader() const
+// {
+//     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
+//     Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
+//     Graphics->DeviceContext->IASetInputLayout(InputLayout);
+//
+//     if (ConstantBuffer)
+//     {
+//         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+//         Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
+//         Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &MaterialConstantBuffer);
+//         Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingBuffer);
+//         Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
+//         Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
+//         Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBufer);
+//     }
+// }
 
-    if (ConstantBuffer)
+void FRenderer::PrepareShader(const FString& shaderName) const
+{
+    ShaderPrograms[shaderName].Bind(Graphics->DeviceContext);
+    
+    if (ConstantBuffer && GridConstantBuffer)
     {
-        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &MaterialConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBufer);
+        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);     // MatrixBuffer (b0)
+        Graphics->DeviceContext->VSSetConstantBuffers(1, 1, &GridConstantBuffer); // GridParameters (b1)
+        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &GridConstantBuffer);
+        Graphics->DeviceContext->VSSetConstantBuffers(3, 1, &LinePrimitiveBuffer);
+        Graphics->DeviceContext->VSSetShaderResources(2, 1, &pBBSRV);
+        Graphics->DeviceContext->VSSetShaderResources(3, 1, &pConeSRV);
+        Graphics->DeviceContext->VSSetShaderResources(4, 1, &pOBBSRV);
     }
 }
 
@@ -515,51 +656,16 @@ void FRenderer::UpdateTextureConstant(float UOffset, float VOffset)
     }
 }
 
-void FRenderer::ReleaseFontShader()
-{
-    if (FontVertexShader)
-    {
-        FontVertexShader->Release();
-        FontVertexShader = nullptr;
-    }
-    if (FontPixelShader)
-    {
-        FontPixelShader->Release();
-        FontPixelShader = nullptr;
-    }
-    if (FontInputLayout)
-    {
-        FontInputLayout->Release();
-        FontInputLayout = nullptr;
-    }
-}
-
-void FRenderer::PrepareFontShader() const
-{
-    Graphics->DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
-    Graphics->DeviceContext->PSSetShader(FontPixelShader, nullptr, 0);
-    Graphics->DeviceContext->IASetInputLayout(FontInputLayout);
-}
+//
+// void FRenderer::PrepareFontShader() const
+// {
+//     Graphics->DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
+//     Graphics->DeviceContext->PSSetShader(FontPixelShader, nullptr, 0);
+//     Graphics->DeviceContext->IASetInputLayout(FontInputLayout);
+// }
 
 void FRenderer::ReleaseTextureShader()
 {
-    if (TextureInputLayout)
-    {
-        TextureInputLayout->Release();
-        TextureInputLayout = nullptr;
-    }
-
-    if (TexturePixelShader)
-    {
-        TexturePixelShader->Release();
-        TexturePixelShader = nullptr;
-    }
-
-    if (TextureVertexShader)
-    {
-        TextureVertexShader->Release();
-        TextureVertexShader = nullptr;
-    }
     if (SubUVConstantBuffer)
     {
         SubUVConstantBuffer->Release();
@@ -572,20 +678,20 @@ void FRenderer::ReleaseTextureShader()
     }
 }
 
-void FRenderer::PrepareTextureShader() const
-{
-    Graphics->DeviceContext->VSSetShader(TextureVertexShader, nullptr, 0);
-    Graphics->DeviceContext->PSSetShader(TexturePixelShader, nullptr, 0);
-    Graphics->DeviceContext->IASetInputLayout(TextureInputLayout);
-
-    if (ConstantBuffer)
-    {
-        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-    }
-}
+// void FRenderer::PrepareTextureShader() const
+// {
+//     Graphics->DeviceContext->VSSetShader(TextureVertexShader, nullptr, 0);
+//     Graphics->DeviceContext->PSSetShader(TexturePixelShader, nullptr, 0);
+//     Graphics->DeviceContext->IASetInputLayout(TextureInputLayout);
+//
+//     if (ConstantBuffer)
+//     {
+//         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+//     }
+// }
 
 void FRenderer::RenderTexturePrimitive(
-    ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* _TextureSRV,
+    ID3D11Buffer* pVertexBuffer, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* _TextureSRV,
     ID3D11SamplerState* _SamplerState
 ) const
 {
@@ -657,35 +763,35 @@ void FRenderer::PrepareSubUVConstant() const
     }
 }
 
-void FRenderer::PrepareLineShader() const
-{
-    // ���̴��� �Է� ���̾ƿ� ����
-    Graphics->DeviceContext->VSSetShader(VertexLineShader, nullptr, 0);
-    Graphics->DeviceContext->PSSetShader(PixelLineShader, nullptr, 0);
-    Graphics->DeviceContext->IASetInputLayout(LineInputLayout);
+// void FRenderer::PrepareLineShader() const
+// {
+//     // ���̴��� �Է� ���̾ƿ� ����
+//     Graphics->DeviceContext->VSSetShader(VertexLineShader, nullptr, 0);
+//     Graphics->DeviceContext->PSSetShader(PixelLineShader, nullptr, 0);
+//     Graphics->DeviceContext->IASetInputLayout(LineInputLayout);
+//
+//     // ��� ���� ���ε�: 
+//     // - MatrixBuffer�� register(b0)��, Vertex Shader�� ���ε�
+//     // - GridConstantBuffer�� register(b1)��, Vertex�� Pixel Shader�� ���ε� (�ȼ� ���̴��� �ʿ信 ����)
+//     if (ConstantBuffer && GridConstantBuffer)
+//     {
+//         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);     // MatrixBuffer (b0)
+//         Graphics->DeviceContext->VSSetConstantBuffers(1, 1, &GridConstantBuffer); // GridParameters (b1)
+//         Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &GridConstantBuffer);
+//         Graphics->DeviceContext->VSSetConstantBuffers(3, 1, &LinePrimitiveBuffer);
+//         Graphics->DeviceContext->VSSetShaderResources(2, 1, &pBBSRV);
+//         Graphics->DeviceContext->VSSetShaderResources(3, 1, &pConeSRV);
+//         Graphics->DeviceContext->VSSetShaderResources(4, 1, &pOBBSRV);
+//     }
+// }
 
-    // ��� ���� ���ε�: 
-    // - MatrixBuffer�� register(b0)��, Vertex Shader�� ���ε�
-    // - GridConstantBuffer�� register(b1)��, Vertex�� Pixel Shader�� ���ε� (�ȼ� ���̴��� �ʿ信 ����)
-    if (ConstantBuffer && GridConstantBuffer)
-    {
-        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);     // MatrixBuffer (b0)
-        Graphics->DeviceContext->VSSetConstantBuffers(1, 1, &GridConstantBuffer); // GridParameters (b1)
-        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &GridConstantBuffer);
-        Graphics->DeviceContext->VSSetConstantBuffers(3, 1, &LinePrimitiveBuffer);
-        Graphics->DeviceContext->VSSetShaderResources(2, 1, &pBBSRV);
-        Graphics->DeviceContext->VSSetShaderResources(3, 1, &pConeSRV);
-        Graphics->DeviceContext->VSSetShaderResources(4, 1, &pOBBSRV);
-    }
-}
-
-void FRenderer::ReleaseLineShader() const
-{
-    if (GridConstantBuffer) GridConstantBuffer->Release();
-    if (LinePrimitiveBuffer) LinePrimitiveBuffer->Release();
-    if (VertexLineShader) VertexLineShader->Release();
-    if (PixelLineShader) PixelLineShader->Release();
-}
+// void FRenderer::ReleaseLineShader() const
+// {
+//     if (GridConstantBuffer) GridConstantBuffer->Release();
+//     if (LinePrimitiveBuffer) LinePrimitiveBuffer->Release();
+//     if (VertexLineShader) VertexLineShader->Release();
+//     if (PixelLineShader) PixelLineShader->Release();
+// }
 
 ID3D11ShaderResourceView* FRenderer::CreateBoundingBoxSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes)
 {
@@ -890,7 +996,7 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
 
 void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    PrepareShader();
+    PrepareShader(TEXT("StaticMesh"));
     for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
     {
         FMatrix Model = JungleMath::CreateModelMatrix(
@@ -1003,7 +1109,7 @@ void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorV
 
 void FRenderer::RenderBillboards(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    PrepareTextureShader();
+    PrepareShader(TEXT("Texture"));
     PrepareSubUVConstant();
     
     for (auto BillboardComp : BillboardObjs)
@@ -1024,24 +1130,24 @@ void FRenderer::RenderBillboards(ULevel* Level, std::shared_ptr<FEditorViewportC
         if (UParticleSubUVComp* SubUVParticle = Cast<UParticleSubUVComp>(BillboardComp))
         {
             RenderTexturePrimitive(
-                SubUVParticle->vertexSubUVBuffer, SubUVParticle->numTextVertices,
-                SubUVParticle->indexTextureBuffer, SubUVParticle->numIndices, SubUVParticle->Texture->TextureSRV, SubUVParticle->Texture->SamplerState
+                SubUVParticle->vertexSubUVBuffer, SubUVParticle->indexTextureBuffer,
+                SubUVParticle->numIndices, SubUVParticle->Texture->TextureSRV, SubUVParticle->Texture->SamplerState
             );
         }
         else
         {
             RenderTexturePrimitive(
-                BillboardComp->vertexTextureBuffer, BillboardComp->numVertices,
-                BillboardComp->indexTextureBuffer, BillboardComp->numIndices, BillboardComp->Texture->TextureSRV, BillboardComp->Texture->SamplerState
+                BillboardComp->vertexTextureBuffer, BillboardComp->indexTextureBuffer,
+                BillboardComp->numIndices, BillboardComp->Texture->TextureSRV, BillboardComp->Texture->SamplerState
             );
         }
     }
-    PrepareShader();
+    PrepareShader(TEXT("StaticMesh"));
 }
 
 void FRenderer::RenderTexts(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    PrepareFontShader();
+    PrepareShader(TEXT("Font"));
     PrepareSubUVConstant();
     
     for (auto TextComps : TextObjs)
@@ -1091,7 +1197,7 @@ void FRenderer::RenderTexts(ULevel* Level, std::shared_ptr<FEditorViewportClient
             );
         }
     }
-    PrepareShader();
+    PrepareShader(TEXT("StaticMesh"));
 }
 
 void FRenderer::RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)

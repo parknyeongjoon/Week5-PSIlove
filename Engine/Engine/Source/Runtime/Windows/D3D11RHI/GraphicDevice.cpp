@@ -478,7 +478,7 @@ bool FGraphicsDevice::CreateVertexShader(const FString& fileName, ID3DBlob** ppC
 #ifdef  _DEBUG
     shaderFlags |= D3DCOMPILE_DEBUG;
 #endif
-    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+    //shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
     ID3DBlob* errorBlob = nullptr;
 
@@ -486,7 +486,7 @@ bool FGraphicsDevice::CreateVertexShader(const FString& fileName, ID3DBlob** ppC
     const std::filesystem::path fullpath = current / TEXT("Shaders") / *fileName;
     const std::wstring shaderFilePath = fullpath.wstring();
 
-    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
+    const HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
 
     if (FAILED(hr))
     {

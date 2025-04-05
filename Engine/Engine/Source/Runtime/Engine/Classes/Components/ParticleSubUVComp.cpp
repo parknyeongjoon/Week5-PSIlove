@@ -1,8 +1,6 @@
-#include "Engine/Source/Editor/PropertyEditor/ShowFlags.h"
 #include "ParticleSubUVComp.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "Level.h"
-#include "LevelEditor/SLevelEditor.h"
 
 
 UParticleSubUVComp::UParticleSubUVComp()
@@ -124,6 +122,10 @@ void UParticleSubUVComp::CreateSubUVVertexBuffer()
 	vertices[3].u = normalWidthOffset;
 	vertices[3].v = normalHeightOffset;
 
+    const FString Name(Texture->Name.c_str());
 	vertexSubUVBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(vertices);
+    FEngineLoop::renderer.AddOrSetVertexBuffer(Name, vertexSubUVBuffer, sizeof(FVertexTexture));
+    
 	numTextVertices = static_cast<UINT>(vertices.Num());
+    FEngineLoop::renderer.AddOrSetIndexBuffer(Name, vertexSubUVBuffer, numTextVertices);
 }

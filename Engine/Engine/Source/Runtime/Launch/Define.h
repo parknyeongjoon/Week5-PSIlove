@@ -135,12 +135,35 @@ enum class EShaderStage
     End,
 };
 
-enum class ECBType
+// ShaderType과 Constant 이름을 결합한 키 구조체
+struct FShaderConstantKey
 {
-    Transform,
-    None,
-    End,
+    EShaderStage ShaderType;  // 예: Vertex, Pixel 등
+    FString ConstantName;    // 상수 버퍼 내 상수 이름
+
+    // 동등 비교 연산자: 두 키가 동일하면 true
+    bool operator==(const FShaderConstantKey& Other) const
+    {
+        return ShaderType == Other.ShaderType && ConstantName == Other.ConstantName;
+    }
 };
+
+// std::hash 특수화를 통해 FShaderConstantKey를 해시 기반 컨테이너에서 사용할 수 있게 함
+namespace std
+{
+    template<>
+    struct hash<FShaderConstantKey>
+    {
+        std::size_t operator()(const FShaderConstantKey& Key) const noexcept
+        {
+            // EShaderType은 enum class이므로 int로 캐스팅하여 해시를 계산
+            std::size_t h1 = std::hash<int>()(static_cast<int>(Key.ShaderType));
+            std::size_t h2 = std::hash<FString>()(Key.ConstantName);
+            // 간단한 해시 결합: XOR과 쉬프트 사용 (더 복잡한 해시 결합도 가능)
+            return h1 ^ (h2 << 1);
+        }
+    };
+}
 
 enum class ESamplerType
 {

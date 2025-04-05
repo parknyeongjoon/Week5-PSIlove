@@ -88,6 +88,29 @@ public:
     FString(const std::string& InString) : PrivateString(InString) {}
     FString(const ANSICHAR* InString) : PrivateString(InString) {}
 #endif
+#if !USE_WIDECHAR
+public:
+    // std::wstring을 받아서 UTF-8 기반의 std::string으로 변환하는 생성자
+    FString(const std::wstring& InWString)
+    {
+        if (InWString.empty())
+        {
+            PrivateString.clear();
+        }
+        else
+        {
+            // 널 문자를 포함한 크기를 계산합니다.
+            int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, InWString.c_str(), -1, nullptr, 0, nullptr, nullptr);
+            if (sizeNeeded > 0)
+            {
+                std::string result(sizeNeeded, 0);
+                WideCharToMultiByte(CP_UTF8, 0, InWString.c_str(), -1, &result[0], sizeNeeded, nullptr, nullptr);
+                // result에는 널문자까지 포함되어 있으므로, 이를 제외한 문자열을 저장합니다.
+                PrivateString = result.substr(0, result.size() - 1);
+            }
+        }
+    }
+#endif
 
 #if USE_WIDECHAR
 	FORCEINLINE std::string ToAnsiString() const
