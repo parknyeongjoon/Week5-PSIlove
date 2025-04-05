@@ -414,7 +414,7 @@ void FRenderer::UpdateLightBuffer(TArray<ULightComponent*> lightComponents) cons
     Graphics->DeviceContext->Unmap(LightArrConstantBuffer, 0);
 }
 
-void FRenderer::UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const
+void FRenderer::UpdateConstant(const FMatrix& Model, const FMatrix& ViewProjection, const FMatrix& NormalMatrix, bool IsSelected) const
 {
     if (ConstantBuffer)
     {
@@ -423,7 +423,8 @@ void FRenderer::UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, 
         Graphics->DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
         {
             FConstants* constants = static_cast<FConstants*>(ConstantBufferMSR.pData);
-            constants->MVP = MVP;
+            constants->Model = Model;
+            constants->ViewProjection = ViewProjection;
             constants->ModelMatrixInverseTranspose = NormalMatrix;
             constants->IsSelected = IsSelected;
         }
@@ -1114,16 +1115,11 @@ void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewpor
             StaticMeshComp->GetWorldScale()
         );
         // 최종 MVP 행렬
-        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+        FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
         // 노말 회전시 필요 행렬
         FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
-        if (Level->GetSelectedActor() == StaticMeshComp->GetOwner())
-        {
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-        }
-        else
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
+
+        UpdateConstant(Model, VP, NormalMatrix, Level->GetSelectedActor() == StaticMeshComp->GetOwner());
 
         if (USkySphereComponent* skysphere = Cast<USkySphereComponent>(StaticMeshComp))
         {
@@ -1191,14 +1187,10 @@ void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorV
             GizmoComp->GetWorldScale()
         );
         FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        FVector4 UUIDColor = GizmoComp->EncodeUUID() / 255.0f;
 
-        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-
-        if (GizmoComp == Level->GetPickingGizmo())
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-        else
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
+        FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+        
+        UpdateConstant(Model, VP, NormalMatrix, GizmoComp == Level->GetPickingGizmo());
 
         if (!GizmoComp->GetStaticMesh()) continue;
 
@@ -1228,13 +1220,10 @@ void FRenderer::RenderBillboards(ULevel* Level, std::shared_ptr<FEditorViewportC
         FMatrix Model = BillboardComp->CreateBillboardMatrix();
 
         // 최종 MVP 행렬
-        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+        FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
         FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        FVector4 UUIDColor = BillboardComp->EncodeUUID() / 255.0f;
-        if (BillboardComp == Level->GetPickingGizmo())
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-        else
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
+        
+        UpdateConstant(Model, VP, NormalMatrix, BillboardComp == Level->GetPickingGizmo());
 
         if (UParticleSubUVComp* SubUVParticle = Cast<UParticleSubUVComp>(BillboardComp))
         {
@@ -1268,13 +1257,10 @@ void FRenderer::RenderTexts(ULevel* Level, std::shared_ptr<FEditorViewportClient
             FMatrix Model = Text->CreateBillboardMatrix();
 
             // 최종 MVP 행렬
-            FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+            FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
             FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-            FVector4 UUIDColor = TextComps->EncodeUUID() / 255.0f;
-            if (TextComps == Level->GetPickingGizmo())
-                UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-            else
-                UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
+            
+            UpdateConstant(Model, VP, NormalMatrix, TextComps == Level->GetPickingGizmo());
             
             FEngineLoop::renderer.RenderTextPrimitive(
                 Text->vertexTextBuffer, Text->numTextVertices,
@@ -1292,13 +1278,10 @@ void FRenderer::RenderTexts(ULevel* Level, std::shared_ptr<FEditorViewportClient
             );
 
             // 최종 MVP 행렬
-            FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+            FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
             FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-            FVector4 UUIDColor = TextComps->EncodeUUID() / 255.0f;
-            if (TextComps == Level->GetPickingGizmo())
-                UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-            else
-                UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
+
+            UpdateConstant(Model, VP, NormalMatrix, TextComps == Level->GetPickingGizmo());
             
             FEngineLoop::renderer.RenderTextPrimitive(
                 Text->vertexTextBuffer, Text->numTextVertices,

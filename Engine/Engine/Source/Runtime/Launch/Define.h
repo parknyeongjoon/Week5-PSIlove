@@ -275,7 +275,8 @@ struct FMaterialConstants {
 };
 
 struct FConstants {
-    FMatrix MVP;      // 모델
+    FMatrix Model;      // 모델
+    FMatrix ViewProjection;      // 모델
     FMatrix ModelMatrixInverseTranspose; // normal 변환을 위한 행렬
     bool IsSelected;
     FVector pad;
