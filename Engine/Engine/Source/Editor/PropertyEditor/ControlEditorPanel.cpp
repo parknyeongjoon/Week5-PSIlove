@@ -275,60 +275,63 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                 switch (static_cast<OBJECTS>(primitive.obj))
                 {
                 case OBJ_SPHERE:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_SPHERE"));
-                    SpawnedActor->AddComponent<USphereComp>();
-                    break;
-                }
+                    {
+                        AStaticMeshActor* TempActor = level->SpawnActor<AStaticMeshActor>();
+                        TempActor->SetActorLabel(TEXT("OBJ_SPHERE"));
+                        UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
+                        FManagerOBJ::CreateStaticMesh("Assets/Sphere.obj");
+                        auto mesh = FManagerOBJ::GetStaticMesh(L"Sphere.obj");
+                        MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Sphere.obj"));
+                        break;
+                    }
                 case OBJ_CUBE:
-                {
-                    AStaticMeshActor* TempActor = level->SpawnActor<AStaticMeshActor>();
-                    TempActor->SetActorLabel(TEXT("OBJ_CUBE"));
-                    UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
-                    FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
-                    MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"helloBlender.obj"));
-                    break;
-                }
+                    {
+                        AStaticMeshActor* TempActor = level->SpawnActor<AStaticMeshActor>();
+                        TempActor->SetActorLabel(TEXT("OBJ_CUBE"));
+                        UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
+                        FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
+                        MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"helloBlender.obj"));
+                        break;
+                    }
                 case OBJ_SpotLight:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
-                    auto a = SpawnedActor->AddComponent<ULightComponent>();
-                    UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
-                    BillboardComp->SetTexture(L"Editor/Icon/SpotLight_64x.png");
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
+                        auto a = SpawnedActor->AddComponent<ULightComponent>();
+                        UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
+                        BillboardComp->SetTexture(L"Editor/Icon/SpotLight_64x.png");
                     
-                    break;
-                }
+                        break;
+                    }
                 case OBJ_PARTICLE:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_PARTICLE"));
-                    UParticleSubUVComp* ParticleComponent = SpawnedActor->AddComponent<UParticleSubUVComp>();
-                    ParticleComponent->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
-                    ParticleComponent->SetRowColumnCount(6, 6);
-                    ParticleComponent->SetScale(FVector(10.0f, 10.0f, 1.0f));
-                    ParticleComponent->Activate();
-                    break;
-                }
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_PARTICLE"));
+                        UParticleSubUVComp* ParticleComponent = SpawnedActor->AddComponent<UParticleSubUVComp>();
+                        ParticleComponent->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
+                        ParticleComponent->SetRowColumnCount(6, 6);
+                        ParticleComponent->SetScale(FVector(10.0f, 10.0f, 1.0f));
+                        ParticleComponent->Activate();
+                        break;
+                    }
                 case OBJ_Text:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_Text"));
-                    UTextRenderComponent* TextComponent = SpawnedActor->AddComponent<UTextRenderComponent>();
-                    TextComponent->SetTexture(L"Assets/Texture/font.png");
-                    TextComponent->SetRowColumnCount(106, 106);
-                    TextComponent->SetText(L"안녕하세요 Jungle 1");
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_Text"));
+                        UTextRenderComponent* TextComponent = SpawnedActor->AddComponent<UTextRenderComponent>();
+                        TextComponent->SetTexture(L"Assets/Texture/font.png");
+                        TextComponent->SetRowColumnCount(106, 106);
+                        TextComponent->SetText(L"안녕하세요 Jungle 1");
                         TextComponent->SetRotation(FVector(90.f, 0.f, 0.f));
-                    break;
-                }
+                        break;
+                    }
                 case OBJ_BILLBOARD:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_BILLBOARD"));
-                    UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
-                    BillboardComp->SetTexture(L"Editor/Icon/S_Actor.png");
-                }
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_BILLBOARD"));
+                        UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
+                        BillboardComp->SetTexture(L"Editor/Icon/S_Actor.png");
+                    }
                 case OBJ_TRIANGLE:
                 case OBJ_CAMERA:
                 case OBJ_PLAYER:
