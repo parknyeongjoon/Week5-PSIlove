@@ -31,6 +31,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateTextureShader();
     CreateFontShader();
     CreateLineShader();
+    
     CreateConstantBuffer();
     CreateLightingBuffer();
     CreateLitUnlitBuffer();
@@ -51,27 +52,103 @@ void FRenderer::CreateShader()
     ID3DBlob* VertexShaderCSO;
     ID3DBlob* PixelShaderCSO;
 
-    D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, nullptr);
-    Graphics->Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
-
-    D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
-    Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
+    Graphics->CreateVertexShader(TEXT("StaticMeshVertexShader.hlsl"), &VertexShaderCSO, &VertexShader);
+    Graphics->CreatePixelShader(TEXT("StaticMeshPixelShader.hlsl"), &PixelShaderCSO, &PixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
 
     Graphics->Device->CreateInputLayout(
         layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
     );
-
+    
     Stride = sizeof(FVertexSimple);
+
+    ShaderPrograms.Add(TEXT("StaticMesh"), FShaderProgram(VertexShader, PixelShader, InputLayout, sizeof(FVertexSimple)));
+    
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
+}
+
+void FRenderer::CreateTextureShader()
+{
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+
+    Graphics->CreateVertexShader(TEXT("TextureVertexShader.hlsl"), &VertexShaderCSO, &TextureVertexShader);
+    Graphics->CreatePixelShader(TEXT("TexturePixelShader.hlsl"), &PixelShaderCSO, &TexturePixelShader);
+
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+    };
+    
+    Graphics->Device->CreateInputLayout(
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &TextureInputLayout
+    );
+    
+    TextureStride = sizeof(FVertexTexture);
+    ShaderPrograms.Add(TEXT("Texture"), FShaderProgram(TextureVertexShader, TexturePixelShader, TextureInputLayout, sizeof(FVertexTexture)));
+    
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
+}
+
+void FRenderer::CreateFontShader()
+{
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+
+    Graphics->CreateVertexShader(TEXT("FontVertexShader.hlsl"), &VertexShaderCSO, &FontVertexShader);
+    Graphics->CreatePixelShader(TEXT("FontPixelShader.hlsl"), &PixelShaderCSO, &FontPixelShader);
+
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+    };
+    
+    Graphics->Device->CreateInputLayout(
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &FontInputLayout
+    );
+
+    TextureStride = sizeof(FVertexTexture);
+
+    ShaderPrograms.Add(TEXT("Texture"), FShaderProgram(TextureVertexShader, TexturePixelShader, TextureInputLayout, sizeof(FVertexTexture)));
+
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
+}
+
+void FRenderer::CreateLineShader()
+{
+    ID3DBlob* VertexShaderLine;
+    ID3DBlob* PixelShaderLine;
+    
+    Graphics->CreateVertexShader(TEXT("ShaderLineVertexShader.hlsl"), &VertexShaderLine, &VertexLineShader);
+    Graphics->CreatePixelShader(TEXT("ShaderLinePixelShader.hlsl"), &PixelShaderLine, &PixelLineShader);
+
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
+    {
+        // 정점 ID: 32비트 부호 없는 정수, 입력 슬로트 0, Per-Vertex 데이터
+        { "SV_VertexID", 0, DXGI_FORMAT_R32_UINT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    
+        // 인스턴스 ID: 32비트 부호 없는 정수, 입력 슬로트 1, Per-Instance 데이터
+        { "SV_InstanceID", 0, DXGI_FORMAT_R32_UINT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+    };
+
+    Graphics->Device->CreateInputLayout(
+    layoutDesc, ARRAYSIZE(layoutDesc), VertexShaderLine->GetBufferPointer(), VertexShaderLine->GetBufferSize(), &LineInputLayout
+    );
+    
+    ShaderPrograms.Add(TEXT("Line"), FShaderProgram(VertexLineShader, PixelLineShader, LineInputLayout, sizeof(FSimpleVertex)));
+    
+    VertexShaderLine->Release();
+    PixelShaderLine->Release();
 }
 
 void FRenderer::ReleaseShader()
@@ -111,48 +188,6 @@ void FRenderer::PrepareShader() const
         Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBufer);
     }
-}
-
-void FRenderer::ResetVertexShader() const
-{
-    Graphics->DeviceContext->VSSetShader(nullptr, nullptr, 0);
-    VertexShader->Release();
-}
-
-void FRenderer::ResetPixelShader() const
-{
-    Graphics->DeviceContext->PSSetShader(nullptr, nullptr, 0);
-    PixelShader->Release();
-}
-
-void FRenderer::SetVertexShader(const FWString& filename, const FString& funcname, const FString& version)
-{
-    // ���� �߻��� ���ɼ��� ����
-    if (Graphics == nullptr)
-        assert(0);
-    if (VertexShader != nullptr)
-        ResetVertexShader();
-    if (InputLayout != nullptr)
-        InputLayout->Release();
-    ID3DBlob* vertexshaderCSO;
-
-    D3DCompileFromFile(filename.c_str(), nullptr, nullptr, *funcname, *version, 0, 0, &vertexshaderCSO, nullptr);
-    Graphics->Device->CreateVertexShader(vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), nullptr, &VertexShader);
-    vertexshaderCSO->Release();
-}
-
-void FRenderer::SetPixelShader(const FWString& filename, const FString& funcname, const FString& version)
-{
-    // ���� �߻��� ���ɼ��� ����
-    if (Graphics == nullptr)
-        assert(0);
-    if (VertexShader != nullptr)
-        ResetVertexShader();
-    ID3DBlob* pixelshaderCSO;
-    D3DCompileFromFile(filename.c_str(), nullptr, nullptr, *funcname, *version, 0, 0, &pixelshaderCSO, nullptr);
-    Graphics->Device->CreatePixelShader(pixelshaderCSO->GetBufferPointer(), pixelshaderCSO->GetBufferSize(), nullptr, &PixelShader);
-
-    pixelshaderCSO->Release();
 }
 
 void FRenderer::ChangeViewMode(EViewModeIndex evi) const
@@ -242,71 +277,20 @@ void FRenderer::RenderTexturedModelPrimitive(
     Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
 }
 
-ID3D11Buffer* FRenderer::CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const
+ID3D11Buffer* FRenderer::CreateIndexBuffer(uint32* indices, uint32 indicesSize) const
 {
-    // 2. Create a vertex buffer
-    D3D11_BUFFER_DESC vertexbufferdesc = {};
-    vertexbufferdesc.ByteWidth = byteWidth;
-    vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
-    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    TArray<uint32> indicesToCopy;
+    indicesToCopy.AppendArray(indices, indicesSize);
 
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {vertices};
-
-    ID3D11Buffer* vertexBuffer;
-
-    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
-    if (FAILED(hr))
-    {
-        UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
-    }
-    return vertexBuffer;
+    return CreateIndexBuffer(indicesToCopy);
 }
 
-ID3D11Buffer* FRenderer::CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const
-{
-    D3D11_BUFFER_DESC vertexbufferdesc = {};
-    vertexbufferdesc.ByteWidth = byteWidth;
-    vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
-    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD;
-    vertexbufferSRD.pSysMem = vertices.GetData();
-
-    ID3D11Buffer* vertexBuffer;
-
-    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
-    if (FAILED(hr))
-    {
-        UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
-    }
-    return vertexBuffer;
-}
-
-ID3D11Buffer* FRenderer::CreateIndexBuffer(uint32* indices, UINT byteWidth) const
+ID3D11Buffer* FRenderer::CreateIndexBuffer(const TArray<uint32>& indices) const
 {
     D3D11_BUFFER_DESC indexbufferdesc = {};              // buffer�� ����, �뵵 ���� ����
     indexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;       // immutable: gpu�� �б� �������� ������ �� �ִ�.
     indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; // index buffer�� ����ϰڴ�.
-    indexbufferdesc.ByteWidth = byteWidth;               // buffer ũ�� ����
-
-    D3D11_SUBRESOURCE_DATA indexbufferSRD = {indices};
-
-    ID3D11Buffer* indexBuffer;
-
-    HRESULT hr = Graphics->Device->CreateBuffer(&indexbufferdesc, &indexbufferSRD, &indexBuffer);
-    if (FAILED(hr))
-    {
-        UE_LOG(LogLevel::Warning, "IndexBuffer Creation faild");
-    }
-    return indexBuffer;
-}
-
-ID3D11Buffer* FRenderer::CreateIndexBuffer(const TArray<uint32>& indices, UINT byteWidth) const
-{
-    D3D11_BUFFER_DESC indexbufferdesc = {};              // buffer�� ����, �뵵 ���� ����
-    indexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;       // immutable: gpu�� �б� �������� ������ �� �ִ�.
-    indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; // index buffer�� ����ϰڴ�.
-    indexbufferdesc.ByteWidth = byteWidth;               // buffer ũ�� ����
+    indexbufferdesc.ByteWidth = sizeof(uint32) * indices.Num();               // buffer ũ�� ����
 
     D3D11_SUBRESOURCE_DATA indexbufferSRD;
     indexbufferSRD.pSysMem = indices.GetData();
@@ -531,43 +515,6 @@ void FRenderer::UpdateTextureConstant(float UOffset, float VOffset)
     }
 }
 
-void FRenderer::CreateFontShader()
-{
-    ID3DBlob* VertexShaderCSO;
-    ID3DBlob* PixelShaderCSO;
-
-    HRESULT hr;
-    hr = D3DCompileFromFile(L"Shaders/FontVertexShader.hlsl", nullptr, nullptr, "main", "vs_5_0", 0, 0, &VertexShaderCSO, nullptr);
-    if (FAILED(hr))
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "VertexShader Error");
-    }
-    Graphics->Device->CreateVertexShader(
-        VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &FontVertexShader
-    );
-
-    hr = D3DCompileFromFile(L"Shaders/FontPixelShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
-    if (FAILED(hr))
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "PixelShader Error");
-    }
-    Graphics->Device->CreatePixelShader(
-        PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &FontPixelShader
-    );
-
-    D3D11_INPUT_ELEMENT_DESC layout[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
-    };
-    Graphics->Device->CreateInputLayout(
-        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &FontInputLayout
-    );
-
-    TextureStride = sizeof(FVertexTexture);
-    VertexShaderCSO->Release();
-    PixelShaderCSO->Release();
-}
-
 void FRenderer::ReleaseFontShader()
 {
     if (FontVertexShader)
@@ -592,44 +539,6 @@ void FRenderer::PrepareFontShader() const
     Graphics->DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(FontPixelShader, nullptr, 0);
     Graphics->DeviceContext->IASetInputLayout(FontInputLayout);
-}
-
-void FRenderer::CreateTextureShader()
-{
-    ID3DBlob* VertexShaderCSO;
-    ID3DBlob* PixelShaderCSO;
-
-    HRESULT hr;
-    hr = D3DCompileFromFile(L"Shaders/TextureVertexShader.hlsl", nullptr, nullptr, "main", "vs_5_0", 0, 0, &VertexShaderCSO, nullptr);
-    if (FAILED(hr))
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "VertexShader Error");
-    }
-    Graphics->Device->CreateVertexShader(
-        VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &TextureVertexShader
-    );
-
-    hr = D3DCompileFromFile(L"Shaders/TexturePixelShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
-    if (FAILED(hr))
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "PixelShader Error");
-    }
-    Graphics->Device->CreatePixelShader(
-        PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &TexturePixelShader
-    );
-
-    D3D11_INPUT_ELEMENT_DESC layout[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
-    };
-    Graphics->Device->CreateInputLayout(
-        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &TextureInputLayout
-    );
-
-    //�ڷᱸ�� ���� �ʿ�
-    TextureStride = sizeof(FVertexTexture);
-    VertexShaderCSO->Release();
-    PixelShaderCSO->Release();
 }
 
 void FRenderer::ReleaseTextureShader()
@@ -673,45 +582,6 @@ void FRenderer::PrepareTextureShader() const
     {
         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
     }
-}
-
-ID3D11Buffer* FRenderer::CreateVertexTextureBuffer(FVertexTexture* vertices, UINT byteWidth) const
-{
-    // 2. Create a vertex buffer
-    D3D11_BUFFER_DESC vertexbufferdesc = {};
-    vertexbufferdesc.ByteWidth = byteWidth;
-    vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC; // will never be updated 
-    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    //D3D11_SUBRESOURCE_DATA vertexbufferSRD = { vertices };
-
-    ID3D11Buffer* vertexBuffer;
-
-    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, nullptr, &vertexBuffer);
-    if (FAILED(hr))
-    {
-        UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
-    }
-    return vertexBuffer;
-}
-
-ID3D11Buffer* FRenderer::CreateIndexTextureBuffer(uint32* indices, UINT byteWidth) const
-{
-    D3D11_BUFFER_DESC indexbufferdesc = {};
-    indexbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    indexbufferdesc.ByteWidth = byteWidth;
-    indexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-    ID3D11Buffer* indexBuffer;
-
-    HRESULT hr = Graphics->Device->CreateBuffer(&indexbufferdesc, nullptr, &indexBuffer);
-    if (FAILED(hr))
-    {
-        return nullptr;
-    }
-    return indexBuffer;
 }
 
 void FRenderer::RenderTexturePrimitive(
@@ -762,27 +632,6 @@ void FRenderer::RenderTextPrimitive(
     Graphics->DeviceContext->Draw(numVertices, 0);
 }
 
-
-ID3D11Buffer* FRenderer::CreateVertexBuffer(FVertexTexture* vertices, UINT byteWidth) const
-{
-    // 2. Create a vertex buffer
-    D3D11_BUFFER_DESC vertexbufferdesc = {};
-    vertexbufferdesc.ByteWidth = byteWidth;
-    vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
-    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {vertices};
-
-    ID3D11Buffer* vertexBuffer;
-
-    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
-    if (FAILED(hr))
-    {
-        UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
-    }
-    return vertexBuffer;
-}
-
 void FRenderer::UpdateSubUVConstant(float _indexU, float _indexV) const
 {
     if (SubUVConstantBuffer)
@@ -813,6 +662,7 @@ void FRenderer::PrepareLineShader() const
     // ���̴��� �Է� ���̾ƿ� ����
     Graphics->DeviceContext->VSSetShader(VertexLineShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(PixelLineShader, nullptr, 0);
+    Graphics->DeviceContext->IASetInputLayout(LineInputLayout);
 
     // ��� ���� ���ε�: 
     // - MatrixBuffer�� register(b0)��, Vertex Shader�� ���ε�
@@ -829,98 +679,12 @@ void FRenderer::PrepareLineShader() const
     }
 }
 
-void FRenderer::CreateLineShader()
-{
-    ID3DBlob* VertexShaderLine;
-    ID3DBlob* PixelShaderLine;
-
-    HRESULT hr;
-    hr = D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderLine, nullptr);
-    if (FAILED(hr))
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "VertexShader Error");
-    }
-    Graphics->Device->CreateVertexShader(VertexShaderLine->GetBufferPointer(), VertexShaderLine->GetBufferSize(), nullptr, &VertexLineShader);
-
-    hr = D3DCompileFromFile(L"Shaders/ShaderLine.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderLine, nullptr);
-    if (FAILED(hr))
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "PixelShader Error");
-    }
-    Graphics->Device->CreatePixelShader(PixelShaderLine->GetBufferPointer(), PixelShaderLine->GetBufferSize(), nullptr, &PixelLineShader);
-
-
-    VertexShaderLine->Release();
-    PixelShaderLine->Release();
-}
-
 void FRenderer::ReleaseLineShader() const
 {
     if (GridConstantBuffer) GridConstantBuffer->Release();
     if (LinePrimitiveBuffer) LinePrimitiveBuffer->Release();
     if (VertexLineShader) VertexLineShader->Release();
     if (PixelLineShader) PixelLineShader->Release();
-}
-
-ID3D11Buffer* FRenderer::CreateStaticVerticesBuffer() const
-{
-    FSimpleVertex vertices[2]{{0}, {0}};
-
-    D3D11_BUFFER_DESC vbDesc = {};
-    vbDesc.Usage = D3D11_USAGE_DEFAULT;
-    vbDesc.ByteWidth = sizeof(vertices);
-    vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    vbDesc.CPUAccessFlags = 0;
-    D3D11_SUBRESOURCE_DATA vbInitData = {};
-    vbInitData.pSysMem = vertices;
-    ID3D11Buffer* pVertexBuffer = nullptr;
-    HRESULT hr = Graphics->Device->CreateBuffer(&vbDesc, &vbInitData, &pVertexBuffer);
-    return pVertexBuffer;
-}
-
-ID3D11Buffer* FRenderer::CreateBoundingBoxBuffer(UINT numBoundingBoxes) const
-{
-    D3D11_BUFFER_DESC bufferDesc;
-    bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // ���� ������Ʈ�� ��� DYNAMIC, �׷��� ������ DEFAULT
-    bufferDesc.ByteWidth = sizeof(FBoundingBox) * numBoundingBoxes;
-    bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    bufferDesc.StructureByteStride = sizeof(FBoundingBox);
-
-    ID3D11Buffer* BoundingBoxBuffer = nullptr;
-    Graphics->Device->CreateBuffer(&bufferDesc, nullptr, &BoundingBoxBuffer);
-    return BoundingBoxBuffer;
-}
-
-ID3D11Buffer* FRenderer::CreateOBBBuffer(UINT numBoundingBoxes) const
-{
-    D3D11_BUFFER_DESC bufferDesc;
-    bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // ���� ������Ʈ�� ��� DYNAMIC, �׷��� ������ DEFAULT
-    bufferDesc.ByteWidth = sizeof(FOBB) * numBoundingBoxes;
-    bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    bufferDesc.StructureByteStride = sizeof(FOBB);
-
-    ID3D11Buffer* BoundingBoxBuffer = nullptr;
-    Graphics->Device->CreateBuffer(&bufferDesc, nullptr, &BoundingBoxBuffer);
-    return BoundingBoxBuffer;
-}
-
-ID3D11Buffer* FRenderer::CreateConeBuffer(UINT numCones) const
-{
-    D3D11_BUFFER_DESC bufferDesc = {};
-    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    bufferDesc.ByteWidth = sizeof(FCone) * numCones;
-    bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    bufferDesc.StructureByteStride = sizeof(FCone);
-
-    ID3D11Buffer* ConeBuffer = nullptr;
-    Graphics->Device->CreateBuffer(&bufferDesc, nullptr, &ConeBuffer);
-    return ConeBuffer;
 }
 
 ID3D11ShaderResourceView* FRenderer::CreateBoundingBoxSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes)

@@ -7,7 +7,10 @@
 #include <d3d11.h>
 #include "EngineBaseTypes.h"
 #include "Define.h"
+#include "Container/Map.h"
 #include "Container/Set.h"
+#include "D3D11RHI/GraphicDevice.h"
+#include "Windows/D3D11RHI/FShaderProgram.h"
 
 class UPrimitiveComponent;
 class ULightComponentBase;
@@ -27,15 +30,39 @@ private:
     float litFlag = 0;
 public:
     FGraphicsDevice* Graphics;
-    ID3D11VertexShader* VertexShader = nullptr;
+
+    TMap<FString, FShaderProgram> ShaderPrograms;
+    TMap<FString, ID3D11PixelShader*> PixelShaders;
+    ID3D11PixelShader* FontPixelShader = nullptr;
     ID3D11PixelShader* PixelShader = nullptr;
+    ID3D11PixelShader* TexturePixelShader = nullptr;
+    ID3D11PixelShader* PixelLineShader = nullptr;
+    
+    TMap<FString, ID3D11VertexShader*> VertexShaders;
+    ID3D11VertexShader* FontVertexShader = nullptr;
+    ID3D11VertexShader* VertexShader = nullptr;
+    ID3D11VertexShader* TextureVertexShader = nullptr;
+    ID3D11VertexShader* VertexLineShader = nullptr;
+
+    TMap<FString, ID3D11InputLayout*> InputLayouts;
     ID3D11InputLayout* InputLayout = nullptr;
+    ID3D11InputLayout* TextureInputLayout = nullptr;
+    ID3D11InputLayout* FontInputLayout = nullptr;
+    ID3D11InputLayout* LineInputLayout = nullptr;
+    
     ID3D11Buffer* ConstantBuffer = nullptr;
     ID3D11Buffer* LightingBuffer = nullptr;
     ID3D11Buffer* FlagBuffer = nullptr;
     ID3D11Buffer* MaterialConstantBuffer = nullptr;
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
     ID3D11Buffer* TextureConstantBufer = nullptr;
+    ID3D11Buffer* GridConstantBuffer = nullptr;
+    ID3D11Buffer* LinePrimitiveBuffer = nullptr;
+
+public:
+    ID3D11ShaderResourceView* pBBSRV = nullptr;
+    ID3D11ShaderResourceView* pConeSRV = nullptr;
+    ID3D11ShaderResourceView* pOBBSRV = nullptr;
 
     FLighting lightingData;
 
@@ -58,13 +85,7 @@ public:
     void ReleaseShader();
     void ReleaseBuffer(ID3D11Buffer*& Buffer) const;
     void ReleaseConstantBuffer();
-
-    void ResetVertexShader() const;
-    void ResetPixelShader() const;
     void CreateShader();
-
-    void SetVertexShader(const FWString& filename, const FString& funcname, const FString& version);
-    void SetPixelShader(const FWString& filename, const FString& funcname, const FString& version);
     
     void ChangeViewMode(EViewModeIndex evi) const;
     
@@ -72,10 +93,27 @@ public:
     void CreateConstantBuffer();
     void CreateLightingBuffer();
     void CreateLitUnlitBuffer();
-    ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const;
-    ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
-    ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
-    ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices, UINT byteWidth) const;
+    
+    template<typename T>
+    ID3D11Buffer* CreateImmutableVertexBuffer(const TArray<T>& vertices) const;
+    template<typename T>
+    ID3D11Buffer* CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const;
+    
+    template <typename T>
+    ID3D11Buffer* CreateStructuredBuffer(uint32 numElements) const;
+    
+    template<typename T>
+    ID3D11Buffer* CreateStaticVertexBuffer(const TArray<T>& vertices) const;
+    template<typename T>
+    ID3D11Buffer* CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const;
+    
+    template<typename T>
+    ID3D11Buffer* CreateDynamicVertexBuffer(const TArray<T>& vertices) const;
+    template<typename T>
+    ID3D11Buffer* CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const;
+    
+    ID3D11Buffer* CreateIndexBuffer(uint32* indices, uint32 indicesSize) const;
+    ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices) const;
 
     // update
     void UpdateLightBuffer() const;
@@ -86,14 +124,6 @@ public:
     void UpdateTextureConstant(float UOffset, float VOffset);
 
 public://텍스쳐용 기능 추가
-    ID3D11VertexShader* TextureVertexShader = nullptr;
-    ID3D11PixelShader* TexturePixelShader = nullptr;
-    ID3D11InputLayout* TextureInputLayout = nullptr;
-
-    ID3D11VertexShader* FontVertexShader = nullptr;
-    ID3D11PixelShader* FontPixelShader = nullptr;
-    ID3D11InputLayout* FontInputLayout = nullptr;
-
     uint32 TextureStride;
     struct FSubUVConstant
     {
@@ -112,8 +142,7 @@ public:
     void ReleaseTextureShader();
     
     void PrepareTextureShader() const;
-    ID3D11Buffer* CreateVertexTextureBuffer(FVertexTexture* vertices, UINT byteWidth) const;
-    ID3D11Buffer* CreateIndexTextureBuffer(uint32* indices, UINT byteWidth) const;
+    
     void RenderTexturePrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices,
         ID3D11Buffer* pIndexBuffer, UINT numIndices,
         ID3D11ShaderResourceView* _TextureSRV,
@@ -121,7 +150,6 @@ public:
     void RenderTextPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices,
         ID3D11ShaderResourceView* _TextureSRV,
         ID3D11SamplerState* _SamplerState) const;
-    ID3D11Buffer* CreateVertexBuffer(FVertexTexture* vertices, UINT byteWidth) const;
 
     void UpdateSubUVConstant(float _indexU, float _indexV) const;
     void PrepareSubUVConstant() const;
@@ -135,10 +163,7 @@ public: // line shader
     void PrepareRender(ULevel* Level);
     void UpdateGridConstantBuffer(const FGridParameters& gridParams) const;
     void UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones) const;
-    ID3D11Buffer* CreateStaticVerticesBuffer() const;
-    ID3D11Buffer* CreateBoundingBoxBuffer(UINT numBoundingBoxes) const;
-    ID3D11Buffer* CreateOBBBuffer(UINT numBoundingBoxes) const;
-    ID3D11Buffer* CreateConeBuffer(UINT numCones) const;
+
     ID3D11ShaderResourceView* CreateBoundingBoxSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes);
     ID3D11ShaderResourceView* CreateOBBSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes);
     ID3D11ShaderResourceView* CreateConeSRV(ID3D11Buffer* pConeBuffer, UINT numCones);
@@ -162,14 +187,122 @@ private:
     TArray<UPrimitiveComponent*> TextObjs;
     TArray<UBillboardComponent*> BillboardObjs;
     TArray<ULightComponentBase*> LightObjs;
-
-public:
-    ID3D11VertexShader* VertexLineShader = nullptr;
-    ID3D11PixelShader* PixelLineShader = nullptr;
-    ID3D11Buffer* GridConstantBuffer = nullptr;
-    ID3D11Buffer* LinePrimitiveBuffer = nullptr;
-    ID3D11ShaderResourceView* pBBSRV = nullptr;
-    ID3D11ShaderResourceView* pConeSRV = nullptr;
-    ID3D11ShaderResourceView* pOBBSRV = nullptr;
 };
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateImmutableVertexBuffer(const TArray<T>& vertices) const
+{
+    D3D11_BUFFER_DESC vertexbufferdesc = {};
+    vertexbufferdesc.ByteWidth = sizeof(T) * vertices.Num();
+    vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // 한 번 생성 후 업데이트하지 않음
+    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {};
+    vertexbufferSRD.pSysMem = vertices.GetData();
+
+    ID3D11Buffer* vertexBuffer = nullptr;
+
+    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG(LogLevel::Warning, "VertexBuffer Creation failed");
+        return nullptr;
+    }
+    return vertexBuffer;
+}
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(const TArray<T>& vertices) const
+{
+    D3D11_BUFFER_DESC vertexbufferdesc = {};
+    vertexbufferdesc.ByteWidth = sizeof(T) * vertices.Num();
+    vertexbufferdesc.Usage = D3D11_USAGE_DYNAMIC; // 업데이트 가능
+    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vertexbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {};
+    vertexbufferSRD.pSysMem = vertices.GetData();
+
+    ID3D11Buffer* vertexBuffer = nullptr;
+
+    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG(LogLevel::Warning, "VertexBuffer Creation failed");
+        return nullptr;
+    }
+    return vertexBuffer;
+}
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const
+{
+    TArray<T> verticeArray;
+    verticeArray.AppendArray(vertices, arraySize);
+
+    return CreateImmutableVertexBuffer(verticeArray);
+}
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateStructuredBuffer(const uint32 numElements) const
+{
+    D3D11_BUFFER_DESC bufferDesc = {};
+    bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // CPU가 데이터를 업데이트할 수 있도록 설정
+    bufferDesc.ByteWidth = sizeof(T) * numElements;
+    bufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    bufferDesc.StructureByteStride = sizeof(T);
+
+    ID3D11Buffer* buffer = nullptr;
+    HRESULT hr = Graphics->Device->CreateBuffer(&bufferDesc, nullptr, &buffer);
+    if (FAILED(hr))
+    {
+        UE_LOG(LogLevel::Warning, "Structured Buffer Creation failed");
+        return nullptr;
+    }
+    return buffer;
+}
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateStaticVertexBuffer(const TArray<T>& vertices) const
+{
+    D3D11_BUFFER_DESC vbDesc = {};
+    vbDesc.Usage = D3D11_USAGE_DEFAULT;  // 정적 버퍼: 한 번 생성 후 업데이트하지 않음
+    vbDesc.ByteWidth =  sizeof(T) * vertices.Num(); // 정점 데이터 개수에 따라 총 바이트 크기를 계산합니다.
+    vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vbDesc.CPUAccessFlags = 0;           // CPU에서 직접 접근하지 않음
+
+    D3D11_SUBRESOURCE_DATA vbInitData = {};
+    vbInitData.pSysMem = vertices.GetData();
+
+    ID3D11Buffer* pVertexBuffer = nullptr;
+    HRESULT hr = Graphics->Device->CreateBuffer(&vbDesc, &vbInitData, &pVertexBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG(LogLevel::Warning, "Static Vertex Buffer Creation failed");
+        return nullptr;
+    }
+    return pVertexBuffer;
+}
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const
+{
+    TArray<T> verticeArray;
+    verticeArray.AppendArray(vertices, arraySize);
+
+    return CreateStaticVertexBuffer(verticeArray);
+}
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const
+{
+    TArray<T> verticeArray;
+    verticeArray.AppendArray(vertices, arraySize);
+
+    return CreateDynamicVertexBuffer(verticeArray);
+}
+
+
 

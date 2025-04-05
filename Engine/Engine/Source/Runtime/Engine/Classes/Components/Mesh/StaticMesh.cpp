@@ -63,11 +63,11 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
 
     uint32 verticeNum = staticMeshRenderData->Vertices.Num();
     if (verticeNum <= 0) return;
-    staticMeshRenderData->VertexBuffer = GetEngine().renderer.CreateVertexBuffer(staticMeshRenderData->Vertices, verticeNum * sizeof(FVertexSimple));
+    staticMeshRenderData->VertexBuffer = GetEngine().renderer.CreateImmutableVertexBuffer<FVertexSimple>(staticMeshRenderData->Vertices);
 
     uint32 indexNum = staticMeshRenderData->Indices.Num();
     if (indexNum > 0)
-        staticMeshRenderData->IndexBuffer = GetEngine().renderer.CreateIndexBuffer(staticMeshRenderData->Indices, indexNum * sizeof(uint32));
+        staticMeshRenderData->IndexBuffer = GetEngine().renderer.CreateIndexBuffer(staticMeshRenderData->Indices);
 
     for (int materialIndex = 0; materialIndex < staticMeshRenderData->Materials.Num(); materialIndex++) {
         FStaticMaterial* newMaterialSlot = new FStaticMaterial();

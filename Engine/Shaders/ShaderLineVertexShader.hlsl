@@ -310,8 +310,3 @@ PS_INPUT mainVS(VS_INPUT input)
     output.Color = color;
     return output;
 }
-
-float4 mainPS(PS_INPUT input) : SV_Target
-{
-    return input.Color;
-}

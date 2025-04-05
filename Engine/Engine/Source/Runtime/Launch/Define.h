@@ -10,7 +10,6 @@
 #include "Math/Vector4.h"
 #include "Math/Matrix.h"
 
-
 #define UE_LOG Console::GetInstance().AddLog
 
 #define _TCHAR_DEFINED
@@ -108,6 +107,7 @@ struct FObjMaterialInfo
     FString AlphaTextureName;    // map_d : Alpha texture
     FWString AlphaTexturePath;
 };
+
 enum class EWorldType
 {
     Editor,
@@ -123,7 +123,76 @@ struct FWorldContext
     
 };
 
+enum class EShaderStage
+{
+    VS,		// Vertex Shader
+    HS,		// Hull Shader
+    DS,		// Domain Shader
+    GS,		// Geometry Shader
+    PS,		// Pixel Shader
+    CS,		// Compute Shader
+    All,
+    End,
+};
 
+enum class ECBType
+{
+    Transform,
+    None,
+    End,
+};
+
+enum class ESamplerType
+{
+    Point,
+    Linear,
+    Anisotropic,
+    PostProcess,
+    End,
+};
+
+enum class ERenderingMode
+{
+    Opaque,
+    CutOut,
+    Transparent,
+    PostProcess,
+    End,
+};
+
+enum class ETextureType
+{
+    Albedo,
+    Normal,
+    Specular,
+    Smoothness,
+    Metallic,
+    Sprite,
+    End,
+};
+
+enum class ERasterizerState
+{
+    SolidBack,
+    SolidFront,
+    SolidNone,
+    WireFrame,
+    End,
+};
+
+enum class EBlendState
+{
+    AlphaBlend,
+    OneOne,
+    End,
+};
+
+enum class EDepthStencilState
+{
+    DepthNone,
+    LessEqual,
+    End,
+};
 
 // Cooked Data
 namespace OBJ

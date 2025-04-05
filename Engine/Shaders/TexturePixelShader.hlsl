@@ -18,7 +18,7 @@ struct PSInput
     float2 texCoord : TEXCOORD;
 };
 
-float4 main(PSInput input) : SV_TARGET
+float4 mainPS(PSInput input) : SV_TARGET
 {
     float2 uv = input.texCoord + float2(indexU, indexV);
     float4 col = gTexture.Sample(gSampler, uv);

@@ -1,4 +1,8 @@
 #include "GraphicDevice.h"
+
+#include <cassert>
+#include <d3dcompiler.h>
+#include <filesystem>
 #include <wchar.h>
 void FGraphicsDevice::Initialize(HWND hWindow) {
     CreateDeviceAndSwapChain(hWindow);
@@ -381,90 +385,161 @@ void FGraphicsDevice::ChangeDepthStencilState(ID3D11DepthStencilState* newDetptS
     DeviceContext->OMSetDepthStencilState(newDetptStencil, 0);
 }
 
-uint32 FGraphicsDevice::GetPixelUUID(POINT pt)
+//uint32 FGraphicsDevice::GetPixelUUID(POINT pt)
+//{
+//    // pt.x 값 제한하기
+//    if (pt.x < 0) {
+//        pt.x = 0;
+//    }
+//    else if (pt.x > screenWidth) {
+//        pt.x = screenWidth;
+//    }
+//
+//    // pt.y 값 제한하기
+//    if (pt.y < 0) {
+//        pt.y = 0;
+//    }
+//    else if (pt.y > screenHeight) {
+//        pt.y = screenHeight;
+//    }
+//
+//    // 1. Staging 텍스처 생성 (1x1 픽셀)
+//    D3D11_TEXTURE2D_DESC stagingDesc = {};
+//    stagingDesc.Width = 1; // 픽셀 1개만 복사
+//    stagingDesc.Height = 1;
+//    stagingDesc.MipLevels = 1;
+//    stagingDesc.ArraySize = 1;
+//    stagingDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 원본 텍스처 포맷과 동일
+//    stagingDesc.SampleDesc.Count = 1;
+//    stagingDesc.Usage = D3D11_USAGE_STAGING;
+//    stagingDesc.BindFlags = 0;
+//    stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+//
+//    ID3D11Texture2D* stagingTexture = nullptr;
+//    Device->CreateTexture2D(&stagingDesc, nullptr, &stagingTexture);
+//
+//    // 2. 복사할 영역 정의 (D3D11_BOX)
+//    D3D11_BOX srcBox = {};
+//    srcBox.left = static_cast<UINT>(pt.x);
+//    srcBox.right = srcBox.left + 1; // 1픽셀 너비
+//    srcBox.top = static_cast<UINT>(pt.y);
+//    srcBox.bottom = srcBox.top + 1; // 1픽셀 높이
+//    srcBox.front = 0;
+//    srcBox.back = 1;
+//    FVector4 UUIDColor{ 1, 1, 1, 1 }; 
+//
+//    if (stagingTexture == nullptr)
+//        return DecodeUUIDColor(UUIDColor);
+//
+//    // 3. 특정 좌표만 복사
+//   DeviceContext->CopySubresourceRegion(
+//        stagingTexture, // 대상 텍스처
+//        0,              // 대상 서브리소스
+//        0, 0, 0,        // 대상 좌표 (x, y, z)
+//        UUIDFrameBuffer, // 원본 텍스처
+//        0,              // 원본 서브리소스
+//        &srcBox         // 복사 영역
+//    );
+//
+//    // 4. 데이터 매핑
+//    D3D11_MAPPED_SUBRESOURCE mapped = {};
+//    DeviceContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &mapped);
+//
+//    // 5. 픽셀 데이터 추출 (1x1 텍스처이므로 offset = 0)
+//    const BYTE* pixelData = static_cast<const BYTE*>(mapped.pData);
+//
+//    if (pixelData)
+//    {
+//        UUIDColor.x = static_cast<float>(pixelData[0]); // R
+//        UUIDColor.y = static_cast<float>(pixelData[1]); // G
+//        UUIDColor.z = static_cast<float>(pixelData[2]) ; // B
+//        UUIDColor.a = static_cast<float>(pixelData[3]); // A
+//    }
+//
+//    // 6. 매핑 해제 및 정리
+//    DeviceContext->Unmap(stagingTexture, 0);
+//    if (stagingTexture) stagingTexture->Release(); stagingTexture = nullptr;
+//
+//    return DecodeUUIDColor(UUIDColor);
+//}
+//
+//uint32 FGraphicsDevice::DecodeUUIDColor(FVector4 UUIDColor) {
+//    uint32_t W = static_cast<uint32_t>(UUIDColor.a) << 24;
+//    uint32_t Z = static_cast<uint32_t>(UUIDColor.z) << 16;
+//    uint32_t Y = static_cast<uint32_t>(UUIDColor.y) << 8;
+//    uint32_t X = static_cast<uint32_t>(UUIDColor.x);
+//
+//    return W | Z | Y | X;
+//}
 
+bool FGraphicsDevice::CreateVertexShader(const FString& fileName, ID3DBlob** ppCode, ID3D11VertexShader** ppVertexShader) const
 {
-    // pt.x 값 제한하기
-    if (pt.x < 0) {
-        pt.x = 0;
-    }
-    else if (pt.x > screenWidth) {
-        pt.x = screenWidth;
-    }
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef  _DEBUG
+    shaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
-    // pt.y 값 제한하기
-    if (pt.y < 0) {
-        pt.y = 0;
-    }
-    else if (pt.y > screenHeight) {
-        pt.y = screenHeight;
-    }
+    ID3DBlob* errorBlob = nullptr;
 
-    // 1. Staging 텍스처 생성 (1x1 픽셀)
-    D3D11_TEXTURE2D_DESC stagingDesc = {};
-    stagingDesc.Width = 1; // 픽셀 1개만 복사
-    stagingDesc.Height = 1;
-    stagingDesc.MipLevels = 1;
-    stagingDesc.ArraySize = 1;
-    stagingDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 원본 텍스처 포맷과 동일
-    stagingDesc.SampleDesc.Count = 1;
-    stagingDesc.Usage = D3D11_USAGE_STAGING;
-    stagingDesc.BindFlags = 0;
-    stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    const std::filesystem::path current = std::filesystem::current_path();
+    const std::filesystem::path fullpath = current / TEXT("Shaders") / *fileName;
+    const std::wstring shaderFilePath = fullpath.wstring();
 
-    ID3D11Texture2D* stagingTexture = nullptr;
-    Device->CreateTexture2D(&stagingDesc, nullptr, &stagingTexture);
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
 
-    // 2. 복사할 영역 정의 (D3D11_BOX)
-    D3D11_BOX srcBox = {};
-    srcBox.left = static_cast<UINT>(pt.x);
-    srcBox.right = srcBox.left + 1; // 1픽셀 너비
-    srcBox.top = static_cast<UINT>(pt.y);
-    srcBox.bottom = srcBox.top + 1; // 1픽셀 높이
-    srcBox.front = 0;
-    srcBox.back = 1;
-    FVector4 UUIDColor{ 1, 1, 1, 1 }; 
-
-    if (stagingTexture == nullptr)
-        return DecodeUUIDColor(UUIDColor);
-
-    // 3. 특정 좌표만 복사
-   DeviceContext->CopySubresourceRegion(
-        stagingTexture, // 대상 텍스처
-        0,              // 대상 서브리소스
-        0, 0, 0,        // 대상 좌표 (x, y, z)
-        UUIDFrameBuffer, // 원본 텍스처
-        0,              // 원본 서브리소스
-        &srcBox         // 복사 영역
-    );
-
-    // 4. 데이터 매핑
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    DeviceContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &mapped);
-
-    // 5. 픽셀 데이터 추출 (1x1 텍스처이므로 offset = 0)
-    const BYTE* pixelData = static_cast<const BYTE*>(mapped.pData);
-
-    if (pixelData)
+    if (FAILED(hr))
     {
-        UUIDColor.x = static_cast<float>(pixelData[0]); // R
-        UUIDColor.y = static_cast<float>(pixelData[1]); // G
-        UUIDColor.z = static_cast<float>(pixelData[2]) ; // B
-        UUIDColor.a = static_cast<float>(pixelData[3]); // A
+        if (errorBlob)
+        {
+            // errorBlob에 저장된 메시지를 출력 (디버그 출력이나 콘솔 등)
+            OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+            errorBlob->Release();
+        }
+        abort();
     }
 
-    // 6. 매핑 해제 및 정리
-    DeviceContext->Unmap(stagingTexture, 0);
-    if (stagingTexture) stagingTexture->Release(); stagingTexture = nullptr;
+    if(Device == nullptr)
+        return false;
 
-    return DecodeUUIDColor(UUIDColor);
+    if (FAILED(Device->CreateVertexShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppVertexShader)))
+        return false;
+
+    return true;
 }
 
-uint32 FGraphicsDevice::DecodeUUIDColor(FVector4 UUIDColor) {
-    uint32_t W = static_cast<uint32_t>(UUIDColor.a) << 24;
-    uint32_t Z = static_cast<uint32_t>(UUIDColor.z) << 16;
-    uint32_t Y = static_cast<uint32_t>(UUIDColor.y) << 8;
-    uint32_t X = static_cast<uint32_t>(UUIDColor.x);
+bool FGraphicsDevice::CreatePixelShader(const FString& fileName, ID3DBlob** ppCode, ID3D11PixelShader** ppPixelShader) const
+{
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef  _DEBUG
+    shaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
-    return W | Z | Y | X;
+    ID3DBlob* errorBlob = nullptr;
+
+    const std::filesystem::path current = std::filesystem::current_path();
+    const std::filesystem::path fullpath = current / TEXT("Shaders") / *fileName;
+    const std::wstring shaderFilePath = fullpath.wstring();
+
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", shaderFlags, 0, ppCode, &errorBlob);
+
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            // errorBlob에 저장된 메시지를 출력 (디버그 출력이나 콘솔 등)
+            OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+            errorBlob->Release();
+        }
+        abort();
+    }
+
+    if (Device == nullptr)
+        return false;
+
+    if (FAILED(Device->CreatePixelShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppPixelShader)))
+        return false;
+
+    return true;
 }

@@ -23,7 +23,7 @@ struct PSOutput
     float4 uuid : SV_Target1;
 };
 
-float4 main(PSInput input) : SV_TARGET {
+float4 mainPS(PSInput input) : SV_TARGET {
     PSOutput output;
     
     float2 uv = input.texCoord + float2(indexU, indexV);

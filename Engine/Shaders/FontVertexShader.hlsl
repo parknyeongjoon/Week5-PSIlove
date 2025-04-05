@@ -14,7 +14,7 @@ cbuffer constants : register(b0)
     float Flag;
 }
 
-PSInput main(VSInput input) {
+PSInput mainVS(VSInput input) {
 
 
     PSInput output;

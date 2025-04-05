@@ -107,7 +107,6 @@ void UParticleSubUVComp::UpdateVertexBuffer(const TArray<FVertexTexture>& vertic
 
 void UParticleSubUVComp::CreateSubUVVertexBuffer()
 {
-
 	uint32 CellWidth = Texture->width/CellsPerColumn;
 	uint32 CellHeight = Texture->height/ CellsPerColumn;
 	float normalWidthOffset = float(CellWidth) / float(Texture->width);
@@ -125,6 +124,6 @@ void UParticleSubUVComp::CreateSubUVVertexBuffer()
 	vertices[3].u = normalWidthOffset;
 	vertices[3].v = normalHeightOffset;
 
-	vertexSubUVBuffer = FEngineLoop::renderer.CreateVertexBuffer(vertices.GetData(), static_cast<UINT>(vertices.Num() * sizeof(FVertexTexture)));
+	vertexSubUVBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(vertices);
 	numTextVertices = static_cast<UINT>(vertices.Num());
 }

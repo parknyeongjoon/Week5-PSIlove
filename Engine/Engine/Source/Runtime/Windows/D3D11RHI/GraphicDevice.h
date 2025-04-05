@@ -8,27 +8,35 @@
 
 #include "EngineBaseTypes.h"
 
-#include "Core/HAL/PlatformType.h"
-#include "Core/Math/Vector4.h"
+#include "Container/Map.h"
+#include "Container/String.h"
+#include "Math/Vector4.h"
 
 class FGraphicsDevice {
 public:
     ID3D11Device* Device = nullptr;
     ID3D11DeviceContext* DeviceContext = nullptr;
     IDXGISwapChain* SwapChain = nullptr;
+    TMap<FString, ID3D11Texture2D*> FrameBuffers;
     ID3D11Texture2D* FrameBuffer = nullptr;
     ID3D11Texture2D* UUIDFrameBuffer = nullptr;
+
+    TMap<FString, ID3D11RenderTargetView*> RenderTargetViews;
     ID3D11RenderTargetView* RTVs[2];
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
     ID3D11RenderTargetView* UUIDFrameBufferRTV = nullptr;
+
+    TMap<FString, ID3D11RasterizerState*> DepthStencilViews;
     ID3D11RasterizerState* RasterizerStateSOLID = nullptr;
     ID3D11RasterizerState* RasterizerStateWIREFRAME = nullptr;
+    
     DXGI_SWAP_CHAIN_DESC SwapchainDesc;
-
     
     UINT screenWidth = 0;
     UINT screenHeight = 0;
+    
     // Depth-Stencil 관련 변수
+    TMap<FString, ID3D11DepthStencilState*> DepthStencilStates;
     ID3D11Texture2D* DepthStencilBuffer = nullptr;  // 깊이/스텐실 텍스처
     ID3D11DepthStencilView* DepthStencilView = nullptr;  // 깊이/스텐실 뷰
     ID3D11DepthStencilState* DepthStencilState = nullptr;
@@ -55,8 +63,13 @@ public:
     void ChangeRasterizer(EViewModeIndex evi);
     void ChangeDepthStencilState(ID3D11DepthStencilState* newDetptStencil);
 
-    uint32 GetPixelUUID(POINT pt);
-    uint32 DecodeUUIDColor(FVector4 UUIDColor);
+    //uint32 GetPixelUUID(POINT pt);
+    //uint32 DecodeUUIDColor(FVector4 UUIDColor);
+
+public:
+    bool CreateVertexShader(const FString& fileName, ID3DBlob** ppCode, ID3D11VertexShader** ppVertexShader) const;
+    bool CreatePixelShader(const FString& fileName, ID3DBlob** ppCode, ID3D11PixelShader** ppPixelShader) const;
+
 private:
     ID3D11RasterizerState* CurrentRasterizer = nullptr;
 };
