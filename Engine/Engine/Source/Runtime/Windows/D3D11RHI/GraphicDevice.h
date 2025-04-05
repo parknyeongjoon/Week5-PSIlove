@@ -6,7 +6,6 @@
 #define _TCHAR_DEFINED
 #define SAFE_RELEASE(p) if(p) { p->Release(); p = nullptr; }
 #include <d3d11.h>
-
 #include "EngineBaseTypes.h"
 
 #include "Core/HAL/PlatformType.h"
@@ -23,6 +22,14 @@ public:
     ID3D11Texture2D* NormalBuffer = nullptr;
     ID3D11Texture2D* DiffuseBuffer = nullptr;
     ID3D11Texture2D* MaterialBuffer = nullptr;
+
+    ID3D11ShaderResourceView* GBufferSRVs[4] = {};
+    ID3D11ShaderResourceView* PositionSRV = nullptr;
+    ID3D11ShaderResourceView* NormalSRV = nullptr;
+    ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+    ID3D11ShaderResourceView* MaterialSRV = nullptr;
+
+    ID3D11SamplerState* DefaultSampler = nullptr;
     
     ID3D11RenderTargetView* RTVs[5] = { };
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
@@ -34,7 +41,6 @@ public:
     ID3D11RasterizerState* RasterizerStateSOLID = nullptr;
     ID3D11RasterizerState* RasterizerStateWIREFRAME = nullptr;
     DXGI_SWAP_CHAIN_DESC SwapchainDesc;
-
     
     UINT screenWidth = 0;
     UINT screenHeight = 0;
@@ -48,20 +54,24 @@ public:
 
     void Initialize(HWND hWindow);
     void CreateDeviceAndSwapChain(HWND hWindow);
+    void CreateDefaultSampler();
     void CreateDepthStencilBuffer(HWND hWindow);
     void CreateDepthStencilState();
     void CreateRasterizerState();
     void ReleaseDeviceAndSwapChain();
     void CreateFrameBuffer();
     void CreateGBuffer();
+    void CreateGBufferSRVs();
     void ReleaseFrameBuffer();
     void ReleaseGBuffer();
+    void ReleaseGBufferSRVs();
     void ReleaseRasterizerState();
     void ReleaseDepthStencilResources();
     void Release();
     void SwapBuffer() const;
     void Prepare() const;
-    void Prepare(D3D11_VIEWPORT* viewport);
+    // void Prepare(D3D11_VIEWPORT* viewport) const;
+    void PrepareLight();
     void OnResize(HWND hWindow);
     ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
     void ChangeRasterizer(EViewModeIndex evi);

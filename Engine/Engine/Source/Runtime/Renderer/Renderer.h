@@ -29,6 +29,7 @@ public:
     FGraphicsDevice* Graphics;
     ID3D11VertexShader* VertexShader = nullptr;
     ID3D11PixelShader* PixelShader = nullptr;
+    ID3D11PixelShader* LightingShader = nullptr;
     ID3D11InputLayout* InputLayout = nullptr;
     ID3D11Buffer* ConstantBuffer = nullptr;
     ID3D11Buffer* LightingBuffer = nullptr;
@@ -48,9 +49,8 @@ public:
     void PrepareShader() const;
     
     //Render
-    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const;
-    void RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const;
     void RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<FStaticMaterial*> materials, TArray<UMaterial*> overrideMaterial, int selectedSubMeshIndex) const;
+    void RenderLight();
    
     void RenderTexturedModelPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* InTextureSRV, ID3D11SamplerState* InSamplerState) const;
     //Release
@@ -70,8 +70,6 @@ public:
     
     // CreateBuffer
     void CreateConstantBuffer();
-    void CreateLightingBuffer();
-    void CreateLitUnlitBuffer();
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;

@@ -32,8 +32,6 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateFontShader();
     CreateLineShader();
     CreateConstantBuffer();
-    CreateLightingBuffer();
-    CreateLitUnlitBuffer();
     UpdateLitUnlitConstant(1);
 }
 
@@ -57,6 +55,9 @@ void FRenderer::CreateShader()
     D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
     Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
 
+    D3DCompileFromFile(L"Shaders/LightingShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
+    Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &LightingShader);
+
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -75,23 +76,10 @@ void FRenderer::CreateShader()
 
 void FRenderer::ReleaseShader()
 {
-    if (InputLayout)
-    {
-        InputLayout->Release();
-        InputLayout = nullptr;
-    }
-
-    if (PixelShader)
-    {
-        PixelShader->Release();
-        PixelShader = nullptr;
-    }
-
-    if (VertexShader)
-    {
-        VertexShader->Release();
-        VertexShader = nullptr;
-    }
+    SAFE_RELEASE(InputLayout)
+    SAFE_RELEASE(VertexShader)
+    SAFE_RELEASE(PixelShader)
+    SAFE_RELEASE(LightingShader)
 }
 
 void FRenderer::PrepareShader() const
@@ -168,22 +156,6 @@ void FRenderer::ChangeViewMode(EViewModeIndex evi) const
     }
 }
 
-void FRenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const
-{
-    UINT offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &offset);
-    Graphics->DeviceContext->Draw(numVertices, 0);
-}
-
-void FRenderer::RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const
-{
-    UINT offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &offset);
-    Graphics->DeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-    Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
-}
-
 void FRenderer::RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<FStaticMaterial*> materials, TArray<UMaterial*> overrideMaterial, int selectedSubMeshIndex = -1) const
 {
     UINT offset = 0;
@@ -215,6 +187,11 @@ void FRenderer::RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<F
             Graphics->DeviceContext->DrawIndexed(indexCount, startIndex, 0);
         }
     }
+}
+
+void FRenderer::RenderLight()
+{
+    
 }
 
 void FRenderer::RenderTexturedModelPrimitive(
@@ -356,25 +333,14 @@ void FRenderer::CreateConstantBuffer()
 
     constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
-}
 
-void FRenderer::CreateLightingBuffer()
-{
-    D3D11_BUFFER_DESC constantbufferdesc = {};
-    constantbufferdesc.ByteWidth = sizeof(FLighting);
-    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
+    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
+
+    constantbufferdesc.ByteWidth = sizeof(FLighting) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LightingBuffer);
-}
 
-void FRenderer::CreateLitUnlitBuffer()
-{
-    D3D11_BUFFER_DESC constantbufferdesc = {};
-    constantbufferdesc.ByteWidth = sizeof(FLitUnlitConstants);
-    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    constantbufferdesc.ByteWidth = sizeof(FLitUnlitConstants)+ 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &FlagBuffer);
 }
 
@@ -419,20 +385,20 @@ void FRenderer::ReleaseConstantBuffer()
 
 void FRenderer::UpdateLightBuffer() const
 {
-    if (!LightingBuffer) return;
-    D3D11_MAPPED_SUBRESOURCE mappedResource;
-    Graphics->DeviceContext->Map(LightingBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    {
-        FLighting* constants = static_cast<FLighting*>(mappedResource.pData);
-        constants->lightDirX = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
-        constants->lightDirY = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
-        constants->lightDirZ = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
-        constants->lightColorX = 1.0f;
-        constants->lightColorY = 1.0f;
-        constants->lightColorZ = 1.0f;
-        constants->AmbientFactor = 0.06f;
-    }
-    Graphics->DeviceContext->Unmap(LightingBuffer, 0);
+    // if (!LightingBuffer) return;
+    // D3D11_MAPPED_SUBRESOURCE mappedResource;
+    // Graphics->DeviceContext->Map(LightingBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    // {
+    //     FLighting* constants = static_cast<FLighting*>(mappedResource.pData);
+    //     constants->lightDirX = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
+    //     constants->lightDirY = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
+    //     constants->lightDirZ = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
+    //     constants->lightColorX = 1.0f;
+    //     constants->lightColorY = 1.0f;
+    //     constants->lightColorZ = 1.0f;
+    //     constants->AmbientFactor = 0.06f;
+    // }
+    // Graphics->DeviceContext->Unmap(LightingBuffer, 0);
 }
 
 void FRenderer::UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const

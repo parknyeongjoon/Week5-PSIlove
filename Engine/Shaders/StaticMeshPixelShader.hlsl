@@ -54,6 +54,7 @@ struct PS_INPUT
 
 struct PS_OUTPUT
 {
+    float4 color : SV_TARGET0;
     float4 position : SV_Target1;
     float4 normal : SV_Target2;
     float4 diffuse : SV_Target3;
@@ -123,5 +124,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
     }
     
     output.diffuse = float4(color, Material.TransparencyScalar);
+    output.color = float4(color,Material.TransparencyScalar);
     return output;
 }

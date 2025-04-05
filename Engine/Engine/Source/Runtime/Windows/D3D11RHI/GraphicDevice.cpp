@@ -2,13 +2,16 @@
 #include <wchar.h>
 void FGraphicsDevice::Initialize(HWND hWindow) {
     CreateDeviceAndSwapChain(hWindow);
+    // CreateDefaultSampler();
     CreateFrameBuffer();
     CreateGBuffer();
+    CreateGBufferSRVs();
     CreateDepthStencilBuffer(hWindow);
     CreateDepthStencilState();
     CreateRasterizerState();
     CurrentRasterizer = RasterizerStateSOLID;
 }
+
 void FGraphicsDevice::CreateDeviceAndSwapChain(HWND hWindow) {
     // 지원하는 Direct3D 기능 레벨을 정의
     D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
@@ -41,7 +44,19 @@ void FGraphicsDevice::CreateDeviceAndSwapChain(HWND hWindow) {
     screenHeight = SwapchainDesc.BufferDesc.Height;
 }
 
+void FGraphicsDevice::CreateDefaultSampler()
+{
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
+    Device->CreateSamplerState(&samplerDesc, &DefaultSampler);
+}
 
 void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow) {
 
@@ -207,6 +222,28 @@ void FGraphicsDevice::CreateGBuffer()
     RTVs[4] = MaterialRTV;
 }
 
+void FGraphicsDevice::CreateGBufferSRVs()
+{
+    HRESULT hr = Device->CreateShaderResourceView(PositionBuffer, nullptr, &PositionSRV);
+    if (FAILED(hr)) return;
+    GBufferSRVs[0] = PositionSRV;
+
+    // NormalBuffer에서 SRV 생성
+    hr = Device->CreateShaderResourceView(NormalBuffer, nullptr, &NormalSRV);
+    if (FAILED(hr)) return;
+    GBufferSRVs[1] = NormalSRV;
+
+    // DiffuseBuffer에서 SRV 생성
+    hr = Device->CreateShaderResourceView(DiffuseBuffer, nullptr, &DiffuseSRV);
+    if (FAILED(hr)) return;
+    GBufferSRVs[2] = DiffuseSRV;
+
+    // MaterialBuffer에서 SRV 생성
+    hr = Device->CreateShaderResourceView(MaterialBuffer, nullptr, &MaterialSRV);
+    if (FAILED(hr)) return;
+    GBufferSRVs[3] = MaterialSRV;
+}
+
 void FGraphicsDevice::ReleaseFrameBuffer()
 {
     SAFE_RELEASE(FrameBuffer)
@@ -223,6 +260,14 @@ void FGraphicsDevice::ReleaseGBuffer()
     SAFE_RELEASE(NormalRTV)
     SAFE_RELEASE(DiffuseRTV)
     SAFE_RELEASE(MaterialRTV)
+}
+
+void FGraphicsDevice::ReleaseGBufferSRVs()
+{
+    SAFE_RELEASE(PositionSRV)
+    SAFE_RELEASE(NormalSRV)
+    SAFE_RELEASE(DiffuseSRV)
+    SAFE_RELEASE(MaterialSRV)
 }
 
 void FGraphicsDevice::ReleaseRasterizerState()
@@ -272,21 +317,27 @@ void FGraphicsDevice::Prepare() const
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
-void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport)
+// void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport) const
+// {
+//     DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+//     
+//     DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
+//
+//     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+//
+//     DeviceContext->RSSetViewports(1, viewport); // GPU가 화면을 렌더링할 영역 설정
+//     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+//
+//     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+//
+//     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
+//     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+// }
+
+void FGraphicsDevice::PrepareLight()
 {
-    DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    
-    DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
-
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-
-    DeviceContext->RSSetViewports(1, viewport); // GPU가 화면을 렌더링할 영역 설정
-    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-
-    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-
-    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
-    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+    DeviceContext->PSSetShaderResources(0,4, GBufferSRVs);
+    DeviceContext->PSSetSamplers(0,1, &DefaultSampler);
 }
 
 
