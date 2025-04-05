@@ -1,7 +1,6 @@
 #include "GraphicDevice.h"
 #include <wchar.h>
-void FGraphicsDevice::Initialize(const HWND hWindow)
-{
+void FGraphicsDevice::Initialize(HWND hWindow) {
     CreateDeviceAndSwapChain(hWindow);
     CreateFrameBuffer();
     CreateDepthStencilBuffer(hWindow);
@@ -9,7 +8,7 @@ void FGraphicsDevice::Initialize(const HWND hWindow)
     CreateRasterizerState();
     CurrentRasterizer = RasterizerStateSOLID;
 }
-void FGraphicsDevice::CreateDeviceAndSwapChain(const HWND hWindow) {
+void FGraphicsDevice::CreateDeviceAndSwapChain(HWND hWindow) {
     // 지원하는 Direct3D 기능 레벨을 정의
     D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
 
@@ -24,21 +23,13 @@ void FGraphicsDevice::CreateDeviceAndSwapChain(const HWND hWindow) {
     SwapchainDesc.Windowed = TRUE; // 창 모드
     SwapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 스왑 방식
 
-UINT deviceFlag = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-#ifdef _DEBUG
-    deviceFlag |= D3D11_CREATE_DEVICE_DEBUG;
-#else
-
-#endif
-
     // 디바이스와 스왑 체인 생성
     HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-        deviceFlag,
+        D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
         featurelevels, ARRAYSIZE(featurelevels), D3D11_SDK_VERSION,
         &SwapchainDesc, &SwapChain, &Device, nullptr, &DeviceContext);
 
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         MessageBox(hWindow, L"CreateDeviceAndSwapChain failed!", L"Error", MB_ICONERROR | MB_OK);
         return;
     }
@@ -388,84 +379,6 @@ void FGraphicsDevice::ChangeRasterizer(EViewModeIndex evi)
 void FGraphicsDevice::ChangeDepthStencilState(ID3D11DepthStencilState* newDetptStencil)
 {
     DeviceContext->OMSetDepthStencilState(newDetptStencil, 0);
-}
-
-bool FGraphicsDevice::CreateGPUBuffer(const D3D11_BUFFER_DESC* pDesc, const D3D11_SUBRESOURCE_DATA* pInitialData, ID3D11Buffer** ppBuffer) const
-{
-    if (Device == nullptr)
-        return false;
-
-    if (FAILED(Device->CreateBuffer(pDesc, pInitialData, ppBuffer)))
-        return false;
-
-    return true;
-}
-
-void FGraphicsDevice::BindVertexBuffer(const uint32 InStartSlot, const uint32 InNumBuffers, ID3D11Buffer* const* ppVertexBuffers, const uint32* pStrides,
-    const uint32* pOffsets) const
-{
-    DeviceContext->IASetVertexBuffers(InStartSlot, InNumBuffers, ppVertexBuffers, pStrides, pOffsets);
-}
-
-void FGraphicsDevice::BindIndexBuffer(ID3D11Buffer* pIndexBuffer, const DXGI_FORMAT InFormat, const uint32 Offset) const
-{
-    if (DeviceContext == nullptr || pIndexBuffer == nullptr)
-        return;
-
-    DeviceContext->IASetIndexBuffer(pIndexBuffer, InFormat, Offset);
-}
-
-void FGraphicsDevice::SetDataToGPUBuffer(ID3D11Buffer* pBuffer, const void* pData, const uint32 InSize) const
-{
-    if (DeviceContext == nullptr || pBuffer == nullptr || pData == nullptr)
-        return;
-
-    D3D11_MAPPED_SUBRESOURCE mappedSubResource = {};
-    HRESULT hr = DeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubResource);
-
-    if (FAILED(hr))
-        return;
-
-    memcpy(mappedSubResource.pData, pData, InSize);
-    DeviceContext->Unmap(pBuffer, 0);
-}
-
-void FGraphicsDevice::BindConstantBuffer(const EShaderStage InShaderStage, const uint32 InSlot, ID3D11Buffer* pBuffer) const
-{
-    if (DeviceContext == nullptr || pBuffer == nullptr)
-        return;
-
-    switch (InShaderStage)
-    {
-    case EShaderStage::VS:
-        DeviceContext->VSSetConstantBuffers(InSlot, 1, &pBuffer);
-        break;
-    case EShaderStage::HS:
-        DeviceContext->HSSetConstantBuffers(InSlot, 1, &pBuffer);
-        break;
-    case EShaderStage::DS:
-        DeviceContext->DSSetConstantBuffers(InSlot, 1, &pBuffer);
-        break;
-    case EShaderStage::GS:
-        DeviceContext->GSSetConstantBuffers(InSlot, 1, &pBuffer);
-        break;
-    case EShaderStage::PS:
-        DeviceContext->PSSetConstantBuffers(InSlot, 1, &pBuffer);
-        break;
-    case EShaderStage::CS:
-        DeviceContext->CSSetConstantBuffers(InSlot, 1, &pBuffer);
-        break;
-    case EShaderStage::All:
-        DeviceContext->VSSetConstantBuffers(InSlot, 1, &pBuffer);
-        DeviceContext->HSSetConstantBuffers(InSlot, 1, &pBuffer);
-        DeviceContext->DSSetConstantBuffers(InSlot, 1, &pBuffer);
-        DeviceContext->GSSetConstantBuffers(InSlot, 1, &pBuffer);
-        DeviceContext->PSSetConstantBuffers(InSlot, 1, &pBuffer);
-        DeviceContext->CSSetConstantBuffers(InSlot, 1, &pBuffer);
-        break;
-    default:
-        break;
-    }
 }
 
 uint32 FGraphicsDevice::GetPixelUUID(POINT pt)

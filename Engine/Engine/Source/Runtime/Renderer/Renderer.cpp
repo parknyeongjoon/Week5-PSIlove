@@ -22,7 +22,6 @@
 #include "UObject/UObjectIterator.h"
 #include "Components/SkySphereComponent.h"
 #include "Components/TextRenderComponent.h"
-#include "D3D11RHI/GPUBuffer/ConstantDefine.h"
 #include "ImGUI/imgui_internal.h"
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
@@ -804,7 +803,7 @@ void FRenderer::PrepareSubUVConstant() const
 {
     if (SubUVConstantBuffer)
     {
-        Graphics->DeviceContext->VSSetConstantBuffers(CB_GETBINDSLOT(FSubUVConstant), 1, &SubUVConstantBuffer);
+        Graphics->DeviceContext->VSSetConstantBuffers(1, 1, &SubUVConstantBuffer);
         Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &SubUVConstantBuffer);
     }
 }
