@@ -23,6 +23,7 @@
 #include "Components/SkySphereComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "ImGUI/imgui_internal.h"
+#include "LevelEditor/SLevelEditor.h"
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
