@@ -148,8 +148,7 @@ bool ULevel::DestroyActor(AActor* ThisActor)
     }
 
     // World에서 제거
-    ActorsArray.Empty();
-    //ActorsArray.Remove(ThisActor);
+    ActorsArray.Remove(ThisActor);
 
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);

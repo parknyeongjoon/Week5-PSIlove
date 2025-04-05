@@ -1067,7 +1067,7 @@ void FRenderer::PrepareRender(ULevel* Level)
         {
             TextObjs.Add(TextRenderComp);
         }
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
+        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
         {
             LightObjs.Add(pLightComp);
         }
@@ -1193,7 +1193,7 @@ void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorV
         Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
     #pragma endregion GizmoDepth
 
-    //  fill solid,  Wirframe 에서도 제대로 렌더링되기 위함
+    //  fill solid,  Wireframe 에서도 제대로 렌더링되기 위함
     Graphics->DeviceContext->RSSetState(FEngineLoop::graphicDevice.RasterizerStateSOLID);
     
     for (auto GizmoComp : GizmoObjs)
@@ -1344,7 +1344,7 @@ void FRenderer::RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient
     for (auto Light : LightObjs)
     {
         FMatrix Model = JungleMath::CreateModelMatrix(Light->GetWorldLocation(), Light->GetWorldRotation(), {1, 1, 1});
-        UPrimitiveBatch::GetInstance().AddCone(Light->GetWorldLocation(), Light->GetRadius(), 15, 140, Light->GetColor(), Model);
+        UPrimitiveBatch::GetInstance().AddCone(Light->GetWorldLocation(), Light->GetAttenuationRadius(), 15, 140, Light->GetColor(), Model);
         UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
     }
 }
