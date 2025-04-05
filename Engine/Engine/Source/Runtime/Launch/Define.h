@@ -334,3 +334,35 @@ struct FTextureConstants {
     float pad0;
     float pad1;
 };
+
+struct FScreenVertex {
+    FVector4 Position;
+    float U, V;
+    float pad0, pad1;
+};
+
+struct FLinearColor
+{
+    float R;
+    float G;
+    float B;
+    float A;
+};
+
+struct FFogConstants
+{
+    float FogDensity;             // 4 bytes
+    float FogHeightFalloff;      // 4 bytes
+    float StartDistance;         // 4 bytes
+    float FogCutoffDistance;     // 4 bytes
+    float FogMaxOpacity;         // 4 bytes
+    float Padding1[3];           // 12 bytes → 16 bytes 정렬 맞춤
+
+    FLinearColor FogInscatteringColor; // 16 bytes (4 floats)
+
+    FVector CameraPosition;
+    float padding;
+    FMatrix InvProjectionMatrix; // 64 bytes (4x4 floats)
+    FMatrix InvViewMatrix;       // 64 bytes
+};
+

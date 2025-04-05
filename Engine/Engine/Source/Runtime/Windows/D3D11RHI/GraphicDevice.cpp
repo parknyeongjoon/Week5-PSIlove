@@ -202,8 +202,71 @@ void FGraphicsDevice::CreateFrameBuffer()
 
     Device->CreateRenderTargetView(UUIDFrameBuffer, &UUIDFrameBufferRTVDesc, &UUIDFrameBufferRTV);
 
-    RTVs[0] = FrameBufferRTV;
+    // 핑퐁 텍스처 생성
+    D3D11_TEXTURE2D_DESC pingpongTextureDesc = {};
+    pingpongTextureDesc.Width = screenWidth;
+    pingpongTextureDesc.Height = screenHeight;
+    pingpongTextureDesc.MipLevels = 1;
+    pingpongTextureDesc.ArraySize = 1;
+    pingpongTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    pingpongTextureDesc.SampleDesc.Count = 1;
+    pingpongTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+    pingpongTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    pingpongTextureDesc.CPUAccessFlags = 0;
+    pingpongTextureDesc.MiscFlags = 0;
+
+    // Depth Texture 생성용
+    D3D11_TEXTURE2D_DESC depthDesc = {};
+    depthDesc.Width = screenWidth;
+    depthDesc.Height = screenHeight;
+    depthDesc.MipLevels = 1;
+    depthDesc.ArraySize = 1;
+    depthDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+    depthDesc.SampleDesc.Count = 1;
+    depthDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    depthDesc.CPUAccessFlags = 0;
+    depthDesc.MiscFlags = 0;
+
+    // Create DSV
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+
+    // Create SRV for depth
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    Device->CreateSamplerState(&samplerDesc, &SamplerState);
+    
+    for (int i = 0;i < 2; i++)
+    {
+        // SceneColor (pingpong)
+        Device->CreateTexture2D(&pingpongTextureDesc, nullptr, &pingpongTex[i]);
+        Device->CreateRenderTargetView(pingpongTex[i], nullptr, &pingpongRTV[i]);
+        Device->CreateShaderResourceView(pingpongTex[i], nullptr, &pingpongSRV[i]);
+
+        // SceneDepth
+        Device->CreateTexture2D(&depthDesc, nullptr, &pingpongDepthTex[i]);
+        Device->CreateDepthStencilView(pingpongDepthTex[i], &dsvDesc, &pingpongDSV[i]);
+        Device->CreateShaderResourceView(pingpongDepthTex[i], &srvDesc, &pingpongDepthSRV[i]);
+    }
+
+
+    RTVs[0] = GetWriteRTV();
     RTVs[1] = UUIDFrameBufferRTV;
+
 }
 
 void FGraphicsDevice::ReleaseFrameBuffer()
@@ -230,6 +293,40 @@ void FGraphicsDevice::ReleaseFrameBuffer()
     {
         UUIDFrameBufferRTV->Release();
         UUIDFrameBufferRTV = nullptr;
+    }
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (pingpongTex[i])
+        {
+            pingpongTex[i]->Release();
+            pingpongTex[i] = nullptr;
+        }
+        if (pingpongRTV[i])
+        {
+            pingpongRTV[i]->Release();
+            pingpongRTV[i] = nullptr;
+        }
+        if (pingpongSRV[i])
+        {
+            pingpongSRV[i]->Release();
+            pingpongSRV[i] = nullptr;
+        }
+        if (pingpongDepthTex[i])
+        {
+            pingpongDepthTex[i]->Release();
+            pingpongDepthTex[i] = nullptr;
+        }
+        if (pingpongDSV[i])
+        {
+            pingpongDSV[i]->Release();
+            pingpongDSV[i] = nullptr;
+        }
+        if (pingpongDepthSRV[i])
+        {
+            pingpongDepthSRV[i]->Release();
+            pingpongDepthSRV[i] = nullptr;
+        }
     }
 }
 
@@ -284,22 +381,7 @@ void FGraphicsDevice::Release()
 void FGraphicsDevice::SwapBuffer() {
     SwapChain->Present(1, 0);
 }
-void FGraphicsDevice::Prepare()
-{
-    DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearRenderTargetView(UUIDFrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
 
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-
-    //DeviceContext->RSSetViewports(1, &ViewportInfo); // GPU가 화면을 렌더링할 영역 설정
-    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-
-    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-
-    DeviceContext->OMSetRenderTargets(2, RTVs, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
-    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
-}
 
 void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport)
 {
@@ -314,6 +396,48 @@ void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport)
     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 
     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
+    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+}
+
+void FGraphicsDevice::Prepare()
+{
+    auto* RenderTarget = GetWriteRTV();
+    auto* RenderDepthTarget = GetWriteDSV();
+    DeviceContext->ClearRenderTargetView(RenderTarget, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->ClearRenderTargetView(UUIDFrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->ClearDepthStencilView(RenderDepthTarget, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
+
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+
+    //DeviceContext->RSSetViewports(1, &ViewportInfo); // GPU가 화면을 렌더링할 영역 설정
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+
+    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, RenderDepthTarget); // 렌더 타겟 설정(백버퍼를 가르킴)
+    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+}
+
+void FGraphicsDevice::PrepareFogRender()
+{
+    SwapRTV();
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->ClearRenderTargetView(RenderTarget, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
+    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+}
+
+void FGraphicsDevice::PrepareFinalRender()
+{
+    SwapRTV();
+    DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
@@ -355,9 +479,6 @@ void FGraphicsDevice::OnResize(HWND hWindow) {
 
     CreateFrameBuffer();
     CreateDepthStencilBuffer(hWindow);
-
-
-
 }
 
 
@@ -384,80 +505,81 @@ void FGraphicsDevice::ChangeDepthStencilState(ID3D11DepthStencilState* newDetptS
 uint32 FGraphicsDevice::GetPixelUUID(POINT pt)
 
 {
-    // pt.x 값 제한하기
-    if (pt.x < 0) {
-        pt.x = 0;
-    }
-    else if (pt.x > screenWidth) {
-        pt.x = screenWidth;
-    }
+   // // pt.x 값 제한하기
+   // if (pt.x < 0) {
+   //     pt.x = 0;
+   // }
+   // else if (pt.x > screenWidth) {
+   //     pt.x = screenWidth;
+   // }
 
-    // pt.y 값 제한하기
-    if (pt.y < 0) {
-        pt.y = 0;
-    }
-    else if (pt.y > screenHeight) {
-        pt.y = screenHeight;
-    }
+   // // pt.y 값 제한하기
+   // if (pt.y < 0) {
+   //     pt.y = 0;
+   // }
+   // else if (pt.y > screenHeight) {
+   //     pt.y = screenHeight;
+   // }
 
-    // 1. Staging 텍스처 생성 (1x1 픽셀)
-    D3D11_TEXTURE2D_DESC stagingDesc = {};
-    stagingDesc.Width = 1; // 픽셀 1개만 복사
-    stagingDesc.Height = 1;
-    stagingDesc.MipLevels = 1;
-    stagingDesc.ArraySize = 1;
-    stagingDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 원본 텍스처 포맷과 동일
-    stagingDesc.SampleDesc.Count = 1;
-    stagingDesc.Usage = D3D11_USAGE_STAGING;
-    stagingDesc.BindFlags = 0;
-    stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+   // // 1. Staging 텍스처 생성 (1x1 픽셀)
+   // D3D11_TEXTURE2D_DESC stagingDesc = {};
+   // stagingDesc.Width = 1; // 픽셀 1개만 복사
+   // stagingDesc.Height = 1;
+   // stagingDesc.MipLevels = 1;
+   // stagingDesc.ArraySize = 1;
+   // stagingDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 원본 텍스처 포맷과 동일
+   // stagingDesc.SampleDesc.Count = 1;
+   // stagingDesc.Usage = D3D11_USAGE_STAGING;
+   // stagingDesc.BindFlags = 0;
+   // stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
-    ID3D11Texture2D* stagingTexture = nullptr;
-    Device->CreateTexture2D(&stagingDesc, nullptr, &stagingTexture);
+   // ID3D11Texture2D* stagingTexture = nullptr;
+   // Device->CreateTexture2D(&stagingDesc, nullptr, &stagingTexture);
 
-    // 2. 복사할 영역 정의 (D3D11_BOX)
-    D3D11_BOX srcBox = {};
-    srcBox.left = static_cast<UINT>(pt.x);
-    srcBox.right = srcBox.left + 1; // 1픽셀 너비
-    srcBox.top = static_cast<UINT>(pt.y);
-    srcBox.bottom = srcBox.top + 1; // 1픽셀 높이
-    srcBox.front = 0;
-    srcBox.back = 1;
-    FVector4 UUIDColor{ 1, 1, 1, 1 }; 
+   // // 2. 복사할 영역 정의 (D3D11_BOX)
+   // D3D11_BOX srcBox = {};
+   // srcBox.left = static_cast<UINT>(pt.x);
+   // srcBox.right = srcBox.left + 1; // 1픽셀 너비
+   // srcBox.top = static_cast<UINT>(pt.y);
+   // srcBox.bottom = srcBox.top + 1; // 1픽셀 높이
+   // srcBox.front = 0;
+   // srcBox.back = 1;
+   // FVector4 UUIDColor{ 1, 1, 1, 1 }; 
 
-    if (stagingTexture == nullptr)
-        return DecodeUUIDColor(UUIDColor);
+   // if (stagingTexture == nullptr)
+   //     return DecodeUUIDColor(UUIDColor);
 
-    // 3. 특정 좌표만 복사
-   DeviceContext->CopySubresourceRegion(
-        stagingTexture, // 대상 텍스처
-        0,              // 대상 서브리소스
-        0, 0, 0,        // 대상 좌표 (x, y, z)
-        UUIDFrameBuffer, // 원본 텍스처
-        0,              // 원본 서브리소스
-        &srcBox         // 복사 영역
-    );
+   // // 3. 특정 좌표만 복사
+   //DeviceContext->CopySubresourceRegion(
+   //     stagingTexture, // 대상 텍스처
+   //     0,              // 대상 서브리소스
+   //     0, 0, 0,        // 대상 좌표 (x, y, z)
+   //     UUIDFrameBuffer, // 원본 텍스처
+   //     0,              // 원본 서브리소스
+   //     &srcBox         // 복사 영역
+   // );
 
-    // 4. 데이터 매핑
-    D3D11_MAPPED_SUBRESOURCE mapped = {};
-    DeviceContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &mapped);
+   // // 4. 데이터 매핑
+   // D3D11_MAPPED_SUBRESOURCE mapped = {};
+   // DeviceContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &mapped);
 
-    // 5. 픽셀 데이터 추출 (1x1 텍스처이므로 offset = 0)
-    const BYTE* pixelData = static_cast<const BYTE*>(mapped.pData);
+   // // 5. 픽셀 데이터 추출 (1x1 텍스처이므로 offset = 0)
+   // const BYTE* pixelData = static_cast<const BYTE*>(mapped.pData);
 
-    if (pixelData)
-    {
-        UUIDColor.x = static_cast<float>(pixelData[0]); // R
-        UUIDColor.y = static_cast<float>(pixelData[1]); // G
-        UUIDColor.z = static_cast<float>(pixelData[2]) ; // B
-        UUIDColor.a = static_cast<float>(pixelData[3]); // A
-    }
+   // if (pixelData)
+   // {
+   //     UUIDColor.x = static_cast<float>(pixelData[0]); // R
+   //     UUIDColor.y = static_cast<float>(pixelData[1]); // G
+   //     UUIDColor.z = static_cast<float>(pixelData[2]) ; // B
+   //     UUIDColor.a = static_cast<float>(pixelData[3]); // A
+   // }
 
-    // 6. 매핑 해제 및 정리
-    DeviceContext->Unmap(stagingTexture, 0);
-    if (stagingTexture) stagingTexture->Release(); stagingTexture = nullptr;
+   // // 6. 매핑 해제 및 정리
+   // DeviceContext->Unmap(stagingTexture, 0);
+   // if (stagingTexture) stagingTexture->Release(); stagingTexture = nullptr;
 
-    return DecodeUUIDColor(UUIDColor);
+   // return DecodeUUIDColor(UUIDColor);
+    return 0;
 }
 
 uint32 FGraphicsDevice::DecodeUUIDColor(FVector4 UUIDColor) {
