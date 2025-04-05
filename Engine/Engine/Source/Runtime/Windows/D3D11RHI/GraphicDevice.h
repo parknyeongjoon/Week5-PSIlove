@@ -70,8 +70,8 @@ public:
     void Release();
     void SwapBuffer() const;
     void Prepare() const;
+    void PrepareLighting() const;
     // void Prepare(D3D11_VIEWPORT* viewport) const;
-    void PrepareLight();
     void OnResize(HWND hWindow);
     ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
     void ChangeRasterizer(EViewModeIndex evi);

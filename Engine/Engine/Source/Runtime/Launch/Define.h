@@ -252,7 +252,7 @@ struct FLighting
     float Intensity;
 	FVector LightDirection;
 	float AmbientFactor;
-	FVector LightColor;
+	FLinearColor LightColor;
     float AttenuationRadius;
 };
 

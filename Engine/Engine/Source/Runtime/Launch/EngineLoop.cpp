@@ -246,10 +246,6 @@ void FEngineLoop::PIETick(double elapsedTime)
 {
     Input();
     GLevel->Tick(elapsedTime);
-    for (auto& actor : GLevel->GetActors())
-    {
-        actor->SetActorRotation(actor->GetActorRotation() + FVector(0.1,0.1,0.1));
-    }
     Render();
 
     UIMgr->BeginFrame();

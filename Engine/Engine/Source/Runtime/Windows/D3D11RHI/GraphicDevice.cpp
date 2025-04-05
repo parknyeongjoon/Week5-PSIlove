@@ -317,6 +317,12 @@ void FGraphicsDevice::Prepare() const
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
+void FGraphicsDevice::PrepareLighting() const
+{
+    DeviceContext->PSSetShaderResources(0, 4, GBufferSRVs);
+    DeviceContext->PSSetSamplers(0, 1, &DefaultSampler);
+}
+
 // void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport) const
 // {
 //     DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
@@ -333,12 +339,6 @@ void FGraphicsDevice::Prepare() const
 //     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
 //     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 // }
-
-void FGraphicsDevice::PrepareLight()
-{
-    DeviceContext->PSSetShaderResources(0,4, GBufferSRVs);
-    DeviceContext->PSSetSamplers(0,1, &DefaultSampler);
-}
 
 
 void FGraphicsDevice::OnResize(HWND hWindow) {
