@@ -362,14 +362,6 @@ struct FScreenVertex {
     float pad0, pad1;
 };
 
-struct FLinearColor
-{
-    float R;
-    float G;
-    float B;
-    float A;
-};
-
 struct FFogConstants
 {
     float FogDensity;             // 4 bytes
