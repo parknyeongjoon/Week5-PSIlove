@@ -2,7 +2,7 @@ Texture2D Texture : register(t0);
 SamplerState Sampler : register(s0);
 
 // MatrixBuffer: 변환 행렬 관리
-cbuffer MatrixBuffer : register(b0)
+cbuffer FMatrixBuffer : register(b0)
 {
     row_major float4x4 MVP;
     row_major float4x4 MInverseTranspose;
@@ -12,7 +12,7 @@ cbuffer MatrixBuffer : register(b0)
 };
 
 // LightingBuffer: 조명 관련 파라미터 관리
-cbuffer LightingBuffer : register(b1)
+cbuffer FLightingBuffer : register(b1)
 {
     float3 LightDirection; // 조명 방향 (단위 벡터; 빛이 들어오는 방향의 반대 사용)
     float AmbientFactor; // ambient 계수 (예: 0.1)

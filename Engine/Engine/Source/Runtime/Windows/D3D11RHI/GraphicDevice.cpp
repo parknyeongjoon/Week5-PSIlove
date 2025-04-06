@@ -543,3 +543,43 @@ bool FGraphicsDevice::CreatePixelShader(const FString& fileName, ID3DBlob** ppCo
 
     return true;
 }
+
+TArray<TPair<FString, uint32>> FGraphicsDevice::ExtractConstantBufferNames(ID3DBlob* shaderBlob)
+{
+    TArray<TPair<FString, uint32>> CBNames;
+
+    // 쉐이더 리플렉션 인터페이스 생성
+    ID3D11ShaderReflection* pReflector = nullptr;
+    HRESULT hr = D3DReflect(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), IID_ID3D11ShaderReflection,
+                            reinterpret_cast<void**>(&pReflector));
+    if (FAILED(hr) || pReflector == nullptr)
+    {
+        // 오류 처리: 빈 벡터 반환
+        return CBNames;
+    }
+    
+    // 쉐이더 설명 가져오기
+    D3D11_SHADER_DESC shaderDesc = {};
+    hr = pReflector->GetDesc(&shaderDesc);
+    assert(SUCCEEDED(hr));
+    
+    // 모든 상수 버퍼에 대해 이름을 추출
+    for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i)
+    {
+        ID3D11ShaderReflectionConstantBuffer* pCB = pReflector->GetConstantBufferByIndex(i);
+        if (pCB)
+        {
+            D3D11_SHADER_BUFFER_DESC cbDesc = {};
+            hr = pCB->GetDesc(&cbDesc);
+            if (SUCCEEDED(hr))
+            {
+                FString CBName = cbDesc.Name;
+                CBNames.Add(TPair(CBName, i));
+            }
+        }
+    }
+    
+    pReflector->Release();
+    return CBNames;
+}
+

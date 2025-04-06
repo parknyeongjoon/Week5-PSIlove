@@ -1,7 +1,7 @@
 Texture2D Textures : register(t0);
 SamplerState Sampler : register(s0);
 
-cbuffer MatrixConstants : register(b0)
+cbuffer FMatrixConstants : register(b0)
 {
     row_major float4x4 MVP;
     row_major float4x4 MInverseTranspose;
@@ -22,12 +22,12 @@ struct FMaterial
     float MaterialPad0;
 };
 
-cbuffer MaterialConstants : register(b1)
+cbuffer FMaterialConstants : register(b1)
 {
     FMaterial Material;
 }
 
-cbuffer LightingConstants : register(b2)
+cbuffer FLightingConstants : register(b2)
 {
     float3 LightDirection; // 조명 방향 (단위 벡터; 빛이 들어오는 방향의 반대 사용)
     float LightPad0; // 16바이트 정렬용 패딩
@@ -37,19 +37,19 @@ cbuffer LightingConstants : register(b2)
     float3 LightPad2; // 16바이트 정렬 맞춤 추가 패딩
 };
 
-cbuffer FlagConstants : register(b3)
+cbuffer FFlagConstants : register(b3)
 {
     bool IsLit;
     float3 flagPad0;
 }
 
-cbuffer SubMeshConstants : register(b4)
+cbuffer FSubMeshConstants : register(b4)
 {
     bool IsSelectedSubMesh;
     float3 SubMeshPad0;
 }
 
-cbuffer TextureConstants : register(b5)
+cbuffer FTextureConstants : register(b5)
 {
     float2 UVOffset;
     float2 TexturePad0;

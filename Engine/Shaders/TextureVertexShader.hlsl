@@ -10,7 +10,7 @@ struct PSInput
     float2 texCoord : TEXCOORD;
 };
 
-cbuffer constants : register(b0)
+cbuffer FConstants : register(b0)
 {
     row_major float4x4 MVP;
     float Flag;

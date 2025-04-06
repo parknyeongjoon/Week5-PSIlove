@@ -1,17 +1,17 @@
 
-cbuffer MatrixBuffer : register(b0)
+cbuffer FMatrixBuffer : register(b0)
 {
     row_major float4x4 MVP;
 };
 
-cbuffer GridParametersData : register(b1)
+cbuffer FGridParametersData : register(b1)
 {
     float GridSpacing;
     int GridCount; // 총 grid 라인 수
     float3 GridOrigin; // Grid의 중심
     float Padding;
 };
-cbuffer PrimitiveCounts : register(b3)
+cbuffer FPrimitiveCounts : register(b3)
 {
     int BoundingBoxCount; // 렌더링할 AABB의 개수
     int pad;

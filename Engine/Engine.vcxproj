@@ -371,6 +371,7 @@
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FIndexBuffer.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVertexBuffer.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVIBuffers.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\TestConstantDefine.h" />
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
     <ClInclude Include="Engine\Source\ThirdParty\tinyfiledialogs\tinyfiledialogs.h" />
     <ClInclude Include="Font\IconDefs.h" />

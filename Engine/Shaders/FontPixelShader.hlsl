@@ -1,13 +1,13 @@
 Texture2D gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
-cbuffer SubUVConstant : register(b1)
+cbuffer FSubUVConstant : register(b1)
 {
     float indexU;
     float indexV;
 }
 
-cbuffer UUIDConstant : register(b2)
+cbuffer FUUIDConstant : register(b2)
 {
     float4 UUID;
 }

@@ -55,7 +55,7 @@ private:
     TMap<FString, FVIBuffers> VIBuffers;
 
     TMap<FString, TMap<FShaderConstantKey, uint32>> ShaderConstantNames;
-    TMap<FString, FConstantBuffer> ConstantBuffers;
+    TMap<FString, ID3D11Buffer*> ConstantBuffers;
 
 public:
     ID3D11ShaderResourceView* pBBSRV = nullptr;
@@ -80,13 +80,12 @@ public:
     
 
     void ReleaseTextureShader();
-    static TArray<TPair<FString, uint32>> ExtractConstantBufferNames(ID3DBlob* shaderBlob);
    
     //void PrepareShader() const;
 
-    void PrepareShader(const FString& shaderName) const;
+    void PrepareShader(const FString& InShaderName) const;
 
-    void BindConstantBuffers(const FString& shaderName) const;
+    void BindConstantBuffers(const FString& InShaderName) const;
     
     //Render
     void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const;
@@ -126,8 +125,11 @@ public:
     template<typename T>
     ID3D11Buffer* CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const;
     
-    ID3D11Buffer* CreateIndexBuffer(uint32* indices, uint32 indicesSize) const;
+    ID3D11Buffer* CreateIndexBuffer(const uint32* indices, uint32 indicesSize) const;
     ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices) const;
+
+    template<typename T>
+    ID3D11Buffer* CreateConstantBuffer();
 
     // update
     void UpdateLightBuffer() const;
@@ -194,10 +196,6 @@ private:
     TArray<ULightComponentBase*> LightObjs;
 };
 
-inline void FRenderer::BindConstantBuffers(const FString& shaderName) const
-{
-}
-
 template <typename T>
 ID3D11Buffer* FRenderer::CreateImmutableVertexBuffer(const TArray<T>& vertices) const
 {
@@ -259,6 +257,11 @@ ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize
     verticeArray.AppendArray(vertices, arraySize);
 
     return CreateDynamicVertexBuffer(verticeArray);
+}
+
+template <typename T>
+ID3D11Buffer* FRenderer::CreateConstantBuffer()
+{
 }
 
 template <typename T>

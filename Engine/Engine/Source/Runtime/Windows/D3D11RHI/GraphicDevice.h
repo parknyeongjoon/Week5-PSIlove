@@ -7,6 +7,7 @@
 #include <d3d11.h>
 
 #include "EngineBaseTypes.h"
+#include "Container/Array.h"
 
 #include "Container/Map.h"
 #include "Container/String.h"
@@ -69,6 +70,7 @@ public:
 public:
     bool CreateVertexShader(const FString& fileName, ID3DBlob** ppCode, ID3D11VertexShader** ppVertexShader) const;
     bool CreatePixelShader(const FString& fileName, ID3DBlob** ppCode, ID3D11PixelShader** ppPixelShader) const;
+    static TArray<TPair<FString, uint32>> ExtractConstantBufferNames(ID3DBlob* shaderBlob);
 
 private:
     ID3D11RasterizerState* CurrentRasterizer = nullptr;
