@@ -103,9 +103,8 @@ public:
     void ChangeViewMode(EViewModeIndex evi) const;
     
     // CreateBuffer
-    void CreateConstantBuffer();
-    void CreateLightingBuffer();
-    void CreateLitUnlitBuffer();
+    //void CreateLightingBuffer();
+    //void CreateLitUnlitBuffer();
     
     template<typename T>
     ID3D11Buffer* CreateImmutableVertexBuffer(const TArray<T>& vertices) const;
@@ -127,9 +126,9 @@ public:
     
     ID3D11Buffer* CreateIndexBuffer(const uint32* indices, uint32 indicesSize) const;
     ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices) const;
-
-    template<typename T>
-    ID3D11Buffer* CreateConstantBuffer();
+    void CreateConstantBuffers();
+    
+    ID3D11Buffer* CreateConstantBuffer(uint32 InSize, const void* InData = nullptr) const;
 
     // update
     void UpdateLightBuffer() const;
@@ -257,11 +256,6 @@ ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize
     verticeArray.AppendArray(vertices, arraySize);
 
     return CreateDynamicVertexBuffer(verticeArray);
-}
-
-template <typename T>
-ID3D11Buffer* FRenderer::CreateConstantBuffer()
-{
 }
 
 template <typename T>

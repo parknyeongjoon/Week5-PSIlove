@@ -57,9 +57,9 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateFontShader();
     CreateLineShader();
     
-    CreateConstantBuffer();
-    CreateLightingBuffer();
-    CreateLitUnlitBuffer();
+    //CreateConstantBuffer();
+    //CreateLightingBuffer();
+    //CreateLitUnlitBuffer();
     UpdateLitUnlitConstant(1);
 }
 
@@ -94,19 +94,21 @@ void FRenderer::CreateShader()
         layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
     );
     
-    const TArray<TPair<FString, uint32>> VertexStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
-    const TArray<TPair<FString, uint32>> PixelStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
+    const TArray<FConstantBufferInfo> VertexStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
     for (const auto item : VertexStaticMeshConstant)
     {
-        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::VS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     for (const auto item :PixelStaticMeshConstant)
     {
-        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::PS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     ShaderPrograms.Add(TEXT("StaticMesh"), FShaderProgram(VertexShader, PixelShader, InputLayout, sizeof(FVertexSimple)));
@@ -137,19 +139,21 @@ void FRenderer::CreateTextureShader()
         layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &TextureInputLayout
     );
     
-    const TArray<TPair<FString, uint32>> VertexTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
-    const TArray<TPair<FString, uint32>> PixelTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
+    const TArray<FConstantBufferInfo> VertexTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
     for (const auto item : VertexTextureMeshConstant)
     {
-        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::VS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     for (const auto item :PixelTextureMeshConstant)
     {
-        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::PS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     ShaderPrograms.Add(TEXT("Texture"), FShaderProgram(TextureVertexShader, TexturePixelShader, TextureInputLayout, sizeof(FVertexTexture)));
@@ -181,19 +185,21 @@ void FRenderer::CreateFontShader()
         layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &FontInputLayout
     );
     
-    const TArray<TPair<FString, uint32>> VertexFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
-    const TArray<TPair<FString, uint32>> PixelFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
+    const TArray<FConstantBufferInfo> VertexFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
     for (const auto item : VertexFontMeshConstant)
     {
-        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::VS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     for (const auto item :PixelFontMeshConstant)
     {
-        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::PS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     ShaderPrograms.Add(TEXT("Font"), FShaderProgram(FontVertexShader, FontPixelShader, FontInputLayout, sizeof(FVertexTexture)));
@@ -228,19 +234,21 @@ void FRenderer::CreateLineShader()
     layoutDesc, ARRAYSIZE(layoutDesc), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &LineInputLayout
     );
     
-    const TArray<TPair<FString, uint32>> VertexLineConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
-    const TArray<TPair<FString, uint32>> PixelLineConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
+    const TArray<FConstantBufferInfo> VertexLineConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelLineConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
     for (const auto item : VertexLineConstant)
     {
-        ShaderStageToCB[{EShaderStage::VS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::VS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     for (const auto item :PixelLineConstant)
     {
-        ShaderStageToCB[{EShaderStage::PS, item.Key}] = item.Value;
+        ShaderStageToCB[{EShaderStage::PS, item.Name}] = item.BindSlot;
+        ConstantBuffers[item.Name] = CreateConstantBuffer(item.ByteWidth);
     }
 
     ShaderPrograms.Add(TEXT("Line"), FShaderProgram(VertexLineShader, PixelLineShader, LineInputLayout, sizeof(FSimpleVertex)));
@@ -257,24 +265,6 @@ void FRenderer::ReleaseShader()
         item.Value.Release();
     }
 }
-
-// void FRenderer::PrepareShader() const
-// {
-//     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
-//     Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
-//     Graphics->DeviceContext->IASetInputLayout(InputLayout);
-//
-//     if (ConstantBuffer)
-//     {
-//         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-//         Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
-//         Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &MaterialConstantBuffer);
-//         Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingBuffer);
-//         Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
-//         Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
-//         Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBufer);
-//     }
-// }
 
 void FRenderer::PrepareShader(const FString& InShaderName) const
 {
@@ -300,7 +290,7 @@ void FRenderer::BindConstantBuffers(const FString& InShaderName) const
     }
 }
 
-void FRenderer::ChangeViewMode(EViewModeIndex evi) const
+void FRenderer::ChangeViewMode(const EViewModeIndex evi) const
 {
     switch (evi)
     {
@@ -415,54 +405,79 @@ ID3D11Buffer* FRenderer::CreateIndexBuffer(const TArray<uint32>& indices) const
     return indexBuffer;
 }
 
-void FRenderer::CreateConstantBuffer()
+// void FRenderer::CreateConstantBuffers()
+// {
+//     D3D11_BUFFER_DESC constantbufferdesc = {};
+//     constantbufferdesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0;
+//     constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+//     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+//
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
+//
+//     constantbufferdesc.ByteWidth = sizeof(FSubUVConstant) + 0xf & 0xfffffff0;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &SubUVConstantBuffer);
+//
+//     constantbufferdesc.ByteWidth = sizeof(FGridParameters) + 0xf & 0xfffffff0;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &GridConstantBuffer);
+//
+//     constantbufferdesc.ByteWidth = sizeof(FPrimitiveCounts) + 0xf & 0xfffffff0;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LinePrimitiveBuffer);
+//
+//     constantbufferdesc.ByteWidth = sizeof(FMaterialConstants) + 0xf & 0xfffffff0;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &MaterialConstantBuffer);
+//     
+//     constantbufferdesc.ByteWidth = sizeof(FSubMeshConstants) + 0xf & 0xfffffff0;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &SubMeshConstantBuffer);
+//
+//     constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
+// }
+
+ID3D11Buffer* FRenderer::CreateConstantBuffer(const uint32 InSize, const void* InData) const
 {
-    D3D11_BUFFER_DESC constantbufferdesc = {};
-    constantbufferdesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0;
-    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    D3D11_BUFFER_DESC constantBufferDesc = {};   
+    constantBufferDesc.ByteWidth = InSize;
+    constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
-
-    constantbufferdesc.ByteWidth = sizeof(FSubUVConstant) + 0xf & 0xfffffff0;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &SubUVConstantBuffer);
-
-    constantbufferdesc.ByteWidth = sizeof(FGridParameters) + 0xf & 0xfffffff0;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &GridConstantBuffer);
-
-    constantbufferdesc.ByteWidth = sizeof(FPrimitiveCounts) + 0xf & 0xfffffff0;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LinePrimitiveBuffer);
-
-    constantbufferdesc.ByteWidth = sizeof(FMaterialConstants) + 0xf & 0xfffffff0;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &MaterialConstantBuffer);
+    D3D11_SUBRESOURCE_DATA sub = {};
+    sub.pSysMem = InData;
     
-    constantbufferdesc.ByteWidth = sizeof(FSubMeshConstants) + 0xf & 0xfffffff0;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &SubMeshConstantBuffer);
+    ID3D11Buffer* constantBuffer;
 
-    constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
+    HRESULT hr;
+    if (InData == nullptr)
+        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
+    else
+        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, &sub, &constantBuffer);
+
+    if (FAILED(hr))
+        assert(NULL/*"Create constant buffer failed!"*/);
+
+    return constantBuffer;
 }
 
-void FRenderer::CreateLightingBuffer()
-{
-    D3D11_BUFFER_DESC constantbufferdesc = {};
-    constantbufferdesc.ByteWidth = sizeof(FLighting);
-    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LightingBuffer);
-}
-
-void FRenderer::CreateLitUnlitBuffer()
-{
-    D3D11_BUFFER_DESC constantbufferdesc = {};
-    constantbufferdesc.ByteWidth = sizeof(FLitUnlitConstants);
-    constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-    constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &FlagBuffer);
-}
+// void FRenderer::CreateLightingBuffer()
+// {
+//     D3D11_BUFFER_DESC constantbufferdesc = {};
+//     constantbufferdesc.ByteWidth = sizeof(FLighting);
+//     constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+//     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LightingBuffer);
+// }
+//
+// void FRenderer::CreateLitUnlitBuffer()
+// {
+//     D3D11_BUFFER_DESC constantbufferdesc = {};
+//     constantbufferdesc.ByteWidth = sizeof(FLitUnlitConstants);
+//     constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
+//     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &FlagBuffer);
+// }
 
 void FRenderer::ReleaseConstantBuffer()
 {
@@ -832,11 +847,11 @@ void FRenderer::UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>
 void FRenderer::UpdateGridConstantBuffer(const FGridParameters& gridParams) const
 {
     D3D11_MAPPED_SUBRESOURCE mappedResource;
-    HRESULT hr = Graphics->DeviceContext->Map(GridConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    HRESULT hr = Graphics->DeviceContext->Map(ConstantBuffers[TEXT("FGridParametersData")], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (SUCCEEDED(hr))
     {
         memcpy(mappedResource.pData, &gridParams, sizeof(FGridParameters));
-        Graphics->DeviceContext->Unmap(GridConstantBuffer, 0);
+        Graphics->DeviceContext->Unmap(ConstantBuffers[TEXT("FGridParametersData")], 0);
     }
     else
     {
@@ -847,11 +862,11 @@ void FRenderer::UpdateGridConstantBuffer(const FGridParameters& gridParams) cons
 void FRenderer::UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones) const
 {
     D3D11_MAPPED_SUBRESOURCE mappedResource;
-    HRESULT hr = Graphics->DeviceContext->Map(LinePrimitiveBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    HRESULT hr = Graphics->DeviceContext->Map(ConstantBuffers[TEXT("FPrimitiveCounts")], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     auto pData = static_cast<FPrimitiveCounts*>(mappedResource.pData);
     pData->BoundingBoxCount = numBoundingBoxes;
     pData->ConeCount = numCones;
-    Graphics->DeviceContext->Unmap(LinePrimitiveBuffer, 0);
+    Graphics->DeviceContext->Unmap(ConstantBuffers[TEXT("FPrimitiveCounts")], 0);
 }
 
 void FRenderer::RenderBatch(

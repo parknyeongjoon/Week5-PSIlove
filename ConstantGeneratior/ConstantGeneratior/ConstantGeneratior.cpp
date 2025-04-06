@@ -238,6 +238,34 @@ static void GenerateConstantBufferStructsForShaders(const std::vector<ID3DBlob*>
         oss << "    " << enumNames[i] << " = " << i << ",\n";
     }
     oss << "    EShaderConstantBuffer_MAX\n};\n\n";
+ 
+
+    // enum 변환 함수 생성: enum 값을 문자열로 변환하는 inline 함수
+    oss << "inline const TCHAR* EShaderConstantBufferToString(EShaderConstantBuffer e)\n{\n";
+    oss << "    switch(e)\n    {\n";
+    for (size_t i = 0; i < enumNames.size(); ++i)
+    {
+        oss << "    case EShaderConstantBuffer::" << enumNames[i] << ": return TEXT(\"" << enumNames[i] << "\");\n";
+    }
+    oss << "    default: return TEXT(\"unknown\");\n";
+    oss << "    }\n}\n\n";
+
+    // 반대 함수: 문자열을 enum 값으로 변환하는 inline 함수
+    oss << "inline EShaderConstantBuffer EShaderConstantBufferFromString(const TCHAR* str)\n{\n";
+    oss << "#if USE_WIDECHAR\n";
+    for (size_t i = 0; i < enumNames.size(); ++i)
+    {
+        oss << "    if(std::wcscmp(str, TEXT(\"" << enumNames[i] << "\")) == 0) return EShaderConstantBuffer::" << enumNames[i] << ";\n";
+    }
+    oss << "#else\n";
+    for (size_t i = 0; i < enumNames.size(); ++i)
+    {
+        oss << "    if(std::strcmp(str, \"" << enumNames[i] << "\") == 0) return EShaderConstantBuffer::" << enumNames[i] << ";\n";
+    }
+    oss << "#endif\n";
+    oss << "    return EShaderConstantBuffer::EShaderConstantBuffer_MAX;\n";
+    oss << "}\n\n";
+    
 
     // 최종적으로 outputFilename에 한 번에 기록
     std::ofstream ofs(outputFilename, std::ios::out);
@@ -404,6 +432,27 @@ static void ReflectShader(ID3DBlob* shaderBlob)
     pReflector->Release();
 }
 
+
+// EXE 파일이 위치한 디렉터리를 반환하는 함수
+static std::wstring GetExeDirectory()
+{
+    wchar_t path[MAX_PATH] = {0};
+    DWORD length = GetModuleFileNameW(NULL, path, MAX_PATH);
+    if (length == 0)
+    {
+        std::wcerr << L"Failed to get module file name." << std::endl;
+        return L"";
+    }
+    std::wstring exePath(path);
+    // 마지막 '\' 또는 '/'까지 자름 (파일 이름 제거)
+    size_t pos = exePath.find_last_of(L"\\/");
+    if (pos != std::wstring::npos)
+    {
+        exePath = exePath.substr(0, pos);
+    }
+    return exePath;
+}
+
 //-----------------------------------------------------------------------------
 // 폴더 내의 모든 쉐이더 파일을 컴파일하고 리플렉션 정보를 출력하는 함수
 //-----------------------------------------------------------------------------
@@ -443,15 +492,10 @@ static void CompileAndReflectShaders(const std::vector<std::wstring>& shaderFile
         shaderBlobs.push_back(shaderBlob);
     }
 
-    wchar_t buffer[MAX_PATH] = {0};
-    const DWORD length = GetCurrentDirectoryW(MAX_PATH, buffer);
-    if (length == 0)
-    {
-        std::wcerr << L"Failed to get current directory." << std::endl;
-    }
-    const std::wstring currentDir(buffer);
+    std::wstring exeDir = GetExeDirectory();
+    std::wcout << L"Exe Directory: " << exeDir << std::endl;
     // 상대 경로 결합: 현재 디렉터리의 부모 폴더의 Engine/Shaders 폴더
-    const std::wstring structFolder = currentDir + L"\\..\\..\\Engine\\Engine\\Source\\Runtime\\Windows\\D3D11RHI\\GPUBuffer\\TestConstantDefine.h";
+    const std::wstring structFolder = exeDir + L"\\..\\..\\..\\Engine\\Engine\\Source\\Runtime\\Windows\\D3D11RHI\\GPUBuffer\\TestConstantDefine.h";
 
     GenerateConstantBufferStructsForShaders(shaderBlobs, structFolder);
     for (auto item : shaderBlobs)
@@ -459,20 +503,18 @@ static void CompileAndReflectShaders(const std::vector<std::wstring>& shaderFile
     
 }
 
+
 //-----------------------------------------------------------------------------
 // main 함수: 특정 폴더의 모든 .hlsl 파일을 컴파일하고 리플렉션 출력
 //-----------------------------------------------------------------------------
 int main()
 {
-    wchar_t buffer[MAX_PATH] = {0};
-    const DWORD length = GetCurrentDirectoryW(MAX_PATH, buffer);
-    if (length == 0)
-    {
-        std::wcerr << L"Failed to get current directory." << std::endl;
-    }
-    const std::wstring currentDir(buffer);
-    // 상대 경로 결합: 현재 디렉터리의 부모 폴더의 Engine/Shaders 폴더
-    const std::wstring shaderFolder = currentDir + L"\\..\\..\\Engine\\Shaders";
+    std::wstring exeDir = GetExeDirectory();
+    std::wcout << L"Exe Directory: " << exeDir << std::endl;
+
+    // EXE 파일의 디렉터리를 기준으로 상대 경로 결합: "../Engine/Shaders"
+    std::wstring shaderFolder = exeDir + L"\\..\\..\\..\\Engine\\Shaders";
+    std::wcout << L"Shader Folder: " << shaderFolder << std::endl;
 
     // 폴더 내의 .hlsl 파일들을 열거
     const std::vector<std::wstring> shaderFiles = EnumerateShaderFiles(shaderFolder);

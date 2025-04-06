@@ -104,7 +104,7 @@ float4 PaperTexture(float3 originalColor)
 PS_OUTPUT mainPS(PS_INPUT input)
 {
     PS_OUTPUT output;
-    
+
     output.UUID = UUID;
     
     float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);

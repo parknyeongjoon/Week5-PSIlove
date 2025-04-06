@@ -11,9 +11,16 @@
 
 #include "Container/Map.h"
 #include "Container/String.h"
-#include "Math/Vector4.h"
 
-class FGraphicsDevice {
+struct FConstantBufferInfo
+{
+    FString Name;
+    uint32 ByteWidth;
+    uint32 BindSlot;
+};
+
+class FGraphicsDevice
+{
 public:
     ID3D11Device* Device = nullptr;
     ID3D11DeviceContext* DeviceContext = nullptr;
@@ -70,7 +77,7 @@ public:
 public:
     bool CreateVertexShader(const FString& fileName, ID3DBlob** ppCode, ID3D11VertexShader** ppVertexShader) const;
     bool CreatePixelShader(const FString& fileName, ID3DBlob** ppCode, ID3D11PixelShader** ppPixelShader) const;
-    static TArray<TPair<FString, uint32>> ExtractConstantBufferNames(ID3DBlob* shaderBlob);
+    static TArray<FConstantBufferInfo> ExtractConstantBufferNames(ID3DBlob* shaderBlob);
 
 private:
     ID3D11RasterizerState* CurrentRasterizer = nullptr;

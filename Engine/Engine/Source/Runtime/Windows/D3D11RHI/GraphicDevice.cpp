@@ -544,9 +544,9 @@ bool FGraphicsDevice::CreatePixelShader(const FString& fileName, ID3DBlob** ppCo
     return true;
 }
 
-TArray<TPair<FString, uint32>> FGraphicsDevice::ExtractConstantBufferNames(ID3DBlob* shaderBlob)
+TArray<FConstantBufferInfo> FGraphicsDevice::ExtractConstantBufferNames(ID3DBlob* shaderBlob)
 {
-    TArray<TPair<FString, uint32>> CBNames;
+    TArray<FConstantBufferInfo> CBInfos;
 
     // 쉐이더 리플렉션 인터페이스 생성
     ID3D11ShaderReflection* pReflector = nullptr;
@@ -555,7 +555,7 @@ TArray<TPair<FString, uint32>> FGraphicsDevice::ExtractConstantBufferNames(ID3DB
     if (FAILED(hr) || pReflector == nullptr)
     {
         // 오류 처리: 빈 벡터 반환
-        return CBNames;
+        return CBInfos;
     }
     
     // 쉐이더 설명 가져오기
@@ -573,13 +573,13 @@ TArray<TPair<FString, uint32>> FGraphicsDevice::ExtractConstantBufferNames(ID3DB
             hr = pCB->GetDesc(&cbDesc);
             if (SUCCEEDED(hr))
             {
-                FString CBName = cbDesc.Name;
-                CBNames.Add(TPair(CBName, i));
+                const FString CBName = cbDesc.Name;
+                CBInfos.Add(FConstantBufferInfo(CBName, cbDesc.Size, i));
             }
         }
     }
     
     pReflector->Release();
-    return CBNames;
+    return CBInfos;
 }
 
