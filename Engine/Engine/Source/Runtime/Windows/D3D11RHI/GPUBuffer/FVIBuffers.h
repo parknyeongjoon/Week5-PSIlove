@@ -9,6 +9,10 @@ public:
     void SetIndexBuffer(ID3D11Buffer* InIndexBuffer, const uint32 InNumIndices) { IndexBuffer = InIndexBuffer; numIndices = InNumIndices; }
     ID3D11Buffer* GetVertexBuffer() const { return VertexBuffer; }
     ID3D11Buffer* GetIndexBuffer() const { return IndexBuffer; }
+
+    uint32 GetNumIndices() const { return numIndices; }
+    uint32 GetStride() const { return Stride; }
+    uint32 GetOffset() const { return Offset; }
     
     void Bind(ID3D11DeviceContext* context) const;
 private:

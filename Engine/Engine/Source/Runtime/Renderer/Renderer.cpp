@@ -41,12 +41,12 @@ void FRenderer::AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* In
 
 void FRenderer::AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 InStride)
 {
-    VIBuffers[InName].SetVertexBuffer(InBuffer, InStride);    
+    VIBuffers[InName]->SetVertexBuffer(InBuffer, InStride);    
 }
 
-void FRenderer::AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 numIndices)
+void FRenderer::AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 numIndices)
 {
-    VIBuffers[InName].SetIndexBuffer(InBuffer, numIndices);
+    VIBuffers[InName]->SetIndexBuffer(InBuffer, numIndices);
 }
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
@@ -66,7 +66,6 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
 void FRenderer::Release()
 {
     ReleaseShader();
-    ReleaseTextureShader();
     ReleaseConstantBuffer();
 }
 
@@ -304,79 +303,6 @@ void FRenderer::ChangeViewMode(const EViewModeIndex evi) const
     }
 }
 
-void FRenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const
-{
-    UINT offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &offset);
-    Graphics->DeviceContext->Draw(numVertices, 0);
-}
-
-void FRenderer::RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const
-{
-    UINT offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &offset);
-    Graphics->DeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-    Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
-}
-
-void FRenderer::RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<FStaticMaterial*> materials, TArray<UMaterial*> overrideMaterial, int selectedSubMeshIndex = -1) const
-{
-    UINT offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &renderData->VertexBuffer, &Stride, &offset);
-
-    if (renderData->IndexBuffer)
-        Graphics->DeviceContext->IASetIndexBuffer(renderData->IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-    if (renderData->MaterialSubsets.Num() == 0)
-    {
-        // no submesh
-        Graphics->DeviceContext->DrawIndexed(renderData->Indices.Num(), 0, 0);
-    }
-
-    for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); subMeshIndex++)
-    {
-        int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
-
-        subMeshIndex == selectedSubMeshIndex ? UpdateSubMeshConstant(true) : UpdateSubMeshConstant(false);
-
-        overrideMaterial[materialIndex] != nullptr ? 
-            UpdateMaterial(overrideMaterial[materialIndex]->GetMaterialInfo()) : UpdateMaterial(materials[materialIndex]->Material->GetMaterialInfo());
-
-        if (renderData->IndexBuffer)
-        {
-            // index draw
-            uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
-            uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
-            Graphics->DeviceContext->DrawIndexed(indexCount, startIndex, 0);
-        }
-    }
-}
-
-void FRenderer::RenderTexturedModelPrimitive(
-    ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* InTextureSRV,
-    ID3D11SamplerState* InSamplerState
-) const
-{
-    if (!InTextureSRV || !InSamplerState)
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "SRV, Sampler Error");
-    }
-    if (numIndices <= 0)
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "numIndices Error");
-    }
-    UINT offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &Stride, &offset);
-    Graphics->DeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-    //Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    Graphics->DeviceContext->PSSetShaderResources(0, 1, &InTextureSRV);
-    Graphics->DeviceContext->PSSetSamplers(0, 1, &InSamplerState);
-
-    Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
-}
-
 ID3D11Buffer* FRenderer::CreateIndexBuffer(const uint32* indices, const uint32 indicesSize) const
 {
     TArray<uint32> indicesToCopy;
@@ -405,35 +331,6 @@ ID3D11Buffer* FRenderer::CreateIndexBuffer(const TArray<uint32>& indices) const
     return indexBuffer;
 }
 
-// void FRenderer::CreateConstantBuffers()
-// {
-//     D3D11_BUFFER_DESC constantbufferdesc = {};
-//     constantbufferdesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0;
-//     constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-//     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-//     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-//
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
-//
-//     constantbufferdesc.ByteWidth = sizeof(FSubUVConstant) + 0xf & 0xfffffff0;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &SubUVConstantBuffer);
-//
-//     constantbufferdesc.ByteWidth = sizeof(FGridParameters) + 0xf & 0xfffffff0;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &GridConstantBuffer);
-//
-//     constantbufferdesc.ByteWidth = sizeof(FPrimitiveCounts) + 0xf & 0xfffffff0;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LinePrimitiveBuffer);
-//
-//     constantbufferdesc.ByteWidth = sizeof(FMaterialConstants) + 0xf & 0xfffffff0;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &MaterialConstantBuffer);
-//     
-//     constantbufferdesc.ByteWidth = sizeof(FSubMeshConstants) + 0xf & 0xfffffff0;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &SubMeshConstantBuffer);
-//
-//     constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
-// }
-
 ID3D11Buffer* FRenderer::CreateConstantBuffer(const uint32 InSize, const void* InData) const
 {
     D3D11_BUFFER_DESC constantBufferDesc = {};   
@@ -459,211 +356,14 @@ ID3D11Buffer* FRenderer::CreateConstantBuffer(const uint32 InSize, const void* I
     return constantBuffer;
 }
 
-// void FRenderer::CreateLightingBuffer()
-// {
-//     D3D11_BUFFER_DESC constantbufferdesc = {};
-//     constantbufferdesc.ByteWidth = sizeof(FLighting);
-//     constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-//     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-//     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LightingBuffer);
-// }
-//
-// void FRenderer::CreateLitUnlitBuffer()
-// {
-//     D3D11_BUFFER_DESC constantbufferdesc = {};
-//     constantbufferdesc.ByteWidth = sizeof(FLitUnlitConstants);
-//     constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC;
-//     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-//     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-//     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &FlagBuffer);
-// }
-
 void FRenderer::ReleaseConstantBuffer()
 {
-    if (ConstantBuffer)
+    for (auto item : ConstantBuffers)
     {
-        ConstantBuffer->Release();
-        ConstantBuffer = nullptr;
-    }
-
-    if (LightingBuffer)
-    {
-        LightingBuffer->Release();
-        LightingBuffer = nullptr;
-    }
-
-    if (FlagBuffer)
-    {
-        FlagBuffer->Release();
-        FlagBuffer = nullptr;
-    }
-
-    if (MaterialConstantBuffer)
-    {
-        MaterialConstantBuffer->Release();
-        MaterialConstantBuffer = nullptr;
-    }
-
-    if (SubMeshConstantBuffer)
-    {
-        SubMeshConstantBuffer->Release();
-        SubMeshConstantBuffer = nullptr;
-    }
-
-    if (TextureConstantBufer)
-    {
-        TextureConstantBufer->Release();
-        TextureConstantBufer = nullptr;
+        item.Value->Release();
+        item.Value = nullptr;
     }
 }
-
-void FRenderer::UpdateLightBuffer() const
-{
-    if (!LightingBuffer) return;
-    D3D11_MAPPED_SUBRESOURCE mappedResource;
-    Graphics->DeviceContext->Map(LightingBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    {
-        FLighting* constants = static_cast<FLighting*>(mappedResource.pData);
-        constants->lightDirX = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
-        constants->lightDirY = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
-        constants->lightDirZ = 1.0f; // ��: ���� ������ �Ʒ��� �������� ���
-        constants->lightColorX = 1.0f;
-        constants->lightColorY = 1.0f;
-        constants->lightColorZ = 1.0f;
-        constants->AmbientFactor = 0.06f;
-    }
-    Graphics->DeviceContext->Unmap(LightingBuffer, 0);
-}
-
-void FRenderer::UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const
-{
-    if (ConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
-
-        Graphics->DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
-        {
-            FConstants* constants = static_cast<FConstants*>(ConstantBufferMSR.pData);
-            constants->MVP = MVP;
-            constants->ModelMatrixInverseTranspose = NormalMatrix;
-            constants->UUIDColor = UUIDColor;
-            constants->IsSelected = IsSelected;
-        }
-        Graphics->DeviceContext->Unmap(ConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
-    }
-}
-
-void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const
-{
-    if (MaterialConstantBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
-
-        Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
-        {
-            FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
-            constants->DiffuseColor = MaterialInfo.Diffuse;
-            constants->TransparencyScalar = MaterialInfo.TransparencyScalar;
-            constants->AmbientColor = MaterialInfo.Ambient;
-            constants->DensityScalar = MaterialInfo.DensityScalar;
-            constants->SpecularColor = MaterialInfo.Specular;
-            constants->SpecularScalar = MaterialInfo.SpecularScalar;
-            constants->EmmisiveColor = MaterialInfo.Emissive;
-        }
-        Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
-    }
-
-    if (MaterialInfo.bHasTexture == true)
-    {
-        std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
-        Graphics->DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
-        Graphics->DeviceContext->PSSetSamplers(0, 1, &texture->SamplerState);
-    }
-    else
-    {
-        ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
-        ID3D11SamplerState* nullSampler[1] = {nullptr};
-
-        Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRV);
-        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler);
-    }
-}
-
-void FRenderer::UpdateLitUnlitConstant(int isLit) const
-{
-    if (FlagBuffer)
-    {
-        D3D11_MAPPED_SUBRESOURCE constantbufferMSR; // GPU �� �޸� �ּ� ����
-        Graphics->DeviceContext->Map(FlagBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-        auto constants = static_cast<FLitUnlitConstants*>(constantbufferMSR.pData); //GPU �޸� ���� ����
-        {
-            constants->isLit = isLit;
-        }
-        Graphics->DeviceContext->Unmap(FlagBuffer, 0);
-    }
-}
-
-void FRenderer::UpdateSubMeshConstant(bool isSelected) const
-{
-    if (SubMeshConstantBuffer) {
-        D3D11_MAPPED_SUBRESOURCE constantbufferMSR; // GPU �� �޸� �ּ� ����
-        Graphics->DeviceContext->Map(SubMeshConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-        FSubMeshConstants* constants = (FSubMeshConstants*)constantbufferMSR.pData; //GPU �޸� ���� ����
-        {
-            constants->isSelectedSubMesh = isSelected;
-        }
-        Graphics->DeviceContext->Unmap(SubMeshConstantBuffer, 0);
-    }
-}
-
-void FRenderer::UpdateTextureConstant(float UOffset, float VOffset)
-{
-    if (TextureConstantBufer) {
-        D3D11_MAPPED_SUBRESOURCE constantbufferMSR; // GPU �� �޸� �ּ� ����
-        Graphics->DeviceContext->Map(TextureConstantBufer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR);
-        FTextureConstants* constants = (FTextureConstants*)constantbufferMSR.pData; //GPU �޸� ���� ����
-        {
-            constants->UOffset = UOffset;
-            constants->VOffset = VOffset;
-        }
-        Graphics->DeviceContext->Unmap(TextureConstantBufer, 0);
-    }
-}
-
-//
-// void FRenderer::PrepareFontShader() const
-// {
-//     Graphics->DeviceContext->VSSetShader(FontVertexShader, nullptr, 0);
-//     Graphics->DeviceContext->PSSetShader(FontPixelShader, nullptr, 0);
-//     Graphics->DeviceContext->IASetInputLayout(FontInputLayout);
-// }
-
-void FRenderer::ReleaseTextureShader()
-{
-    if (SubUVConstantBuffer)
-    {
-        SubUVConstantBuffer->Release();
-        SubUVConstantBuffer = nullptr;
-    }
-    if (ConstantBuffer)
-    {
-        ConstantBuffer->Release();
-        ConstantBuffer = nullptr;
-    }
-}
-
-// void FRenderer::PrepareTextureShader() const
-// {
-//     Graphics->DeviceContext->VSSetShader(TextureVertexShader, nullptr, 0);
-//     Graphics->DeviceContext->PSSetShader(TexturePixelShader, nullptr, 0);
-//     Graphics->DeviceContext->IASetInputLayout(TextureInputLayout);
-//
-//     if (ConstantBuffer)
-//     {
-//         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-//     }
-// }
 
 void FRenderer::RenderTexturePrimitive(
     ID3D11Buffer* pVertexBuffer, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* _TextureSRV,
@@ -689,29 +389,29 @@ void FRenderer::RenderTexturePrimitive(
     Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
 }
 
-//��Ʈ ��ġ������
-void FRenderer::RenderTextPrimitive(
-    ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11ShaderResourceView* _TextureSRV, ID3D11SamplerState* _SamplerState
-) const
-{
-    if (!_TextureSRV || !_SamplerState)
-    {
-        Console::GetInstance().AddLog(LogLevel::Warning, "SRV, Sampler Error");
-    }
-    UINT offset = 0;
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &TextureStride, &offset);
-
-    // �Է� ���̾ƿ� �� �⺻ ����
-    Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    Graphics->DeviceContext->PSSetShaderResources(0, 1, &_TextureSRV);
-    Graphics->DeviceContext->PSSetSamplers(0, 1, &_SamplerState);
-    
-    ID3D11DepthStencilState* DepthStateDisable = Graphics->DepthStateDisable;
-    Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
-
-    // ��ο� ȣ�� (6���� �ε��� ���)
-    Graphics->DeviceContext->Draw(numVertices, 0);
-}
+// //��Ʈ ��ġ������
+// void FRenderer:: mRenderTextPrimitive(
+//     ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11ShaderResourceView* _TextureSRV, ID3D11SamplerState* _SamplerState
+// ) const
+// {
+//     if (!_TextureSRV || !_SamplerState)
+//     {
+//         Console::GetInstance().AddLog(LogLevel::Warning, "SRV, Sampler Error");
+//     }
+//     UINT offset = 0;
+//     Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &TextureStride, &offset);
+//
+//     // �Է� ���̾ƿ� �� �⺻ ����
+//     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+//     Graphics->DeviceContext->PSSetShaderResources(0, 1, &_TextureSRV);
+//     Graphics->DeviceContext->PSSetSamplers(0, 1, &_SamplerState);
+//     
+//     ID3D11DepthStencilState* DepthStateDisable = Graphics->DepthStateDisable;
+//     Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
+//
+//     // ��ο� ȣ�� (6���� �ε��� ���)
+//     Graphics->DeviceContext->Draw(numVertices, 0);
+// }
 
 void FRenderer::UpdateSubUVConstant(float _indexU, float _indexV) const
 {
@@ -738,35 +438,23 @@ void FRenderer::PrepareSubUVConstant() const
     }
 }
 
-// void FRenderer::PrepareLineShader() const
-// {
-//     // ���̴��� �Է� ���̾ƿ� ����
-//     Graphics->DeviceContext->VSSetShader(VertexLineShader, nullptr, 0);
-//     Graphics->DeviceContext->PSSetShader(PixelLineShader, nullptr, 0);
-//     Graphics->DeviceContext->IASetInputLayout(LineInputLayout);
-//
-//     // ��� ���� ���ε�: 
-//     // - MatrixBuffer�� register(b0)��, Vertex Shader�� ���ε�
-//     // - GridConstantBuffer�� register(b1)��, Vertex�� Pixel Shader�� ���ε� (�ȼ� ���̴��� �ʿ信 ����)
-//     if (ConstantBuffer && GridConstantBuffer)
-//     {
-//         Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);     // MatrixBuffer (b0)
-//         Graphics->DeviceContext->VSSetConstantBuffers(1, 1, &GridConstantBuffer); // GridParameters (b1)
-//         Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &GridConstantBuffer);
-//         Graphics->DeviceContext->VSSetConstantBuffers(3, 1, &LinePrimitiveBuffer);
-//         Graphics->DeviceContext->VSSetShaderResources(2, 1, &pBBSRV);
-//         Graphics->DeviceContext->VSSetShaderResources(3, 1, &pConeSRV);
-//         Graphics->DeviceContext->VSSetShaderResources(4, 1, &pOBBSRV);
-//     }
-// }
+ID3D11ShaderResourceView* FRenderer::CreateBufferSRV(ID3D11Buffer* pBuffer, const UINT numElements) const
+{
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN; // 구조화된 버퍼의 경우 형식은 UNKNOWN으로 지정
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    srvDesc.Buffer.ElementOffset = 0;
+    srvDesc.Buffer.NumElements = numElements;
 
-// void FRenderer::ReleaseLineShader() const
-// {
-//     if (GridConstantBuffer) GridConstantBuffer->Release();
-//     if (LinePrimitiveBuffer) LinePrimitiveBuffer->Release();
-//     if (VertexLineShader) VertexLineShader->Release();
-//     if (PixelLineShader) PixelLineShader->Release();
-// }
+    ID3D11ShaderResourceView* pSRV = nullptr;
+    if (HRESULT hr = Graphics->Device->CreateShaderResourceView(pBuffer, &srvDesc, &pSRV); FAILED(hr))
+    {
+        // 오류 처리 (필요에 따라 로그 출력 등)
+        assert(false && "CreateShaderResourceView failed");
+        return nullptr;
+    }
+    return pSRV;
+}
 
 ID3D11ShaderResourceView* FRenderer::CreateBoundingBoxSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes)
 {
@@ -911,9 +599,6 @@ void FRenderer::PrepareRender(ULevel* Level)
             LightObjs.Add(pLightComp);
         }
     }
-    
-
-
     
     for (const auto iter : Ss)
     {
@@ -1071,7 +756,7 @@ void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorV
         OBJ::FStaticMeshRenderData* renderData = GizmoComp->GetStaticMesh()->GetRenderData();
         if (renderData == nullptr) continue;
 
-        RenderPrimitive(renderData, GizmoComp->GetStaticMesh()->GetMaterials(), GizmoComp->GetOverrideMaterials());
+        //RenderPrimitive(renderData, GizmoComp->GetStaticMesh()->GetMaterials(), GizmoComp->GetOverrideMaterials());
     }
 
     Graphics->DeviceContext->RSSetState(Graphics->GetCurrentRasterizer());

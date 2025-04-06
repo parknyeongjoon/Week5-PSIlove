@@ -32,27 +32,18 @@ private:
     float litFlag = 0;
 public:
     FGraphicsDevice* Graphics;
-    
-    ID3D11Buffer* ConstantBuffer = nullptr;
-    ID3D11Buffer* LightingBuffer = nullptr;
-    ID3D11Buffer* FlagBuffer = nullptr;
-    ID3D11Buffer* MaterialConstantBuffer = nullptr;
-    ID3D11Buffer* SubMeshConstantBuffer = nullptr;
-    ID3D11Buffer* TextureConstantBufer = nullptr;
-    ID3D11Buffer* GridConstantBuffer = nullptr;
-    ID3D11Buffer* LinePrimitiveBuffer = nullptr;
 
-public:
     void AddOrSetVertexShader(const FString& InName, ID3D11VertexShader* InShader);
     void AddOrSetPixelShader(const FString& InName, ID3D11PixelShader* InShader);
     void AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* InLayout);
 
     void AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 InStride);
     void AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 numIndices);
-    
+
+    FVIBuffers* GetVIBuffer(const FString& InVIName) { return VIBuffers[InVIName]; }
 private:
     TMap<FString, FShaderProgram> ShaderPrograms;
-    TMap<FString, FVIBuffers> VIBuffers;
+    TMap<FString, FVIBuffers*> VIBuffers;
 
     TMap<FString, TMap<FShaderConstantKey, uint32>> ShaderConstantNames;
     TMap<FString, ID3D11Buffer*> ConstantBuffers;
@@ -64,24 +55,12 @@ public:
 
     FLighting lightingData;
 
-    uint32 Stride;
-    uint32 Stride2;
-
 public:
     void Initialize(FGraphicsDevice* graphics);
     void CreateShader();
     void CreateTextureShader();
     void CreateFontShader();
-    void CreateLineShader();
-
-    //void ReleaseFontShader();
-
-    //void PrepareFontShader() const;
-    
-
-    void ReleaseTextureShader();
-   
-    //void PrepareShader() const;
+    void CreateLineShader();    
 
     void PrepareShader(const FString& InShaderName) const;
 
@@ -96,15 +75,9 @@ public:
     //Release
     void Release();
     void ReleaseShader();
-    void ReleaseBuffer(ID3D11Buffer*& Buffer) const;
     void ReleaseConstantBuffer();
-
     
     void ChangeViewMode(EViewModeIndex evi) const;
-    
-    // CreateBuffer
-    //void CreateLightingBuffer();
-    //void CreateLitUnlitBuffer();
     
     template<typename T>
     ID3D11Buffer* CreateImmutableVertexBuffer(const TArray<T>& vertices) const;
@@ -113,7 +86,6 @@ public:
     
     template <typename T>
     ID3D11Buffer* CreateStructuredBuffer(uint32 numElements) const;
-    
     template<typename T>
     ID3D11Buffer* CreateStaticVertexBuffer(const TArray<T>& vertices) const;
     template<typename T>
@@ -126,9 +98,14 @@ public:
     
     ID3D11Buffer* CreateIndexBuffer(const uint32* indices, uint32 indicesSize) const;
     ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices) const;
-    void CreateConstantBuffers();
     
     ID3D11Buffer* CreateConstantBuffer(uint32 InSize, const void* InData = nullptr) const;
+
+    template<typename T>
+    void UpdateConstant(ID3D11Buffer* InBuffer, const T* InData = nullptr);
+
+    template <typename T>
+    void UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const;
 
     // update
     void UpdateLightBuffer() const;
@@ -160,7 +137,7 @@ public:
 
     void UpdateSubUVConstant(float _indexU, float _indexV) const;
     void PrepareSubUVConstant() const;
-
+    ID3D11ShaderResourceView* CreateBufferSRV(ID3D11Buffer* pBuffer, UINT numElements) const;
 
 public: // line shader
     //void PrepareLineShader() const;
@@ -256,6 +233,38 @@ ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize
     verticeArray.AppendArray(vertices, arraySize);
 
     return CreateDynamicVertexBuffer(verticeArray);
+}
+
+template <typename T>
+void FRenderer::UpdateConstant(ID3D11Buffer* InBuffer, const T* InData)
+{
+    D3D11_MAPPED_SUBRESOURCE sub = {};
+    Graphics->DeviceContext->Map(InBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
+    memcpy(sub.pData, InData, sizeof(T));
+    Graphics->DeviceContext->Unmap(InBuffer, 0);
+}
+
+template <typename T>
+void FRenderer::UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const
+{
+    if (!pBuffer)
+        return;
+
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    const HRESULT hr = Graphics->DeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(hr))
+    {
+        // 오류 처리 (필요 시 로그 출력)
+        return;
+    }
+
+    auto pData = reinterpret_cast<T*>(mappedResource.pData);
+    for (int i = 0; i < Data.Num(); ++i)
+    {
+        pData[i] = Data[i];
+    }
+
+    Graphics->DeviceContext->Unmap(pBuffer, 0);
 }
 
 template <typename T>

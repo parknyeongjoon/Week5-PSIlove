@@ -33,5 +33,7 @@ public:
         //staticMesh = FEngineLoop::resourceMgr.GetMesh(m_Type);
     }
     FBoundingBox GetBoundingBox() { return AABB; }
+
+    FString VIBufferName;
 };
 
