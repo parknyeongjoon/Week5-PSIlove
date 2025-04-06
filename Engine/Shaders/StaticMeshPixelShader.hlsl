@@ -3,7 +3,8 @@ SamplerState Sampler : register(s0);
 
 cbuffer MatrixConstants : register(b0)
 {
-    row_major float4x4 MVP;
+    row_major float4x4 M;
+    row_major float4x4 VP;
     row_major float4x4 MInverseTranspose;
     bool isSelected;
     float3 MatrixPad0;
@@ -47,6 +48,7 @@ cbuffer TextureConstants : register(b5)
 struct PS_INPUT
 {
     float4 position : SV_POSITION; // 변환된 화면 좌표
+    float4 vertexWorldPosition : VERTEX_POSITION;
     float4 color : COLOR; // 전달할 색상
     float3 normal : NORMAL; // 정규화된 노멀 벡터
     float2 texcoord : TEXCOORD;
@@ -95,7 +97,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 {
     PS_OUTPUT output;
 
-    output.position = input.position;
+    output.position = input.vertexWorldPosition;
     output.normal = float4(input.normal,0);
     
     float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);

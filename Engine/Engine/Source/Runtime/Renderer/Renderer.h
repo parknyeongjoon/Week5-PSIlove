@@ -28,8 +28,9 @@ private:
 public:
     FGraphicsDevice* Graphics;
     ID3D11VertexShader* VertexShader = nullptr;
+    ID3D11VertexShader* QuadShader = nullptr;
     ID3D11PixelShader* PixelShader = nullptr;
-    ID3D11PixelShader* LightingShader = nullptr;
+    ID3D11PixelShader* LightingPixelShader = nullptr;
     ID3D11InputLayout* InputLayout = nullptr;
     ID3D11Buffer* ConstantBuffer = nullptr;
     ID3D11Buffer* LightArrConstantBuffer = nullptr;

@@ -47,17 +47,23 @@ void FRenderer::Release()
 
 void FRenderer::CreateShader()
 {
-    ID3DBlob* VertexShaderCSO;
-    ID3DBlob* PixelShaderCSO;
+    ID3DBlob* VSBlob_StaticMesh = nullptr;
+    ID3DBlob* PSBlob_StaticMesh = nullptr;
+    ID3DBlob* VSBlob_Quad = nullptr;
+    ID3DBlob* PSBlob_Lighting = nullptr;
+    UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 
-    D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, nullptr);
-    Graphics->Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
+    D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", compileFlags, 0, &VSBlob_StaticMesh, nullptr);
+    Graphics->Device->CreateVertexShader(VSBlob_StaticMesh->GetBufferPointer(), VSBlob_StaticMesh->GetBufferSize(), nullptr, &VertexShader);
 
-    D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
-    Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
+    D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PSBlob_StaticMesh, nullptr);
+    Graphics->Device->CreatePixelShader(PSBlob_StaticMesh->GetBufferPointer(), PSBlob_StaticMesh->GetBufferSize(), nullptr, &PixelShader);
 
-    D3DCompileFromFile(L"Shaders/LightingShader.hlsl", nullptr, nullptr, "main", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
-    Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &LightingShader);
+    D3DCompileFromFile(L"Shaders/QuadVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", compileFlags, 0, &VSBlob_Quad, nullptr);
+    Graphics->Device->CreateVertexShader(VSBlob_Quad->GetBufferPointer(), VSBlob_Quad->GetBufferSize(), nullptr, &QuadShader);
+
+    D3DCompileFromFile(L"Shaders/LightingPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PSBlob_Lighting, nullptr);
+    Graphics->Device->CreatePixelShader(PSBlob_Lighting->GetBufferPointer(), PSBlob_Lighting->GetBufferSize(), nullptr, &LightingPixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -67,12 +73,15 @@ void FRenderer::CreateShader()
     };
 
     Graphics->Device->CreateInputLayout(
-        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
+        layout, ARRAYSIZE(layout), VSBlob_StaticMesh->GetBufferPointer(), VSBlob_StaticMesh->GetBufferSize(), &InputLayout
     );
 
     Stride = sizeof(FVertexSimple);
-    VertexShaderCSO->Release();
-    PixelShaderCSO->Release();
+    
+    SAFE_RELEASE(VSBlob_StaticMesh)
+    SAFE_RELEASE(PSBlob_StaticMesh)
+    SAFE_RELEASE(VSBlob_Quad)
+    SAFE_RELEASE(PSBlob_Lighting)
 }
 
 void FRenderer::ReleaseShader()
@@ -80,7 +89,7 @@ void FRenderer::ReleaseShader()
     SAFE_RELEASE(InputLayout)
     SAFE_RELEASE(VertexShader)
     SAFE_RELEASE(PixelShader)
-    SAFE_RELEASE(LightingShader)
+    SAFE_RELEASE(LightingPixelShader)
 }
 
 void FRenderer::PrepareShader() const
@@ -103,14 +112,15 @@ void FRenderer::PrepareShader() const
 
 void FRenderer::PrepareLightingShader() const
 {
-    Graphics->DeviceContext->VSSetShader(nullptr, nullptr, 0);
-    Graphics->DeviceContext->PSSetShader(LightingShader, nullptr, 0);
+    Graphics->DeviceContext->VSSetShader(QuadShader, nullptr, 0);
+    Graphics->DeviceContext->PSSetShader(LightingPixelShader, nullptr, 0);
     Graphics->PrepareLighting();
 
     if (LightArrConstantBuffer)
         Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &LightArrConstantBuffer);
 
     Graphics->DeviceContext->IASetInputLayout(nullptr); // 입력 레이아웃 불필요
+    Graphics->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 }
 
 void FRenderer::ResetVertexShader() const
@@ -405,7 +415,7 @@ void FRenderer::UpdateLightBuffer(TArray<ULightComponent*> lightComponents) cons
         {
             constants->Lights[index].Intensity = lightComponents[index]->GetIntensity();
             constants->Lights[index].Position = lightComponents[index]->GetWorldLocation();
-            constants->Lights[index].AmbientFactor = 0.0f;
+            constants->Lights[index].AmbientFactor = 1.0f;
             constants->Lights[index].LightColor = lightComponents[index]->GetLightColor();
             constants->Lights[index].LightDirection = FVector(-1,-1,-1);
             constants->Lights[index].AttenuationRadius = lightComponents[index]->GetAttenuationRadius();
@@ -462,7 +472,7 @@ void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const
     {
         ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
         ID3D11SamplerState* nullSampler[1] = {nullptr};
-
+        
         Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRV);
         Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler);
     }
@@ -1090,6 +1100,7 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     {
         RenderStaticMeshes(Level, ActiveViewport);
     }
+    
     UpdateLightBuffer(LightObjs);
     RenderLighting(Level, ActiveViewport);
     
@@ -1297,5 +1308,8 @@ void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportCli
     PrepareLightingShader();
     
     // 화면 크기 사각형 렌더링
-    //Graphics->DeviceContext->Draw(4, 0); // 4개의 정점으로 화면 전체 사각형 그리기
+    Graphics->DeviceContext->Draw(6, 0); // 4개의 정점으로 화면 전체 사각형 그리기
+    
+    Graphics->DeviceContext->OMSetRenderTargets(5, Graphics->RTVs, Graphics->DepthStencilView);
+    Graphics->DeviceContext->PSSetShaderResources(0,0,nullptr);
 }

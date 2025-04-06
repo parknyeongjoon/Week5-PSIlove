@@ -19,6 +19,7 @@ struct VS_INPUT
 struct PS_INPUT
 {
     float4 position : SV_POSITION; // 변환된 화면 좌표
+    float4 vertexWorldPosition : VERTEX_POSITION;
     float4 color : COLOR; // 전달할 색상
     float3 normal : NORMAL; // 정규화된 노멀 벡터
     float2 texcoord : TEXCOORD;
@@ -29,7 +30,8 @@ PS_INPUT mainVS(VS_INPUT input)
     PS_INPUT output;
     
     // 위치 변환
-    output.position = mul(mul(input.position, M), VP);
+    output.position = mul(mul(input.position, M),VP);
+    output.vertexWorldPosition = mul(input.position, M);
     output.color = input.color;
     if (isSelected)
         output.color *= 0.5;

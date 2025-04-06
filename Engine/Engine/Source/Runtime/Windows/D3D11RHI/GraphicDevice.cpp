@@ -2,10 +2,9 @@
 #include <wchar.h>
 void FGraphicsDevice::Initialize(HWND hWindow) {
     CreateDeviceAndSwapChain(hWindow);
-    // CreateDefaultSampler();
+    CreateDefaultSampler();
     CreateFrameBuffer();
     CreateGBuffer();
-    CreateGBufferSRVs();
     CreateDepthStencilBuffer(hWindow);
     CreateDepthStencilState();
     CreateRasterizerState();
@@ -220,6 +219,8 @@ void FGraphicsDevice::CreateGBuffer()
     RTVs[2] = NormalRTV;
     RTVs[3] = DiffuseRTV;
     RTVs[4] = MaterialRTV;
+
+    CreateGBufferSRVs();
 }
 
 void FGraphicsDevice::CreateGBufferSRVs()
@@ -260,6 +261,7 @@ void FGraphicsDevice::ReleaseGBuffer()
     SAFE_RELEASE(NormalRTV)
     SAFE_RELEASE(DiffuseRTV)
     SAFE_RELEASE(MaterialRTV)
+    SAFE_RELEASE(PositionSRV)
 }
 
 void FGraphicsDevice::ReleaseGBufferSRVs()
@@ -319,6 +321,7 @@ void FGraphicsDevice::Prepare() const
 
 void FGraphicsDevice::PrepareLighting() const
 {
+    DeviceContext->OMSetRenderTargets(1, RTVs, DepthStencilView);
     DeviceContext->PSSetShaderResources(0, 4, GBufferSRVs);
     DeviceContext->PSSetSamplers(0, 1, &DefaultSampler);
 }

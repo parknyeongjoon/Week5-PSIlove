@@ -25,6 +25,7 @@ cbuffer LightBuffer : register(b0)
 
 struct PS_INPUT
 {
+    float4 position : SV_Position;
     float2 texCoord : TEXCOORD0;
 };
 
@@ -33,7 +34,7 @@ struct PS_OUTPUT
     float4 color : SV_TARGET0;
 };
 
-PS_OUTPUT main(PS_INPUT input)
+PS_OUTPUT mainPS(PS_INPUT input)
 {
     PS_OUTPUT output;
 
@@ -43,7 +44,7 @@ PS_OUTPUT main(PS_INPUT input)
     float4 diffuse = DiffuseBuffer.Sample(SamLinear, input.texCoord);
     float4 material = MaterialBuffer.Sample(SamLinear, input.texCoord);
 
-    // 유효한 픽셀인지 확인 (깊이 값이 0이면 스킵)
+    // // 유효한 픽셀인지 확인 (깊이 값이 0이면 스킵)
     if (position.w == 0.0f)
     {
         discard;
@@ -114,5 +115,6 @@ PS_OUTPUT main(PS_INPUT input)
     finalColor = pow(finalColor, float3(1.0f/2.2f, 1.0f/2.2f, 1.0f/2.2f));
     
     output.color = float4(finalColor, 1.0f);
+    
     return output;
 }
