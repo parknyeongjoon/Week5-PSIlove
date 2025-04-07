@@ -34,6 +34,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateTextureShader();
     CreateFontShader();
     CreateLineShader();
+    CreateDefaultPostProcessShader();
     CreateFogShader();
     CreatePostProcessVertexBuffer();
     CreatePostProcessIndexBuffer();
@@ -50,6 +51,8 @@ void FRenderer::Release()
     ReleaseFontShader();
     ReleaseLineShader();
     ReleaseConstantBuffer();
+    ReleaseDefaultPostProcessShader();
+    ReleaseFogShader();
 }
 
 void FRenderer::CreateShader()
@@ -1134,10 +1137,10 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
         RenderTexts(Level, ActiveViewport);
     }
     //RenderLight(Level, ActiveViewport);
-    //if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
-    //{
-    //    //RenderFog(Level, ActiveViewport);
-    //}
+    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
+    {
+        RenderFog(Level, ActiveViewport);
+    }
     //RenderFog(Level, ActiveViewport);
     RenderFinal(Level, ActiveViewport);
     ClearRenderArr();
@@ -1361,6 +1364,80 @@ void FRenderer::RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient
     }
 }
 
+void FRenderer::CreateDefaultPostProcessShader()
+{
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+    HRESULT hr;
+
+    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+
+    hr = D3DCompileFromFile(L"Shaders/PostProcessVertexShader.hlsl", nullptr, nullptr, "MainVS", "vs_5_0", flags, 0, &VertexShaderCSO, nullptr);
+    if (FAILED(hr))
+    {
+        Console::GetInstance().AddLog(LogLevel::Warning, "VertexShader Error");
+    }
+    Graphics->Device->CreateVertexShader(
+        VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &PostProcessVertexShader
+    );
+    ID3DBlob* errorBlob = nullptr;
+    hr = D3DCompileFromFile(L"Shaders/PostProcessPixelShader.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "MainPS", "ps_5_0", flags, 0, &PixelShaderCSO, &errorBlob);
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+            errorBlob->Release();
+        }
+        else
+        {
+            OutputDebugStringA("❗ Shader compile failed with no error info\n");
+        }
+        Console::GetInstance().AddLog(LogLevel::Warning, "PixelShader Error");
+    }
+    Graphics->Device->CreatePixelShader(
+        PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &PostProcessPixelShader
+    );
+
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+
+    Graphics->Device->CreateInputLayout(
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &PostProcessInputLayout
+    );
+
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
+}
+
+void FRenderer::ReleaseDefaultPostProcessShader()
+{
+    if (PostProcessVertexShader)
+    {
+        PostProcessVertexShader->Release();
+        PostProcessVertexShader = nullptr;
+    }
+    if (PostProcessPixelShader)
+    {
+        PostProcessPixelShader->Release();
+        PostProcessPixelShader = nullptr;
+    }
+    if (PostProcessInputLayout)
+    {
+        PostProcessInputLayout->Release();
+        PostProcessInputLayout = nullptr;
+    }
+}
+
+void FRenderer::PrepareDefaultPostProcessShader() const
+{
+    Graphics->DeviceContext->VSSetShader(PostProcessVertexShader, nullptr, 0);
+    Graphics->DeviceContext->PSSetShader(PostProcessPixelShader, nullptr, 0);
+    Graphics->DeviceContext->IASetInputLayout(PostProcessInputLayout);
+}
+
 void FRenderer::CreateFogShader()
 {
     ID3DBlob* VertexShaderCSO;
@@ -1568,7 +1645,7 @@ void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> 
 void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     Graphics->PrepareFinalRender();
-    PrepareFogShader();
+    PrepareDefaultPostProcessShader();
     UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
@@ -1591,5 +1668,4 @@ void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient
     // Sampler 해제
     ID3D11SamplerState* nullSamplers[1] = { nullptr };
     Graphics->DeviceContext->PSSetSamplers(0, 1, nullSamplers);
-
 }

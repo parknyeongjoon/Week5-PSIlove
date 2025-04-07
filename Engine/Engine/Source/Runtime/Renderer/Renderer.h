@@ -174,6 +174,14 @@ public:
     ID3D11ShaderResourceView* pConeSRV = nullptr;
     ID3D11ShaderResourceView* pOBBSRV = nullptr;
 
+    // default postprocess
+public:
+    ID3D11VertexShader* PostProcessVertexShader = nullptr;
+    ID3D11PixelShader* PostProcessPixelShader = nullptr;
+    ID3D11InputLayout* PostProcessInputLayout = nullptr;
+    void CreateDefaultPostProcessShader();
+    void ReleaseDefaultPostProcessShader();
+    void PrepareDefaultPostProcessShader() const;
     // fogshader
 public:
     ID3D11VertexShader* FogVertexShader = nullptr;
@@ -191,12 +199,7 @@ public:
     void CreatePostProcessIndexBuffer();
     void UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport);
     void UpdateFogConstant(UHeightFogComponent* FogComponent, const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition);
-    void UpdateFogTexture(ID3D11ShaderResourceView* fogSRV, int slot) const;
     void RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderFogPass() const;
-    void RenderFogPass(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-
-
 };
 
