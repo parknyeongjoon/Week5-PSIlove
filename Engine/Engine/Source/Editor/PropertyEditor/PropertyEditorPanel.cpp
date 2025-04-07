@@ -100,7 +100,7 @@ void PropertyEditorPanel::Render()
                 ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
                 if (ImGui::TreeNodeEx("SpotLight Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
                 {
-                    FLinearColor currColor = lightObj->GetColor();
+                    FLinearColor currColor = lightObj->GetLightColor();
 
                     float r = currColor.r;
                     float g = currColor.g;
@@ -122,7 +122,7 @@ void PropertyEditorPanel::Render()
                         g = lightColor[1];
                         b = lightColor[2];
                         a = lightColor[3];
-                        lightObj->SetColor(FLinearColor(r, g, b, a));
+                        lightObj->SetLightColor(FLinearColor(r, g, b, a));
                     }
                     RGBToHSV(r, g, b, h, s, v);
                     // RGB/HSV
@@ -151,13 +151,13 @@ void PropertyEditorPanel::Render()
                     {
                         // RGB -> HSV
                         RGBToHSV(r, g, b, h, s, v);
-                        lightObj->SetColor(FLinearColor(r, g, b, a));
+                        lightObj->SetLightColor(FLinearColor(r, g, b, a));
                     }
                     else if (changedHSV && !changedRGB)
                     {
                         // HSV -> RGB
                         HSVToRGB(h, s, v, r, g, b);
-                        lightObj->SetColor(FLinearColor(r, g, b, a));
+                        lightObj->SetLightColor(FLinearColor(r, g, b, a));
                     }
 
                     // Light Radius

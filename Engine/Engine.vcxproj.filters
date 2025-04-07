@@ -487,6 +487,12 @@
     <FxCompile Include="Shaders\FontVertexShader.hlsl" />
     <FxCompile Include="Shaders\TexturePixelShader.hlsl" />
     <FxCompile Include="Shaders\TextureVertexShader.hlsl" />
+    <FxCompile Include="Shaders\LightingPixelShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="QuadVertexShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Engine.natvis" />

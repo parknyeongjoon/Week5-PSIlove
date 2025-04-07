@@ -29,10 +29,12 @@ private:
 public:
     FGraphicsDevice* Graphics;
     ID3D11VertexShader* VertexShader = nullptr;
+    ID3D11VertexShader* QuadShader = nullptr;
     ID3D11PixelShader* PixelShader = nullptr;
+    ID3D11PixelShader* LightingPixelShader = nullptr;
     ID3D11InputLayout* InputLayout = nullptr;
     ID3D11Buffer* ConstantBuffer = nullptr;
-    ID3D11Buffer* LightingBuffer = nullptr;
+    ID3D11Buffer* LightArrConstantBuffer = nullptr;
     ID3D11Buffer* FlagBuffer = nullptr;
     ID3D11Buffer* MaterialConstantBuffer = nullptr;
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
@@ -47,10 +49,9 @@ public:
     void Initialize(FGraphicsDevice* graphics);
    
     void PrepareShader() const;
-    
+    void PrepareLightingShader() const;
+
     //Render
-    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const;
-    void RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const;
     void RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<FStaticMaterial*> materials, TArray<UMaterial*> overrideMaterial, int selectedSubMeshIndex) const;
    
     void RenderTexturedModelPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* InTextureSRV, ID3D11SamplerState* InSamplerState) const;
@@ -71,16 +72,14 @@ public:
     
     // CreateBuffer
     void CreateConstantBuffer();
-    void CreateLightingBuffer();
-    void CreateLitUnlitBuffer();
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices, UINT byteWidth) const;
 
     // update
-    void UpdateLightBuffer() const;
-    void UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
+    void UpdateConstant(const FMatrix& Model, const FMatrix& ViewProjection, const FMatrix& NormalMatrix, bool IsSelected) const;
+    void UpdateLightBuffer(TArray<ULightComponent*> lightComponents) const;
     void UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const;
     void UpdateLitUnlitConstant(int isLit) const;
     void UpdateSubMeshConstant(bool isSelected) const;
@@ -153,7 +152,7 @@ public: // line shader
     void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
-    void RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport) const;
     void RenderBillboards(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderTexts(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     

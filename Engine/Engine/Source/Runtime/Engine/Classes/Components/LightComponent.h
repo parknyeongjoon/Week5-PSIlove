@@ -17,13 +17,13 @@ public:
     void InitializeLight();
 
 private:
-    FLinearColor Color;
-    float Intensity;
+    FLinearColor LightColor;
+    float Intensity = 1.0f;
     float AttenuationRadius;
     FBoundingBox AABB;
     
 public:
-    UPROPERTY(FLinearColor, Color);
+    UPROPERTY(FLinearColor, LightColor);
     UPROPERTY(float, Intensity);
     UPROPERTY(float, AttenuationRadius);
     FBoundingBox GetBoundingBox() const {return AABB;}

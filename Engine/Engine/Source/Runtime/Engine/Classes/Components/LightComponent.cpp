@@ -21,8 +21,8 @@ void ULightComponent::InitializeLight()
 {
     AABB.max = { 1.f,1.f,1.f };
     AABB.min = { -1.f,-1.f,-1.f };
-    Color = { 1,1,1, 1 };
-    AttenuationRadius = 5;
+    LightColor = { 1,1,1, 1 };
+    AttenuationRadius = 10;
 }
 
 void ULightComponent::TickComponent(float DeltaTime)
