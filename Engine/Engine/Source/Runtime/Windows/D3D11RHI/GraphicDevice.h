@@ -94,12 +94,11 @@ public:
     void Release();
     
     void ClearRenderTarget();
-    void Prepare(D3D11_VIEWPORT* viewport);
     void PreparePostProcessRender();    
     void PrepareFinalRender();
     void SwapBuffer() const;
-    void Prepare() const;
-    void PrepareLighting() const;
+    void Prepare();
+    void PrepareLighting();
     // void Prepare(D3D11_VIEWPORT* viewport) const;
     void OnResize(HWND hWindow);
     ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
