@@ -24,8 +24,6 @@ public:
     
     FMatrix CreateBillboardMatrix();
 
-    ID3D11Buffer* vertexTextureBuffer;
-    ID3D11Buffer* indexTextureBuffer;
     UINT numVertices;
     UINT numIndices;
     float finalIndexU = 0.0f;

@@ -282,7 +282,7 @@ void FEngineLoop::TogglePIE()
     GLevel = GWorld->Level;
 }
 
-float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
+float FEngineLoop::GetAspectRatio(const Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain) const
 {
     DXGI_SWAP_CHAIN_DESC desc;
     swapChain->GetDesc(&desc);
@@ -319,7 +319,6 @@ void FEngineLoop::Exit()
     delete UIMgr;
     resourceMgr.Release(&renderer);
     renderer.Release();
-    graphicDevice.Release();
 }
 
 

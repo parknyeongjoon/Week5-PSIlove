@@ -1,5 +1,5 @@
 
-cbuffer FMatrixBuffer : register(b0)
+cbuffer FMVPConstant : register(b0)
 {
     row_major float4x4 MVP;
 };
@@ -18,6 +18,7 @@ cbuffer FPrimitiveCounts : register(b3)
     int ConeCount; // 렌더링할 cone의 개수
     int pad1;
 };
+
 struct FBoundingBoxData
 {
     float3 bbMin;
@@ -25,6 +26,7 @@ struct FBoundingBoxData
     float3 bbMax;
     float padding1;
 };
+
 struct FConeData
 {
     float3 ConeApex; // 원뿔의 꼭짓점
@@ -37,6 +39,7 @@ struct FConeData
     int ConeSegmentCount; // 원뿔 밑면 분할 수
     float pad[3];
 };
+
 struct FOrientedBoxCornerData
 {
     float3 corners[8]; // 회전/이동 된 월드 공간상의 8꼭짓점
@@ -45,6 +48,7 @@ struct FOrientedBoxCornerData
 StructuredBuffer<FBoundingBoxData> g_BoundingBoxes : register(t2);
 StructuredBuffer<FConeData> g_ConeData : register(t3);
 StructuredBuffer<FOrientedBoxCornerData> g_OrientedBoxes : register(t4);
+
 static const int BB_EdgeIndices[12][2] =
 {
     { 0, 1 },

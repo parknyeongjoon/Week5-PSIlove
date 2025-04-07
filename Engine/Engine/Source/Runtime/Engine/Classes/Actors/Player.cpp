@@ -275,13 +275,13 @@ void AEditorPlayer::AddCoordiMode()
 
 void AEditorPlayer::ScreenToViewSpace(int screenX, int screenY, const FMatrix& viewMatrix, const FMatrix& projectionMatrix, FVector& pickPosition)
 {
-    D3D11_VIEWPORT viewport = GetEngine().GetLevelEditor()->GetActiveViewportClient()->GetD3DViewport();
+    D3D11_VIEWPORT* viewport = GetEngine().GetLevelEditor()->GetActiveViewportClient()->GetD3DViewport();
     
-    float viewportX = screenX - viewport.TopLeftX;
-    float viewportY = screenY - viewport.TopLeftY;
+    float viewportX = screenX - viewport->TopLeftX;
+    float viewportY = screenY - viewport->TopLeftY;
 
-    pickPosition.x = ((2.0f * viewportX / viewport.Width) - 1) / projectionMatrix[0][0];
-    pickPosition.y = -((2.0f * viewportY / viewport.Height) - 1) / projectionMatrix[1][1];
+    pickPosition.x = ((2.0f * viewportX / viewport->Width) - 1) / projectionMatrix[0][0];
+    pickPosition.y = -((2.0f * viewportY / viewport->Height) - 1) / projectionMatrix[1][1];
     if (GetEngine().GetLevelEditor()->GetActiveViewportClient()->IsOrtho())
     {
         pickPosition.z = 0.0f;  // 오쏘 모드에서는 unproject 시 near plane 위치를 기준

@@ -10,7 +10,7 @@ cbuffer FMatrixConstants : register(b0)
     float3 MatrixPad0;
 };
 
-struct FMaterial
+cbuffer FMaterialConstants : register(b1)
 {
     float3 DiffuseColor;
     float TransparencyScalar;
@@ -20,21 +20,15 @@ struct FMaterial
     float SpecularScalar;
     float3 EmissiveColor;
     float MaterialPad0;
-};
-
-cbuffer FMaterialConstants : register(b1)
-{
-    FMaterial Material;
 }
 
-cbuffer FLightingConstants : register(b2)
+// LightingBuffer: 조명 관련 파라미터 관리
+cbuffer FLightingBuffer : register(b2)
 {
     float3 LightDirection; // 조명 방향 (단위 벡터; 빛이 들어오는 방향의 반대 사용)
-    float LightPad0; // 16바이트 정렬용 패딩
-    float3 LightColor; // 조명 색상 (예: (1, 1, 1))
-    float LightPad1; // 16바이트 정렬용 패딩
     float AmbientFactor; // ambient 계수 (예: 0.1)
-    float3 LightPad2; // 16바이트 정렬 맞춤 추가 패딩
+    float3 LightColor; // 조명 색상 (예: (1, 1, 1))
+    float LightPad0; // 16바이트 정렬용 패딩
 };
 
 cbuffer FFlagConstants : register(b3)
@@ -110,10 +104,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);
     float3 color;
     if (texColor.g == 0) // TODO: boolean으로 변경
-        color = saturate(Material.DiffuseColor);
+        color = saturate(DiffuseColor);
     else
     {
-        color = texColor + Material.DiffuseColor;
+        color = texColor + DiffuseColor;
     }
     
     if (isSelected)
@@ -138,32 +132,32 @@ PS_OUTPUT mainPS(PS_INPUT input)
             // 스페큘러 계산 (간단한 Blinn-Phong)
             float3 V = float3(0, 0, 1); // 카메라가 Z 방향을 향한다고 가정
             float3 H = normalize(L + V);
-            float specular = pow(saturate(dot(N, H)), Material.SpecularScalar * 32) * Material.SpecularScalar;
+            float specular = pow(saturate(dot(N, H)), SpecularScalar * 32) * SpecularScalar;
             
             // 최종 라이팅 계산
-            float3 ambient = Material.AmbientColor * AmbientFactor;
+            float3 ambient = AmbientColor * AmbientFactor;
             float3 diffuseLight = diffuse * LightColor;
-            float3 specularLight = specular * Material.SpecularColor * LightColor;
+            float3 specularLight = specular * SpecularColor * LightColor;
             
             color = ambient + (diffuseLight * color) + specularLight;
         }
         
         // 투명도 적용
-        color += Material.EmissiveColor;
-        output.color = float4(color, Material.TransparencyScalar);
+        color += EmissiveColor;
+        output.color = float4(color, TransparencyScalar);
         return output;
     }
     else // unlit 상태일 때 PaperTexture 효과 적용
     {
         if (input.normalFlag < 0.5)
         {
-            output.color = float4(color, Material.TransparencyScalar);
+            output.color = float4(color, TransparencyScalar);
             return output;
         }
         
         output.color = float4(color, 1);
         // 투명도 적용
-        output.color.a = Material.TransparencyScalar;
+        output.color.a = TransparencyScalar;
             
         return output;
     }

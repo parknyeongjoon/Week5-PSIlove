@@ -11,11 +11,6 @@ UParticleSubUVComp::UParticleSubUVComp()
 
 UParticleSubUVComp::~UParticleSubUVComp()
 {
-	if (vertexSubUVBuffer)
-	{
-		vertexSubUVBuffer->Release();
-		vertexSubUVBuffer = nullptr;
-	}
 }
 
 void UParticleSubUVComp::DuplicateSubObjects()
@@ -35,8 +30,8 @@ UObject* UParticleSubUVComp::Duplicate()
 void UParticleSubUVComp::InitializeComponent()
 {
 	Super::InitializeComponent();
-	FEngineLoop::renderer.UpdateSubUVConstant(0, 0);
-	FEngineLoop::renderer.PrepareSubUVConstant();
+	//FEngineLoop::renderer.UpdateSubUVConstant(0, 0);
+	//FEngineLoop::renderer.PrepareSubUVConstant();
 }
 
 void UParticleSubUVComp::TickComponent(float DeltaTime)
@@ -123,6 +118,8 @@ void UParticleSubUVComp::CreateSubUVVertexBuffer()
 	vertices[3].v = normalHeightOffset;
 
     const FString Name(Texture->Name.c_str());
+
+    Microsoft::WRL::ComPtr<ID3D11Buffer> vertexSubUVBuffer = nullptr;
 	vertexSubUVBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(vertices);
     FEngineLoop::renderer.AddOrSetVertexBuffer(Name, vertexSubUVBuffer, sizeof(FVertexTexture));
     

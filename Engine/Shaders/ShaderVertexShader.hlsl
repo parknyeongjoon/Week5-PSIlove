@@ -1,8 +1,7 @@
 Texture2D Texture : register(t0);
 SamplerState Sampler : register(s0);
 
-// MatrixBuffer: 변환 행렬 관리
-cbuffer FMatrixBuffer : register(b0)
+cbuffer FMatrixConstants : register(b0)
 {
     row_major float4x4 MVP;
     row_major float4x4 MInverseTranspose;

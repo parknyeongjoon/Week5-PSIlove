@@ -235,9 +235,9 @@ void SLevelEditor::SaveConfig()
     }
     ActiveViewportClient->SaveConfig(config);
     config["bMutiView"] = std::to_string(bMultiViewportMode);
-    config["ActiveViewportIndex"] = std::to_string(ActiveViewportClient->ViewportIndex);
-    config["ScreenWidth"] = std::to_string(ActiveViewportClient->ViewportIndex);
-    config["ScreenHeight"] = std::to_string(ActiveViewportClient->ViewportIndex);
+    config["ActiveViewportIndex"] = std::to_string(ActiveViewportClient->GetViewportIndex());
+    config["ScreenWidth"] = std::to_string(ActiveViewportClient->GetViewportIndex());
+    config["ScreenHeight"] = std::to_string(ActiveViewportClient->GetViewportIndex());
     config["OrthoPivotX"] = std::to_string(ActiveViewportClient->Pivot.x);
     config["OrthoPivotY"] = std::to_string(ActiveViewportClient->Pivot.y);
     config["OrthoPivotZ"] = std::to_string(ActiveViewportClient->Pivot.z);

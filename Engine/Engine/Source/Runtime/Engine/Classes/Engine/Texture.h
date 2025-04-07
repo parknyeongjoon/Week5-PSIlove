@@ -2,7 +2,7 @@
 #include "D3D11RHI/GraphicDevice.h"
 struct FTexture
 {
-    FTexture(const FWString& InName, ID3D11ShaderResourceView* SRV, ID3D11Texture2D* Texture2D, ID3D11SamplerState* Sampler, uint32 _width, uint32 _height)
+    FTexture(const FWString& InName, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV, Microsoft::WRL::ComPtr<ID3D11Texture2D> Texture2D, Microsoft::WRL::ComPtr<ID3D11SamplerState> Sampler, uint32 _width, uint32 _height)
         : Name(InName),TextureSRV(SRV), Texture(Texture2D), SamplerState(Sampler), width(_width), height(_height)
     {}
     ~FTexture()
@@ -15,9 +15,9 @@ struct FTexture
         if (SamplerState) { SamplerState->Release(); SamplerState = nullptr; }
     }
     FWString Name;
-    ID3D11ShaderResourceView* TextureSRV = nullptr;
-    ID3D11Texture2D* Texture = nullptr;
-    ID3D11SamplerState* SamplerState = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> TextureSRV = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> Texture = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState> SamplerState = nullptr;
     uint32 width;
     uint32 height;
 };

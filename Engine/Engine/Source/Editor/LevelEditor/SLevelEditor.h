@@ -1,10 +1,12 @@
 #pragma once
 #include "Define.h"
 #include "Container/Map.h"
+
 class SSplitterH;
 class SSplitterV;
 class ULevel;
 class FEditorViewportClient;
+
 class SLevelEditor
 {
 public:
@@ -45,7 +47,7 @@ public:
     {
         return ActiveViewportClient;
     }
-    void SetViewportClient(std::shared_ptr<FEditorViewportClient> viewportClient)
+    void SetViewportClient(const std::shared_ptr<FEditorViewportClient>& viewportClient)
     {
         ActiveViewportClient = viewportClient;
     }

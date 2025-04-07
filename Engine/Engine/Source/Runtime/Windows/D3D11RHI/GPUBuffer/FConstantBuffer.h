@@ -1,14 +1,16 @@
 #pragma once
 #include "HAL/PlatformType.h"
 
-class D3D11Buffer;
+#define _TCHAR_DEFINED
+#include <wrl.h>
+#include <d3d11.h>
 
 class FConstantBuffer
 {
-    FConstantBuffer(D3D11Buffer* InBuffer, const uint32 InSize)
+    FConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer, const uint32 InSize)
         : Buffer(InBuffer), Size(InSize) {}
 private:
-    D3D11Buffer* Buffer = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer = nullptr;
     
     uint32 Slot = 0;
     uint32 Size = 0;

@@ -16,21 +16,21 @@ UPrimitiveBatch::~UPrimitiveBatch()
     }
     ReleaseOBBResources();
     ReleaseBoundingBoxResources();
-    ReleaseConeResources();
+   // ReleaseConeResources();
 }
 
 void UPrimitiveBatch::Release()
 {
     ReleaseOBBResources();
     ReleaseBoundingBoxResources();
-    ReleaseConeResources();
+    //ReleaseConeResources();
 }
 
 void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
 {
-    GridParam.gridSpacing = spacing;
-    GridParam.numGridLines = gridCount;
-    GridParam.gridOrigin = { 0,0,0 };
+    GridParam.GridSpacing = spacing;
+    GridParam.GridCount = gridCount;
+    GridParam.GridOrigin = { 0,0,0 };
 }
 
 void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection)
@@ -38,51 +38,50 @@ void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection
     //FEngineLoop::renderer.PrepareLineShader();
     FEngineLoop::renderer.PrepareShader(TEXT("Line"));
 
-    InitializeVertexBuffer();
+    //InitializeVertexBuffer();
 
     FMatrix Model = FMatrix::Identity;
     FMatrix MVP = Model * View * Projection;
     FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-    FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, FVector4(0,0,0,0), false);
-    FEngineLoop::renderer.UpdateGridConstantBuffer(GridParam);
+    //FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, FVector4(0,0,0,0), false);
+    //FEngineLoop::renderer.UpdateGridConstantBuffer(GridParam);
 
     UpdateBoundingBoxResources();
-    UpdateConeResources();
-    UpdateOBBResources();
+    //UpdateConeResources();
+    //UpdateOBBResources();
     int boundingBoxSize = static_cast<int>(BoundingBoxes.Num());
     int coneSize = static_cast<int>(Cones.Num());
     int obbSize = static_cast<int>(OrientedBoundingBoxes.Num());
     FEngineLoop::renderer.UpdateLinePrimitveCountBuffer(boundingBoxSize, coneSize);
-    FEngineLoop::renderer.RenderBatch(GridParam, pVertexBuffer, boundingBoxSize, coneSize, ConeSegmentCount, obbSize);
+    //FEngineLoop::renderer.RenderBatch(GridParam, pVertexBuffer, boundingBoxSize, coneSize, ConeSegmentCount, obbSize);
     BoundingBoxes.Empty();
     Cones.Empty();
     OrientedBoundingBoxes.Empty();
     FEngineLoop::renderer.PrepareShader(TEXT("StaticMesh"));
 }
-void UPrimitiveBatch::InitializeVertexBuffer()
-{
-    if (!pVertexBuffer)
-    {
-        FSimpleVertex vertices[2]{{0}, {0}};
-        pVertexBuffer = FEngineLoop::renderer.CreateStaticVertexBuffer<FSimpleVertex>(vertices, 2);
-        FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Line"), pVertexBuffer, sizeof(FSimpleVertex));
-    }
-}
 
 void UPrimitiveBatch::UpdateBoundingBoxResources()
 {
-    if (BoundingBoxes.Num() > allocatedBoundingBoxCapacity) {
+    if (BoundingBoxes.Num() > allocatedBoundingBoxCapacity)
+    {
         allocatedBoundingBoxCapacity = BoundingBoxes.Num();
 
         ReleaseBoundingBoxResources();
 
-        pBoundingBoxBuffer = FEngineLoop::renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(allocatedBoundingBoxCapacity));
-        pBoundingBoxSRV = FEngineLoop::renderer.CreateBoundingBoxSRV(pBoundingBoxBuffer, static_cast<UINT>(allocatedBoundingBoxCapacity));
+        Microsoft::WRL::ComPtr<ID3D11Buffer> SB = nullptr;
+        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SBSRV = nullptr;
+        SB = FEngineLoop::renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(allocatedBoundingBoxCapacity));
+        SBSRV = FEngineLoop::renderer.CreateBufferSRV(SB, static_cast<UINT>(allocatedBoundingBoxCapacity));
+
+        FEngineLoop::renderer.AddOrSetStructuredBuffer(TEXT("BoundingBox"), SB);
+        FEngineLoop::renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("BoundingBox"), SBSRV);
     }
 
-    if (pBoundingBoxBuffer && pBoundingBoxSRV){
-        int boundingBoxCount = static_cast<int>(BoundingBoxes.Num());
-        FEngineLoop::renderer.UpdateBoundingBoxBuffer(pBoundingBoxBuffer, BoundingBoxes, boundingBoxCount);
+    const Microsoft::WRL::ComPtr<ID3D11Buffer> SB = FEngineLoop::renderer.GetStructuredBuffer(TEXT("BoundingBox"));
+    const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SBSRV = FEngineLoop::renderer.GetStructuredBufferShaderResourceView(TEXT("BoundingBox"));
+    if (SB != nullptr && SBSRV != nullptr)
+    {
+        FEngineLoop::renderer.UpdateStructuredBuffer(SB, BoundingBoxes);
     }
 }
 
@@ -92,50 +91,68 @@ void UPrimitiveBatch::ReleaseBoundingBoxResources()
     if (pBoundingBoxSRV) pBoundingBoxSRV->Release();
 }
 
-void UPrimitiveBatch::UpdateConeResources()
-{
-    if (Cones.Num() > allocatedConeCapacity) {
-        allocatedConeCapacity = Cones.Num();
+//void UPrimitiveBatch::UpdateConeResources()
+//{
+//    if (Cones.Num() > allocatedConeCapacity)
+//    {
+//        allocatedConeCapacity = Cones.Num();
+//
+//        ReleaseConeResources();
+//
+//        ID3D11Buffer* SB = nullptr;
+//        ID3D11ShaderResourceView* SBSRV = nullptr;
+//        SB = FEngineLoop::renderer.CreateStructuredBuffer<FCone>(static_cast<UINT>(allocatedConeCapacity));
+//        SBSRV = FEngineLoop::renderer.CreateBufferSRV(pConesBuffer, static_cast<UINT>(allocatedConeCapacity));
+//        
+//        FEngineLoop::renderer.AddOrSetStructuredBuffer(TEXT("Cone"), SB);
+//        FEngineLoop::renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("Cone"), SBSRV);
+//    }
+//
+//    ID3D11Buffer* SB = FEngineLoop::renderer.GetStructuredBuffer(TEXT("Cone"));
+//    const ID3D11ShaderResourceView* SBSRV = FEngineLoop::renderer.GetStructuredBufferShaderResourceView(TEXT("Cone"));
+//    if (SB != nullptr && SBSRV != nullptr)
+//    {
+//        FEngineLoop::renderer.UpdateStructuredBuffer(SB, BoundingBoxes);
+//    }
+//}
+//
+//void UPrimitiveBatch::ReleaseConeResources()
+//{
+//    if (pConesBuffer) pConesBuffer->Release();
+//    if (pConesSRV) pConesSRV->Release();
+//}
+//
+//void UPrimitiveBatch::UpdateOBBResources()
+//{
+//    if (OrientedBoundingBoxes.Num() > allocatedOBBCapacity)
+//    {
+//        allocatedOBBCapacity = OrientedBoundingBoxes.Num();
+//
+//        ReleaseOBBResources();
+//
+//        ID3D11Buffer* SB = nullptr;
+//        ID3D11ShaderResourceView* SBSRV = nullptr;
+//        SB = FEngineLoop::renderer.CreateStructuredBuffer<FOBB>(static_cast<UINT>(allocatedOBBCapacity));
+//        SBSRV = FEngineLoop::renderer.CreateBufferSRV(pOBBBuffer, static_cast<UINT>(allocatedOBBCapacity));
+//
+//        FEngineLoop::renderer.AddOrSetStructuredBuffer(TEXT("OBB"), SB);
+//        FEngineLoop::renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("OBB"), SBSRV);
+//    }
+//
+//    ID3D11Buffer* SB = FEngineLoop::renderer.GetStructuredBuffer(TEXT("OBB"));
+//    const ID3D11ShaderResourceView* SBSRV = FEngineLoop::renderer.GetStructuredBufferShaderResourceView(TEXT("OBB"));
+//    if (SB != nullptr && SBSRV != nullptr)
+//    {
+//        FEngineLoop::renderer.UpdateStructuredBuffer(SB, BoundingBoxes);
+//    }
+//}
 
-        ReleaseConeResources();
-
-        pConesBuffer = FEngineLoop::renderer.CreateStructuredBuffer<FCone>(static_cast<UINT>(allocatedConeCapacity));
-        pConesSRV = FEngineLoop::renderer.CreateConeSRV(pConesBuffer, static_cast<UINT>(allocatedConeCapacity));
-    }
-
-    if (pConesBuffer && pConesSRV) {
-        int coneCount = static_cast<int>(Cones.Num());
-        FEngineLoop::renderer.UpdateConesBuffer(pConesBuffer, Cones, coneCount);
-    }
-}
-
-void UPrimitiveBatch::ReleaseConeResources()
-{
-    if (pConesBuffer) pConesBuffer->Release();
-    if (pConesSRV) pConesSRV->Release();
-}
-
-void UPrimitiveBatch::UpdateOBBResources()
-{
-    if (OrientedBoundingBoxes.Num() > allocatedOBBCapacity) {
-        allocatedOBBCapacity = OrientedBoundingBoxes.Num();
-
-        ReleaseOBBResources();
-
-        pOBBBuffer = FEngineLoop::renderer.CreateStructuredBuffer<FOBB>(static_cast<UINT>(allocatedOBBCapacity));
-        pOBBSRV = FEngineLoop::renderer.CreateOBBSRV(pOBBBuffer, static_cast<UINT>(allocatedOBBCapacity));
-    }
-
-    if (pOBBBuffer && pOBBSRV) {
-        int obbCount = static_cast<int>(OrientedBoundingBoxes.Num());
-        FEngineLoop::renderer.UpdateOBBBuffer(pOBBBuffer, OrientedBoundingBoxes, obbCount);
-    }
-}
 void UPrimitiveBatch::ReleaseOBBResources()
 {
     if (pOBBBuffer) pOBBBuffer->Release();
     if (pOBBSRV) pOBBSRV->Release();
 }
+
 void UPrimitiveBatch::RenderAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix)
 {
     FVector localVertices[8] = {

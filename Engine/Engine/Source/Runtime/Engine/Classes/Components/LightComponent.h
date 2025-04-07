@@ -1,5 +1,5 @@
 #pragma once
-#include "PrimitiveComponent.h"
+#include "SceneComponent.h"
 #include "Define.h"
 
 class ULightComponentBase : public USceneComponent

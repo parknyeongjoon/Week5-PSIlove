@@ -3,59 +3,57 @@
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
-#define _TCHAR_DEFINED
-#include <d3d11.h>
 #include "EngineBaseTypes.h"
 #include "Define.h"
 #include "Container/Map.h"
 #include "Container/Set.h"
 #include "D3D11RHI/GraphicDevice.h"
-#include "D3D11RHI/GPUBuffer/FConstantBuffer.h"
-#include "D3D11RHI/GPUBuffer/FVIBuffers.h"
-#include "Windows/D3D11RHI/FShaderProgram.h"
+// #include "D3D11RHI/GPUBuffer/FConstantBuffer.h"
+// #include "D3D11RHI/GPUBuffer/FVIBuffers.h"
+#include "D3D11RHI/GPUBuffer/TestConstantDefine.h"
 
-class UPrimitiveComponent;
+class FVIBuffers;
 class ULightComponentBase;
-class ULevel;
-class FGraphicsDevice;
-class UMaterial;
-struct FStaticMaterial;
-class UObject;
-class FEditorViewportClient;
 class UBillboardComponent;
-class UStaticMeshComponent;
+class UPrimitiveComponent;
 class UGizmoBaseComponent;
+class UStaticMeshComponent;
+class ULevel;
+class FShaderProgram;
+class FEditorViewportClient;
+
+
 class FRenderer 
 {
-
-private:
-    float litFlag = 0;
 public:
     FGraphicsDevice* Graphics;
 
-    void AddOrSetVertexShader(const FString& InName, ID3D11VertexShader* InShader);
-    void AddOrSetPixelShader(const FString& InName, ID3D11PixelShader* InShader);
-    void AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* InLayout);
+    void AddOrSetVertexShader(const FString& InName, Microsoft::WRL::ComPtr<ID3D11VertexShader> InShader);
+    void AddOrSetPixelShader(const FString& InName, Microsoft::WRL::ComPtr<ID3D11PixelShader> InShader);
+    void AddOrSetInputLayout(const FString& InName, Microsoft::WRL::ComPtr<ID3D11InputLayout> InLayout);
 
-    void AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 InStride);
-    void AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 numIndices);
+    void AddOrSetVertexBuffer(const FString& InName,  Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer, uint32 InStride);
+    void AddOrSetIndexBuffer(const FString& InName,  Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer, uint32 numIndices);
 
-    FVIBuffers* GetVIBuffer(const FString& InVIName) { return VIBuffers[InVIName]; }
+    void AddOrSetStructuredBuffer(const FString& InName,  Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer);
+    void AddOrSetStructuredBufferShaderResourceView(const FString& InName,  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> InShaderResourceView);
+    
+    std::shared_ptr<FVIBuffers> GetVIBuffer(const FString& InVIName) { return VIBuffers[InVIName]; }
+
+    Microsoft::WRL::ComPtr<ID3D11Buffer> GetStructuredBuffer(const FString& InName) { return StructuredBuffers[InName].Key; }
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetStructuredBufferShaderResourceView(const FString& InName) { return StructuredBuffers[InName].Value; }
+
+    Microsoft::WRL::ComPtr<ID3D11Buffer> GetConstantBuffer(const FString& InName) { return ConstantBuffers[InName]; }
 private:
-    TMap<FString, FShaderProgram> ShaderPrograms;
-    TMap<FString, FVIBuffers*> VIBuffers;
+    TMap<FString, std::shared_ptr<FShaderProgram>> ShaderPrograms;
+    TMap<FString, std::shared_ptr<FVIBuffers>> VIBuffers;
 
     TMap<FString, TMap<FShaderConstantKey, uint32>> ShaderConstantNames;
-    TMap<FString, ID3D11Buffer*> ConstantBuffers;
-
+    TMap<FString, Microsoft::WRL::ComPtr<ID3D11Buffer>> ConstantBuffers;
+    TMap<FString, TPair<Microsoft::WRL::ComPtr<ID3D11Buffer>, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>> StructuredBuffers;
 public:
-    ID3D11ShaderResourceView* pBBSRV = nullptr;
-    ID3D11ShaderResourceView* pConeSRV = nullptr;
-    ID3D11ShaderResourceView* pOBBSRV = nullptr;
+    FLightingBuffer lightingData;
 
-    FLighting lightingData;
-
-public:
     void Initialize(FGraphicsDevice* graphics);
     void CreateShader();
     void CreateTextureShader();
@@ -66,94 +64,77 @@ public:
 
     void BindConstantBuffers(const FString& InShaderName) const;
     
-    //Render
-    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const;
-    void RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const;
-    void RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<FStaticMaterial*> materials, TArray<UMaterial*> overrideMaterial, int selectedSubMeshIndex) const;
-   
-    void RenderTexturedModelPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* InTextureSRV, ID3D11SamplerState* InSamplerState) const;
-    //Release
-    void Release();
-    void ReleaseShader();
-    void ReleaseConstantBuffer();
+    // //Render
+    // void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const;
+    // void RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const;
+    // void RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<FStaticMaterial*> materials, TArray<UMaterial*> overrideMaterial, int selectedSubMeshIndex) const;
+    //
+    // void RenderTexturedModelPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* InTextureSRV, ID3D11SamplerState* InSamplerState) const;
     
-    void ChangeViewMode(EViewModeIndex evi) const;
+    void ChangeViewMode(EViewModeIndex evi);
     
     template<typename T>
-    ID3D11Buffer* CreateImmutableVertexBuffer(const TArray<T>& vertices) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateImmutableVertexBuffer(const TArray<T>& vertices) const;
     template<typename T>
-    ID3D11Buffer* CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const;
     
     template <typename T>
-    ID3D11Buffer* CreateStructuredBuffer(uint32 numElements) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateStructuredBuffer(uint32 numElements) const;
     template<typename T>
-    ID3D11Buffer* CreateStaticVertexBuffer(const TArray<T>& vertices) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateStaticVertexBuffer(const TArray<T>& vertices) const;
     template<typename T>
-    ID3D11Buffer* CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const;
     
     template<typename T>
-    ID3D11Buffer* CreateDynamicVertexBuffer(const TArray<T>& vertices) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateDynamicVertexBuffer(const TArray<T>& vertices) const;
     template<typename T>
-    ID3D11Buffer* CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const;
     
-    ID3D11Buffer* CreateIndexBuffer(const uint32* indices, uint32 indicesSize) const;
-    ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateIndexBuffer(const uint32* indices, uint32 indicesSize) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateIndexBuffer(const TArray<uint32>& indices) const;
     
-    ID3D11Buffer* CreateConstantBuffer(uint32 InSize, const void* InData = nullptr) const;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> CreateConstantBuffer(uint32 InSize, const void* InData = nullptr) const;
 
     template<typename T>
-    void UpdateConstant(ID3D11Buffer* InBuffer, const T* InData = nullptr);
+    void UpdateConstant(Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer, const T* InData = nullptr);
 
     template <typename T>
-    void UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const;
+    void UpdateStructuredBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> pBuffer, const TArray<T>& Data) const;
 
     // update
-    void UpdateLightBuffer() const;
-    void UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
-    void UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const;
-    void UpdateLitUnlitConstant(int isLit) const;
-    void UpdateSubMeshConstant(bool isSelected) const;
-    void UpdateTextureConstant(float UOffset, float VOffset);
-
-public://텍스쳐용 기능 추가
-    uint32 TextureStride;
-    struct FSubUVConstant
-    {
-        float indexU;
-        float indexV;
-    };
-    ID3D11Buffer* SubUVConstantBuffer = nullptr;
+    // void UpdateLightBuffer() const;
+    // void UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
+    // void UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const;
+    // void UpdateLitUnlitConstant(int isLit) const;
+    // void UpdateSubMeshConstant(bool isSelected) const;
+    // void UpdateTextureConstant(float UOffset, float VOffset);
 
 public:    
     //void PrepareTextureShader() const;
     
-    void RenderTexturePrimitive(ID3D11Buffer* pVertexBuffer,
-                                ID3D11Buffer* pIndexBuffer, UINT numIndices,
-                                ID3D11ShaderResourceView* _TextureSRV,
-                                ID3D11SamplerState* _SamplerState) const;
-    void RenderTextPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices,
-        ID3D11ShaderResourceView* _TextureSRV,
-        ID3D11SamplerState* _SamplerState) const;
+    // void RenderTexturePrimitive(ID3D11Buffer* pVertexBuffer,
+    //                             ID3D11Buffer* pIndexBuffer, UINT numIndices,
+    //                             ID3D11ShaderResourceView* _TextureSRV,
+    //                             ID3D11SamplerState* _SamplerState) const;
+    // void RenderTextPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices,
+    //     ID3D11ShaderResourceView* _TextureSRV,
+    //     ID3D11SamplerState* _SamplerState) const;
 
-    void UpdateSubUVConstant(float _indexU, float _indexV) const;
-    void PrepareSubUVConstant() const;
-    ID3D11ShaderResourceView* CreateBufferSRV(ID3D11Buffer* pBuffer, UINT numElements) const;
+    // void UpdateSubUVConstant(float _indexU, float _indexV) const;
+    // void PrepareSubUVConstant() const;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CreateBufferSRV(const Microsoft::WRL::ComPtr<ID3D11Buffer>& pBuffer, UINT numElements) const;
 
 public: // line shader
     //void PrepareLineShader() const;
     //void ReleaseLineShader() const;
-    void RenderBatch(const FGridParameters& gridParam, ID3D11Buffer* pVertexBuffer, int boundingBoxCount, int coneCount, int coneSegmentCount, int obbCount) const;
-    void PrepareRender(ULevel* Level);
-    void UpdateGridConstantBuffer(const FGridParameters& gridParams) const;
+    //void RenderBatch(const FGridParametersData& gridParam, Microsoft::WRL::ComPtr<ID3D11Buffer> pVertexBuffer, int boundingBoxCount, int coneCount, int coneSegmentCount, int obbCount) const;
+    void PrepareRender(const ULevel* Level);
+    void UpdateGridConstantBuffer(const FGridParametersData& gridParams) const;
     void UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones) const;
 
-    ID3D11ShaderResourceView* CreateBoundingBoxSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes);
-    ID3D11ShaderResourceView* CreateOBBSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes);
-    ID3D11ShaderResourceView* CreateConeSRV(ID3D11Buffer* pConeBuffer, UINT numCones);
-
-    void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
-    void UpdateOBBBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes, int numBoundingBoxes) const;
-    void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
+    // void UpdateBoundingBoxBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes) const;
+    // void UpdateOBBBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes) const;
+    // void UpdateConesBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>pConeBuffer, const TArray<FCone>& Cones) const;
 
     //Render Pass Demo
     void ClearRenderArr();
@@ -173,7 +154,7 @@ private:
 };
 
 template <typename T>
-ID3D11Buffer* FRenderer::CreateImmutableVertexBuffer(const TArray<T>& vertices) const
+Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateImmutableVertexBuffer(const TArray<T>& vertices) const
 {
     D3D11_BUFFER_DESC vertexbufferdesc = {};
     vertexbufferdesc.ByteWidth = sizeof(T) * vertices.Num();
@@ -195,7 +176,7 @@ ID3D11Buffer* FRenderer::CreateImmutableVertexBuffer(const TArray<T>& vertices) 
 }
 
 template <typename T>
-ID3D11Buffer* FRenderer::CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const
+Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const
 {
     TArray<T> verticeArray;
     verticeArray.AppendArray(vertices, arraySize);
@@ -204,7 +185,7 @@ ID3D11Buffer* FRenderer::CreateImmutableVertexBuffer(T* vertices, uint32 arraySi
 }
 
 template <typename T>
-ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(const TArray<T>& vertices) const
+Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateDynamicVertexBuffer(const TArray<T>& vertices) const
 {
     D3D11_BUFFER_DESC vertexbufferdesc = {};
     vertexbufferdesc.ByteWidth = sizeof(T) * vertices.Num();
@@ -227,7 +208,7 @@ ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(const TArray<T>& vertices) co
 }
 
 template <typename T>
-ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const
+Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const
 {
     TArray<T> verticeArray;
     verticeArray.AppendArray(vertices, arraySize);
@@ -236,22 +217,22 @@ ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize
 }
 
 template <typename T>
-void FRenderer::UpdateConstant(ID3D11Buffer* InBuffer, const T* InData)
+void FRenderer::UpdateConstant(Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer, const T* InData)
 {
     D3D11_MAPPED_SUBRESOURCE sub = {};
-    Graphics->DeviceContext->Map(InBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
+    Graphics->DeviceContext->Map(InBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
     memcpy(sub.pData, InData, sizeof(T));
-    Graphics->DeviceContext->Unmap(InBuffer, 0);
+    Graphics->DeviceContext->Unmap(InBuffer.Get(), 0);
 }
 
 template <typename T>
-void FRenderer::UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const
+void FRenderer::UpdateStructuredBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer> pBuffer, const TArray<T>& Data) const
 {
     if (!pBuffer)
         return;
 
     D3D11_MAPPED_SUBRESOURCE mappedResource;
-    const HRESULT hr = Graphics->DeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    const HRESULT hr = Graphics->DeviceContext->Map(pBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
     if (FAILED(hr))
     {
         // 오류 처리 (필요 시 로그 출력)
@@ -264,11 +245,11 @@ void FRenderer::UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& D
         pData[i] = Data[i];
     }
 
-    Graphics->DeviceContext->Unmap(pBuffer, 0);
+    Graphics->DeviceContext->Unmap(pBuffer.Get(), 0);
 }
 
 template <typename T>
-ID3D11Buffer* FRenderer::CreateStructuredBuffer(const uint32 numElements) const
+Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateStructuredBuffer(const uint32 numElements) const
 {
     D3D11_BUFFER_DESC bufferDesc = {};
     bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // CPU가 데이터를 업데이트할 수 있도록 설정
@@ -289,7 +270,7 @@ ID3D11Buffer* FRenderer::CreateStructuredBuffer(const uint32 numElements) const
 }
 
 template <typename T>
-ID3D11Buffer* FRenderer::CreateStaticVertexBuffer(const TArray<T>& vertices) const
+Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateStaticVertexBuffer(const TArray<T>& vertices) const
 {
     D3D11_BUFFER_DESC vbDesc = {};
     vbDesc.Usage = D3D11_USAGE_DEFAULT;  // 정적 버퍼: 한 번 생성 후 업데이트하지 않음
@@ -311,7 +292,7 @@ ID3D11Buffer* FRenderer::CreateStaticVertexBuffer(const TArray<T>& vertices) con
 }
 
 template <typename T>
-ID3D11Buffer* FRenderer::CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const
+Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const
 {
     TArray<T> verticeArray;
     verticeArray.AppendArray(vertices, arraySize);

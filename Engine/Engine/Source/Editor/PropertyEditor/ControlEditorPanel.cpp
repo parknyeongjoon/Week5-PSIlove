@@ -2,7 +2,6 @@
 
 #include "Level.h"
 #include "Actors/Player.h"
-#include "Components/CubeComp.h"
 #include "Components/LightComponent.h"
 #include "Components/SphereComp.h"
 #include "Components/ParticleSubUVComp.h"
@@ -10,7 +9,6 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Engine/StaticMeshActor.h"
-#include "ImGUI/imgui_internal.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include "UnrealEd/EditorViewportClient.h"

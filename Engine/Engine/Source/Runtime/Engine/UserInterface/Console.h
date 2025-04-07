@@ -4,6 +4,7 @@
 #include "PropertyEditor/IWindowToggleable.h"
 #include <windows.h>
 #include <psapi.h>
+
 enum class LogLevel { Display, Warning, Error };
 class StatOverlay {
 public:
@@ -20,7 +21,7 @@ public:
         }
     }
 
-    void Render(ID3D11DeviceContext* context, UINT width, UINT height) {
+    void Render(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, UINT width, UINT height) {
 
         if (!showRender)
             return;

@@ -1,17 +1,17 @@
+#include "ImGuiManager.h"
 #include "ImGUI/imgui.h"
 #include "ImGUI/imgui_impl_dx11.h"
 #include "ImGUI/imgui_impl_win32.h"
-#include "ImGuiManager.h"
 #include "Font/RawFonts.h"
 #include "Font/IconDefs.h"
 
-void UImGuiManager::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+void UImGuiManager::Initialize(HWND hWnd, Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Init(hWnd);
-    ImGui_ImplDX11_Init(device, deviceContext);
+    ImGui_ImplDX11_Init(device.Get(), deviceContext.Get());
     io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 24.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 
     ImFontConfig FeatherFontConfig;

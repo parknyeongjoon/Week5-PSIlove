@@ -18,16 +18,6 @@ UBillboardComponent::UBillboardComponent()
 
 UBillboardComponent::~UBillboardComponent()
 {
-	if (vertexTextureBuffer)
-	{
-		vertexTextureBuffer->Release();
-		vertexTextureBuffer = nullptr;
-	}
-	if (indexTextureBuffer)
-	{
-		indexTextureBuffer->Release();
-		indexTextureBuffer = nullptr;
-	}
 }
 
 void UBillboardComponent::DuplicateSubObjects()
@@ -108,9 +98,12 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 {
 	numVertices = sizeof(quadTextureVertices) / sizeof(FVertexTexture);
 	numIndices = sizeof(quadTextureInices) / sizeof(uint32);
+
+    Microsoft::WRL::ComPtr<ID3D11Buffer> vertexTextureBuffer = nullptr;
 	vertexTextureBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(quadTextureVertices, numVertices);
     FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexTextureBuffer, sizeof(FVertexTexture));
     
+    Microsoft::WRL::ComPtr<ID3D11Buffer> indexTextureBuffer = nullptr;
 	indexTextureBuffer = FEngineLoop::renderer.CreateIndexBuffer(quadTextureInices, numIndices);
     FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexTextureBuffer, numIndices);
 

@@ -73,7 +73,7 @@ TSet<FString> FResourceMgr::GetAllTextureKeys() const
     return Keys;
 }
 
-HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* filename)
+HRESULT FResourceMgr::LoadTextureFromFile(Microsoft::WRL::ComPtr<ID3D11Device> device, const wchar_t* filename)
 {
 	IWICImagingFactory* wicFactory = nullptr;
 	IWICBitmapDecoder* decoder = nullptr;
@@ -169,17 +169,17 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* f
 	return hr;
 }
 
-HRESULT FResourceMgr::LoadTextureFromDDS(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* filename)
+HRESULT FResourceMgr::LoadTextureFromDDS(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, const wchar_t* filename)
 {
 
-	ID3D11Resource* texture = nullptr;
-	ID3D11ShaderResourceView* textureView = nullptr;
+	Microsoft::WRL::ComPtr<ID3D11Resource> texture = nullptr;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView = nullptr;
 
 	HRESULT hr = DirectX::CreateDDSTextureFromFile(
-		device, context,
+		device.Get(), context.Get(),
 		filename,
-		&texture,
-		&textureView
+		texture.GetAddressOf(),
+		textureView.GetAddressOf()
 	);
 	if (FAILED(hr) || texture == nullptr) abort();
 

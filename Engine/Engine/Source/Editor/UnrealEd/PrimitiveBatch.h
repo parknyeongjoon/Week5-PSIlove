@@ -1,6 +1,8 @@
 #pragma once
 #include "Define.h"
-#include <d3d11.h>
+
+#include "D3D11RHI/GPUBuffer/TestConstantDefine.h"
+
 class UPrimitiveBatch
 {
 public:
@@ -14,15 +16,15 @@ public:
 public:
     void Release();
     void ClearGrid() {};
-    float GetSpacing() { return GridParam.gridSpacing; }
+    float GetSpacing() { return GridParam.GridSpacing; }
     void GenerateGrid(float spacing, int gridCount);
     void RenderBatch(const FMatrix& View, const FMatrix& Projection);
-    void InitializeVertexBuffer();
+    //void InitializeVertexBuffer();
     void UpdateBoundingBoxResources();
     void ReleaseBoundingBoxResources();
-    void UpdateConeResources();
-    void ReleaseConeResources();
-    void UpdateOBBResources();
+    //void UpdateConeResources();
+   // void ReleaseConeResources();
+    //void UpdateOBBResources();
     void ReleaseOBBResources();
     void RenderAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
     void RenderOBB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
@@ -32,6 +34,8 @@ public:
     // 복사 생성자 및 대입 연산자 삭제
     UPrimitiveBatch(const UPrimitiveBatch&) = delete;
     UPrimitiveBatch& operator=(const UPrimitiveBatch&) = delete;
+
+    FGridParametersData GetGridParameters() const { return GridParam; }
 private:
     ID3D11Buffer* pVertexBuffer;
     ID3D11Buffer* pBoundingBoxBuffer;
@@ -47,7 +51,6 @@ private:
     TArray<FBoundingBox> BoundingBoxes;
     TArray<FOBB> OrientedBoundingBoxes;
     TArray<FCone> Cones;
-    FGridParameters GridParam;
+    FGridParametersData GridParam;
     int ConeSegmentCount = 0;
-
 };

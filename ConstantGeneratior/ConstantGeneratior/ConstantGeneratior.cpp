@@ -157,6 +157,8 @@ static void GenerateConstantBufferStructsForShaders(const std::vector<ID3DBlob*>
             if (FAILED(hr))
                 continue;
 
+            if (cbDesc.Type != D3D_CT_CBUFFER) continue;
+
             // 만약 이미 이 상수 버퍼 이름에 대한 구조체를 생성했다면 건너뛰기
             std::string cbName(cbDesc.Name);
             if (definedCBs.find(cbName) != definedCBs.end())
@@ -464,7 +466,7 @@ static void CompileAndReflectShaders(const std::vector<std::wstring>& shaderFile
     {
         ID3DBlob* shaderBlob = nullptr;
         // 파일명에 따라 ShaderType 결정 (기본은 Vertex)
-        EShaderType shaderType = DetermineShaderType(filePath);
+        const EShaderType shaderType = DetermineShaderType(filePath);
 
         // 컴파일 결과용 Blob 포인터들
         ID3DBlob* errorBlob = nullptr;
@@ -498,7 +500,7 @@ static void CompileAndReflectShaders(const std::vector<std::wstring>& shaderFile
     const std::wstring structFolder = exeDir + L"\\..\\..\\..\\Engine\\Engine\\Source\\Runtime\\Windows\\D3D11RHI\\GPUBuffer\\TestConstantDefine.h";
 
     GenerateConstantBufferStructsForShaders(shaderBlobs, structFolder);
-    for (auto item : shaderBlobs)
+    for (const auto item : shaderBlobs)
         item->Release();
     
 }

@@ -13,8 +13,6 @@
 
 extern FEngineLoop GEngineLoop;
 
-
-
 struct FViewportCameraTransform
 {
 private:
@@ -105,14 +103,6 @@ protected:
     /** Camera speed scalar */
     float CameraSpeedScalar = 1.0f;
     float GridSize;
-
-public: 
-    FViewport* Viewport;
-    int32 ViewportIndex;
-    FViewport* GetViewport() { return Viewport; }
-    D3D11_VIEWPORT& GetD3DViewport();
-
-
 public:
     //카메라
     /** Viewport camera transform data for perspective viewports */

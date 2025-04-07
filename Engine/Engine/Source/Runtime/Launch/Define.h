@@ -14,6 +14,7 @@
 
 #define _TCHAR_DEFINED
 #include <d3d11.h>
+#include <wrl.h>
 
 #include "UserInterface/Console.h"
 
@@ -229,8 +230,8 @@ namespace OBJ
         TArray<FVertexSimple> Vertices;
         TArray<UINT> Indices;
 
-        ID3D11Buffer* VertexBuffer;
-        ID3D11Buffer* IndexBuffer;
+        Microsoft::WRL::ComPtr<ID3D11Buffer> VertexBuffer;
+        Microsoft::WRL::ComPtr<ID3D11Buffer> IndexBuffer;
         
         TArray<FObjMaterialInfo> Materials;
         TArray<FMaterialSubset> MaterialSubsets;
@@ -245,21 +246,13 @@ struct FVertexTexture
 	float x, y, z;    // Position
 	float u, v; // Texture
 };
-struct FGridParameters
-{
-	float gridSpacing;
-	int   numGridLines;
-	FVector gridOrigin;
-	float pad;
-};
+
 struct FSimpleVertex
 {
-	float dummy; // 내용은 사용되지 않음
+    float dummy; // 내용은 사용되지 않음
     float padding[11];
 };
-struct FOBB {
-    FVector corners[8];
-};
+
 struct FRect
 {
     FRect() : leftTopX(0), leftTopY(0), width(0), height(0) {}
@@ -358,8 +351,8 @@ struct FBoundingBox
 
         return true;
     }
-
 };
+
 struct FCone
 {
     FVector ConeApex; // 원뿔의 꼭짓점
@@ -373,56 +366,9 @@ struct FCone
     float pad[3];
 
 };
-struct FPrimitiveCounts 
+
+struct FOBB
 {
-	int BoundingBoxCount;
-	int pad;
-	int ConeCount; 
-	int pad1;
-};
-struct FLighting
-{
-	float lightDirX, lightDirY, lightDirZ; // 조명 방향
-	float pad1;                      // 16바이트 정렬용 패딩
-	float lightColorX, lightColorY, lightColorZ;    // 조명 색상
-	float pad2;                      // 16바이트 정렬용 패딩
-	float AmbientFactor;             // ambient 계수
-	float pad3; // 16바이트 정렬 맞춤 추가 패딩
-	float pad4; // 16바이트 정렬 맞춤 추가 패딩
-	float pad5; // 16바이트 정렬 맞춤 추가 패딩
+    FVector corners[8];
 };
 
-struct FMaterialConstants {
-    FVector DiffuseColor;
-    float TransparencyScalar;
-    FVector AmbientColor;
-    float DensityScalar;
-    FVector SpecularColor;
-    float SpecularScalar;
-    FVector EmmisiveColor;
-    float MaterialPad0;
-};
-
-struct FConstants {
-    FMatrix MVP;      // 모델
-    FMatrix ModelMatrixInverseTranspose; // normal 변환을 위한 행렬
-    FVector4 UUIDColor;
-    bool IsSelected;
-    FVector pad;
-};
-struct FLitUnlitConstants {
-    int isLit; // 1 = Lit, 0 = Unlit 
-    FVector pad;
-};
-
-struct FSubMeshConstants {
-    float isSelectedSubMesh;
-    FVector pad;
-};
-
-struct FTextureConstants {
-    float UOffset;
-    float VOffset;
-    float pad0;
-    float pad1;
-};
