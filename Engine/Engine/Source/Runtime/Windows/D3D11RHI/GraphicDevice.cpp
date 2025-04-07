@@ -401,6 +401,7 @@ void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport)
 
 void FGraphicsDevice::ClearRenderTarget()
 {
+    CurrentIndex = 0;
     auto* RenderTarget = GetWriteRTV();
     auto* RenderDepthTarget = GetWriteDSV();
     DeviceContext->ClearRenderTargetView(RenderTarget, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
@@ -411,6 +412,7 @@ void FGraphicsDevice::ClearRenderTarget()
 
 void FGraphicsDevice::Prepare()
 {
+    CurrentIndex = 0;
     auto* RenderTarget = GetWriteRTV();
     auto* RenderDepthTarget = GetWriteDSV();
     //DeviceContext->ClearRenderTargetView(RenderTarget, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
