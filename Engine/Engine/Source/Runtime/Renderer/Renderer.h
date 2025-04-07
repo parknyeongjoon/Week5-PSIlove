@@ -163,6 +163,7 @@ private:
     TArray<UPrimitiveComponent*> TextObjs;
     TArray<UBillboardComponent*> BillboardObjs;
     TArray<ULightComponent*> LightObjs;
+    TArray<UHeightFogComponent*> HeightFogObjs;
 
 public:
     ID3D11VertexShader* VertexLineShader = nullptr;

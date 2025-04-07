@@ -7,6 +7,7 @@
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
 #include "Components/SkySphereComponent.h"
+#include "Actors/Fog.h"
 
 
 void ULevel::Initialize(EWorldType worldType)
@@ -16,6 +17,8 @@ void ULevel::Initialize(EWorldType worldType)
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
     FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
+    Fog = SpawnActor<AFog>();
+
 }
 
 void ULevel::CreateBaseObject(EWorldType worldType)

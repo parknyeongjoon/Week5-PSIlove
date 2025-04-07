@@ -3,6 +3,7 @@
 
 #include "Level.h"
 #include "Actors/Player.h"
+#include "Actors/Fog.h"
 #include "BaseGizmos/GizmoBaseComponent.h"
 #include "BaseGizmos/TransformGizmo.h"
 #include "Components/LightComponent.h"
@@ -24,6 +25,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Components/HeightFogComponent.h"
 #include "ImGUI/imgui_internal.h"
+
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
@@ -1072,6 +1074,10 @@ void FRenderer::PrepareRender(ULevel* Level)
         {
             LightObjs.Add(pLightComp);
         }
+        //if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(iter))
+        //{
+        //    HeightFogObjs.Add(pHeightFogComp);
+        //}
     }
     
 
@@ -1106,6 +1112,7 @@ void FRenderer::ClearRenderArr()
     GizmoObjs.Empty();
     TextObjs.Empty();
     LightObjs.Empty();
+    HeightFogObjs.Empty();
 }
 
 void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
@@ -1127,7 +1134,11 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
         RenderTexts(Level, ActiveViewport);
     }
     //RenderLight(Level, ActiveViewport);
-    RenderFog(Level, ActiveViewport);
+    //if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
+    //{
+    //    //RenderFog(Level, ActiveViewport);
+    //}
+    //RenderFog(Level, ActiveViewport);
     RenderFinal(Level, ActiveViewport);
     ClearRenderArr();
 }
@@ -1525,7 +1536,7 @@ void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> 
     Graphics->PreparePostProcessRender();
     PrepareFogShader();
     UpdateFogConstant(
-        new UHeightFogComponent(),
+        Cast<UHeightFogComponent>(level->GetFog()->GetRootComponent()),
         FMatrix::Inverse(ActiveViewport->GetProjectionMatrix()),
         FMatrix::Inverse(ActiveViewport->GetViewMatrix()),
         ActiveViewport->ViewTransformPerspective.GetLocation()
