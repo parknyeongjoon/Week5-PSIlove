@@ -1521,7 +1521,7 @@ void FRenderer::UpdateFogConstant(const FMatrix& InvProjectionMatrix, const FMat
 
 void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {   
-    Graphics->PrepareFogRender();
+    Graphics->PreparePostProcessRender();
     PrepareFogShader();
     UpdateFogConstant(
         FMatrix::Inverse(ActiveViewport->GetProjectionMatrix()),

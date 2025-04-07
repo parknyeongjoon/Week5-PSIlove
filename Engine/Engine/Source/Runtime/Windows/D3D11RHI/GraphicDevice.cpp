@@ -427,7 +427,7 @@ void FGraphicsDevice::Prepare()
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 } 
 
-void FGraphicsDevice::PrepareFogRender()
+void FGraphicsDevice::PreparePostProcessRender()
 {
     SwapRTV();
     auto* RenderTarget = GetWriteRTV();

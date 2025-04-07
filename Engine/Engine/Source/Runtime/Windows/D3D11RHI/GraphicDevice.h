@@ -74,7 +74,7 @@ public:
     void ClearRenderTarget();
     void Prepare();
     void Prepare(D3D11_VIEWPORT* viewport);
-    void PrepareFogRender();    
+    void PreparePostProcessRender();    
     void PrepareFinalRender();
     void OnResize(HWND hWindow);
     ID3D11RasterizerState* GetCurrentRasterizer() { return CurrentRasterizer; }
