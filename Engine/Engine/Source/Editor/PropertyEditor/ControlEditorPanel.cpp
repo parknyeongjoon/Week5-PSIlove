@@ -2,6 +2,7 @@
 
 #include "Level.h"
 #include "Actors/Player.h"
+#include "Actors/Object/FireBall.h"
 #include "Components/CubeComp.h"
 #include "Components/LightComponent.h"
 #include "Components/SphereComp.h"
@@ -259,6 +260,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
         static const Primitive primitives[] = {
             { .label= "Cube",      .obj= OBJ_CUBE },
             { .label= "Sphere",    .obj= OBJ_SPHERE },
+            { .label= "FireBall",    .obj= OBJ_FireBall },
             { .label= "SpotLight", .obj= OBJ_SpotLight },
             { .label= "Particle",  .obj= OBJ_PARTICLE },
             { .label= "Billboard", .obj= OBJ_BILLBOARD },
@@ -280,7 +282,6 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                         TempActor->SetActorLabel(TEXT("OBJ_SPHERE"));
                         UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
                         FManagerOBJ::CreateStaticMesh("Assets/Sphere.obj");
-                        auto mesh = FManagerOBJ::GetStaticMesh(L"Sphere.obj");
                         MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Sphere.obj"));
                         break;
                     }
@@ -300,7 +301,12 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                         auto a = SpawnedActor->AddComponent<ULightComponent>();
                         UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
                         BillboardComp->SetTexture(L"Editor/Icon/SpotLight_64x.png");
-                    
+                        break;
+                    }
+                case OBJ_FireBall:
+                    {
+                        SpawnedActor = level->SpawnActor<AFireBall>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_FireBall"));
                         break;
                     }
                 case OBJ_PARTICLE:

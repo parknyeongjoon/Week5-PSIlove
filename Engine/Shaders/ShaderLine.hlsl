@@ -293,8 +293,6 @@ PS_INPUT mainVS(VS_INPUT input)
         uint coneIndex = coneInstanceID / (2 * N);
         
         color = g_ConeData[coneIndex].Color;
-   
-        
     }
     else
     {

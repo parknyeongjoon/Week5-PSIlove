@@ -226,7 +226,7 @@ void FEngineLoop::Tick()
 void FEngineLoop::EditorTick(double elapsedTime)
 {
     Input();
-    GLevel->Tick(elapsedTime);
+    GLevel->EditorTick(elapsedTime);
     LevelEditor->Tick(elapsedTime);
     Render();
     UIMgr->BeginFrame();
@@ -245,7 +245,7 @@ void FEngineLoop::EditorTick(double elapsedTime)
 void FEngineLoop::PIETick(double elapsedTime)
 {
     Input();
-    GLevel->Tick(elapsedTime);
+    GLevel->PIETick(elapsedTime);
     Render();
 
     UIMgr->BeginFrame();

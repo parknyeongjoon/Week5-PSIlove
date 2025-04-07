@@ -101,11 +101,11 @@ PS_OUTPUT mainPS(PS_INPUT input)
     output.normal = float4(input.normal,0);
     
     float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);
-    float3 color = Material.AmbientColor;
+    float3 color;// = Material.AmbientColor;
     if (texColor.g == 0) // TODO: boolean으로 변경
-        color += saturate(Material.DiffuseColor);
+        color = saturate(Material.DiffuseColor);
     else
-        color += texColor + Material.DiffuseColor;
+        color = texColor + Material.DiffuseColor;
     
     if (isSelected)
     {

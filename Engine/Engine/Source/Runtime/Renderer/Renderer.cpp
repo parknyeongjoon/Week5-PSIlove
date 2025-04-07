@@ -2,6 +2,7 @@
 #include <d3dcompiler.h>
 
 #include "Level.h"
+#include "UnrealClient.h"
 #include "Actors/Player.h"
 #include "BaseGizmos/GizmoBaseComponent.h"
 #include "BaseGizmos/TransformGizmo.h"
@@ -117,7 +118,10 @@ void FRenderer::PrepareLightingShader() const
     Graphics->PrepareLighting();
 
     if (LightArrConstantBuffer)
+    {
         Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &LightArrConstantBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &TextureConstantBufer);
+    }
 
     Graphics->DeviceContext->IASetInputLayout(nullptr); // 입력 레이아웃 불필요
     Graphics->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
@@ -352,9 +356,6 @@ void FRenderer::CreateConstantBuffer()
     constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
 
-    constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
-    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
-
     constantbufferdesc.ByteWidth = sizeof(FLightingArr) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LightArrConstantBuffer);
 
@@ -410,12 +411,11 @@ void FRenderer::UpdateLightBuffer(TArray<ULightComponent*> lightComponents) cons
     {
         FLightingArr* constants = static_cast<FLightingArr*>(mappedResource.pData);
         constants->EyePosition = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->ViewTransformPerspective.ViewLocation;
-        int num = lightComponents.Num();
         constants->LightCount = lightComponents.Num();
         for (int index = 0; index< lightComponents.Num();index++)
         {
             constants->Lights[index].Intensity = lightComponents[index]->GetIntensity();
-            constants->Lights[index].Position = lightComponents[index]->GetWorldLocation();
+            constants->Lights[index].Position = lightComponents[index]->GetOwner()->GetActorLocation();
             constants->Lights[index].AmbientFactor = 0.0f;
             constants->Lights[index].LightColor = lightComponents[index]->GetLightColor();
             constants->Lights[index].LightDirection = FVector(-1,-1,-1);
@@ -506,7 +506,7 @@ void FRenderer::UpdateSubMeshConstant(bool isSelected) const
     }
 }
 
-void FRenderer::UpdateTextureConstant(float UOffset, float VOffset)
+void FRenderer::UpdateTextureConstant(float UOffset, float VOffset, float UTiles, float VTiles) const
 {
     if (TextureConstantBufer) {
         D3D11_MAPPED_SUBRESOURCE constantbufferMSR; // GPU �� �޸� �ּ� ����
@@ -515,6 +515,8 @@ void FRenderer::UpdateTextureConstant(float UOffset, float VOffset)
         {
             constants->UOffset = UOffset;
             constants->VOffset = VOffset;
+            constants->UTiles = UTiles;
+            constants->VTiles = VTiles;
         }
         Graphics->DeviceContext->Unmap(TextureConstantBufer, 0);
     }
@@ -1034,9 +1036,13 @@ void FRenderer::PrepareRender(ULevel* Level)
     for (const auto& A : Level->GetActors())
     {
         Ss.Add(A->GetRootComponent());
-        TArray<USceneComponent*> temp;
-        A->GetRootComponent()->GetChildrenComponents(temp);
-        Ss + temp;
+        TArray<UActorComponent*> components;
+        components = A->GetComponents();
+        for (const auto& comp : components)
+        {
+            if (ULightComponent* pLightComp = Cast<ULightComponent>(comp))
+                LightObjs.Add(pLightComp);
+        }
     }
 
 
@@ -1050,14 +1056,7 @@ void FRenderer::PrepareRender(ULevel* Level)
         {
             TextObjs.Add(TextRenderComp);
         }
-        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
     }
-    
-
-
     
     for (const auto iter : Ss)
     {
@@ -1137,11 +1136,11 @@ void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewpor
 
         if (USkySphereComponent* skysphere = Cast<USkySphereComponent>(StaticMeshComp))
         {
-            UpdateTextureConstant(skysphere->UOffset, skysphere->VOffset);
+            UpdateTextureConstant(skysphere->UOffset, skysphere->VOffset,1,1);
         }
         else
         {
-            UpdateTextureConstant(0, 0);
+            UpdateTextureConstant(0, 0,1,1);
         }
 
         if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
@@ -1306,10 +1305,15 @@ void FRenderer::RenderTexts(ULevel* Level, std::shared_ptr<FEditorViewportClient
     PrepareShader();
 }
 
-void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport) const
+void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport) const
 {
     PrepareLightingShader();
 
+    float uoffset = ActiveViewport->Viewport->GetViewport().TopLeftX / Graphics->screenWidth;
+    float voffset = ActiveViewport->Viewport->GetViewport().TopLeftY / Graphics->screenHeight;
+    float uscale = ActiveViewport->Viewport->GetViewport().Width / Graphics->screenWidth;
+    float vscale = ActiveViewport->Viewport->GetViewport().Height / Graphics->screenHeight;
+    UpdateTextureConstant(uoffset, voffset, uscale, vscale);
     UpdateLightBuffer(LightObjs);
     
     // 화면 크기 사각형 렌더링

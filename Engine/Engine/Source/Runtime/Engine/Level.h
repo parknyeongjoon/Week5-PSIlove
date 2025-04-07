@@ -23,7 +23,8 @@ public:
     void Initialize(EWorldType worldType);
     void CreateBaseObject(EWorldType worldType);
     void ReleaseBaseObject();
-    void Tick(float DeltaTime);
+    void EditorTick(float DeltaTime);
+    void PIETick(float DeltaTime);
     void Release();
 
     virtual UObject* Duplicate() override;

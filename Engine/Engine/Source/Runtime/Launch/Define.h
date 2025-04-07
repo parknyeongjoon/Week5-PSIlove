@@ -295,6 +295,6 @@ struct FSubMeshConstants {
 struct FTextureConstants {
     float UOffset;
     float VOffset;
-    float pad0;
-    float pad1;
+    float UTiles;
+    float VTiles;
 };

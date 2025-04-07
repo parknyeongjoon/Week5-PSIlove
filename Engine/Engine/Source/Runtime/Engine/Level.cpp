@@ -52,11 +52,21 @@ void ULevel::ReleaseBaseObject()
     }
 }
 
-void ULevel::Tick(float DeltaTime)
+void ULevel::EditorTick(float DeltaTime)
 {
-	if (EditorPlayer) EditorPlayer->Tick(DeltaTime);
-	if (LocalGizmo) LocalGizmo->Tick(DeltaTime);
+    if (EditorPlayer) EditorPlayer->Tick(DeltaTime);
+    if (LocalGizmo) LocalGizmo->Tick(DeltaTime);
 
+    // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
+    for (AActor* Actor : PendingBeginPlayActors)
+    {
+        Actor->BeginPlay();
+    }
+    PendingBeginPlayActors.Empty();
+}
+
+void ULevel::PIETick(float DeltaTime)
+{
     // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
     for (AActor* Actor : PendingBeginPlayActors)
     {
@@ -65,10 +75,10 @@ void ULevel::Tick(float DeltaTime)
     PendingBeginPlayActors.Empty();
 
     // 매 틱마다 Actor->Tick(...) 호출
-	for (AActor* Actor : ActorsArray)
-	{
-	    Actor->Tick(DeltaTime);
-	}
+    for (AActor* Actor : ActorsArray)
+    {
+        Actor->Tick(DeltaTime);
+    }
 }
 
 void ULevel::Release()
