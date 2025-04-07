@@ -20,6 +20,7 @@ class FEditorViewportClient;
 class UBillboardComponent;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
+class UHeightFogComponent;
 class FRenderer 
 {
 
@@ -188,7 +189,7 @@ public:
     void CreatePostProcessVertexBuffer();
     void CreatePostProcessIndexBuffer();
     void UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport);
-    void UpdateFogConstant(const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition, const FLinearColor& fogColor, float fogDensity);
+    void UpdateFogConstant(UHeightFogComponent* FogComponent, const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition);
     void UpdateFogTexture(ID3D11ShaderResourceView* fogSRV, int slot) const;
     void RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);

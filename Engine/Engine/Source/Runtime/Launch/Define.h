@@ -47,6 +47,11 @@ struct FLinearColor
     float b;
     float a;
 
+    FLinearColor() : r(0), g(0), b(0), a(1) {}
+    FLinearColor(float InR, float InG, float InB, float InA = 1.0f)
+        : r(InR), g(InG), b(InB), a(InA) {
+    }
+
     FColor ConvertToFColor() const;
 };
 

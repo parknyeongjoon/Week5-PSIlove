@@ -22,6 +22,7 @@
 #include "UObject/UObjectIterator.h"
 #include "Components/SkySphereComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Components/HeightFogComponent.h"
 #include "ImGUI/imgui_internal.h"
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
@@ -1483,10 +1484,10 @@ void FRenderer::UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport)
     float uvMaxY = (viewport.TopLeftY + viewport.Height) / screenHeight;
 
     FScreenVertex vertices[4] = {
-        { FVector4(-1.0f,    1.0f,    0.0f, 1.0f), uvMinX, uvMinY }, // top-left
-        { FVector4(1.0f,   1.0f,    0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
-        { FVector4(1.0f,   -1.0f , 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
-        { FVector4(-1.0f,   -1.0f , 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
+        { FVector4(-1.0f, 1.0f, 0.0f, 1.0f), uvMinX, uvMinY }, // top-left
+        { FVector4(1.0f, 1.0f, 0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
+        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
+        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
     };
 
     D3D11_MAPPED_SUBRESOURCE mapped;
@@ -1498,19 +1499,19 @@ void FRenderer::UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport)
 }
 
 
-void FRenderer::UpdateFogConstant(const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition, const FLinearColor& fogColor, float fogDensity)
+void FRenderer::UpdateFogConstant(UHeightFogComponent* FogComponent, const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition)
 {
     Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &FogConstantBuffer);
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     Graphics->DeviceContext->Map(FogConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
     FFogConstants* data = reinterpret_cast<FFogConstants*>(mappedResource.pData);
-    data->FogDensity = fogDensity;
-    data->FogHeightFalloff = 0.5f;
-    data->StartDistance = 100.0f;
-    data->FogCutoffDistance = 2000.0f;
-    data->FogMaxOpacity = 1.0f;
-    data->FogInscatteringColor = fogColor;
+    data->FogDensity = FogComponent->FogDensity;
+    data->FogHeightFalloff = FogComponent->FogHeightFalloff;
+    data->StartDistance = FogComponent->StartDistance;
+    data->FogCutoffDistance = FogComponent->FogCutoffDistance;
+    data->FogMaxOpacity = FogComponent->FogMaxOpacity;
+    data->FogInscatteringColor = FogComponent->FogInscatteringColor;
 
     data->CameraPosition = CameraPosition;
     data->InvProjectionMatrix = InvProjectionMatrix;
@@ -1524,11 +1525,10 @@ void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> 
     Graphics->PreparePostProcessRender();
     PrepareFogShader();
     UpdateFogConstant(
+        new UHeightFogComponent(),
         FMatrix::Inverse(ActiveViewport->GetProjectionMatrix()),
         FMatrix::Inverse(ActiveViewport->GetViewMatrix()),
-        ActiveViewport->ViewTransformPerspective.GetLocation(),
-        FLinearColor(0.5f, 0.5f, 0.5f, 1.0f),
-        0.1f 
+        ActiveViewport->ViewTransformPerspective.GetLocation()
     );
     UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
