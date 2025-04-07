@@ -9,11 +9,6 @@ UTextRenderComponent::UTextRenderComponent()
 
 UTextRenderComponent::~UTextRenderComponent()
 {
-    if (vertexTextBuffer)
-    {
-        vertexTextBuffer->Release();
-        vertexTextBuffer = nullptr;
-    }
 }
 
 void UTextRenderComponent::InitializeComponent()
@@ -40,26 +35,18 @@ void UTextRenderComponent::SetText(FWString _text)
 
 		vertexTextureArr.Empty();
 		quad.Empty();
-
-		// 기존 버텍스 버퍼가 있다면 해제
-		if (vertexTextBuffer)
-		{
-			vertexTextBuffer->Release();
-			vertexTextBuffer = nullptr;
-		}
+	    
 		return;
 	}
-	int textSize = static_cast<int>(_text.size());
 
+	const uint32 BitmapWidth = Texture->width;
+	const uint32 BitmapHeight = Texture->height;
 
-	uint32 BitmapWidth = Texture->width;
-	uint32 BitmapHeight = Texture->height;
+	const float CellWidth =  static_cast<float>(BitmapWidth) / static_cast<float>(ColumnCount);
+	const float CellHeight = static_cast<float>(BitmapHeight)/ static_cast<float>(RowCount);
 
-	float CellWidth =  float(BitmapWidth)/ColumnCount;
-	float CellHeight = float(BitmapHeight)/RowCount;
-
-	float nTexelUOffset = CellWidth / BitmapWidth;
-	float nTexelVOffset = CellHeight/ BitmapHeight;
+	const float nTexelUOffset = CellWidth / static_cast<float>(BitmapWidth) ;
+	const float nTexelVOffset = CellHeight/ static_cast<float>(BitmapWidth) ;
 
 	for (int i = 0; i < _text.size(); i++)
 	{
@@ -97,15 +84,33 @@ void UTextRenderComponent::SetText(FWString _text)
 		vertexTextureArr.Add(rightDown);
 		vertexTextureArr.Add(leftDown);
 	}
-	UINT byteWidth = static_cast<UINT>(vertexTextureArr.Num() * sizeof(FVertexTexture));
 
-	float lastX = -1.0f + quadSize* _text.size();
+	const float lastX = -1.0f + quadSize * _text.size();
 	quad.Add(FVector(-1.0f,1.0f,0.0f));
 	quad.Add(FVector(-1.0f,-1.0f,0.0f));
 	quad.Add(FVector(lastX,1.0f,0.0f));
 	quad.Add(FVector(lastX,-1.0f,0.0f));
+    
+    TArray<uint32> indices;
+    const uint32 numLetters = static_cast<uint32>(_text.size());
+    for (uint32 letter = 0; letter < numLetters; letter++)
+    {
+        uint32 baseIndex = letter * 6;
+        // 첫 번째 삼각형
+        indices.Add(baseIndex);
+        indices.Add(baseIndex + 1);
+        indices.Add(baseIndex + 2);
+        // 두 번째 삼각형
+        indices.Add(baseIndex + 3);
+        indices.Add(baseIndex + 4);
+        indices.Add(baseIndex + 5);
+    }
 
-	CreateTextTextureVertexBuffer(vertexTextureArr,byteWidth);
+    const Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer(vertexTextureArr);
+    const Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer = FEngineLoop::renderer.CreateIndexBuffer(indices);
+    
+    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture));
+    FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexBuffer, sizeof(uint32));
 }
 
 void UTextRenderComponent::SetRowColumnCount(int32 InRowCount, int32 InColumnCount)
@@ -208,34 +213,9 @@ void UTextRenderComponent::setStartUV(wchar_t hangul, float& outStartU, float& o
         Console::GetInstance().AddLog(LogLevel::Warning, "Text Error");
     }
 
-    int offsetV = (offset + StartU) / ColumnCount;
-    int offsetU = (offset + StartU) % ColumnCount;
+    const int offsetV = (offset + StartU) / ColumnCount;
+    const int offsetU = (offset + StartU) % ColumnCount;
 
     outStartU = static_cast<float>(offsetU);
     outStartV = static_cast<float>(StartV + offsetV);
-}
-
-void UTextRenderComponent::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex, UINT byteWidth)
-{
-    numTextVertices = static_cast<UINT>(_vertex.Num());
-    // 2. Create a vertex buffer
-    D3D11_BUFFER_DESC vertexbufferdesc = {};
-    vertexbufferdesc.ByteWidth = byteWidth;
-    vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
-    vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD = { _vertex.GetData()};
-
-    ID3D11Buffer* vertexBuffer;
-	
-    HRESULT hr = FEngineLoop::graphicDevice.Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
-    if (FAILED(hr))
-    {
-        UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
-    }
-    vertexTextBuffer = vertexBuffer;
-
-    //FEngineLoop::resourceMgr.RegisterMesh(&FEngineLoop::renderer, "JungleText", _vertex, _vertex.Num() * sizeof(FVertexTexture),
-    //	nullptr, 0);
-
 }

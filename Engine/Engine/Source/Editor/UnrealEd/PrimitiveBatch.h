@@ -14,7 +14,6 @@ public:
     }
 
 public:
-    void Release();
     void ClearGrid() {};
     float GetSpacing() { return GridParam.GridSpacing; }
     void GenerateGrid(float spacing, int gridCount);
@@ -25,7 +24,6 @@ public:
     //void UpdateConeResources();
    // void ReleaseConeResources();
     //void UpdateOBBResources();
-    void ReleaseOBBResources();
     void RenderAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
     void RenderOBB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
 	
@@ -37,14 +35,6 @@ public:
 
     FGridParametersData GetGridParameters() const { return GridParam; }
 private:
-    ID3D11Buffer* pVertexBuffer;
-    ID3D11Buffer* pBoundingBoxBuffer;
-    ID3D11ShaderResourceView* pBoundingBoxSRV;
-    ID3D11Buffer* pConesBuffer;
-    ID3D11Buffer* pOBBBuffer;
-    ID3D11ShaderResourceView* pConesSRV;
-    ID3D11ShaderResourceView* pOBBSRV;
-
     size_t allocatedBoundingBoxCapacity;
     size_t allocatedConeCapacity;
     size_t allocatedOBBCapacity;

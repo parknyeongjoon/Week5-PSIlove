@@ -19,15 +19,12 @@ public:
 
     void SetTexture(FWString _fileName);
     
-    ID3D11Buffer* vertexTextBuffer;
     TArray<FVertexTexture> vertexTextureArr;
-    UINT numTextVertices;
 
     float finalIndexU = 0.0f;
     float finalIndexV = 0.0f;
 
     std::shared_ptr<FTexture> Texture;
-    
 protected:
     FWString text;
 
@@ -43,5 +40,4 @@ protected:
 
     void setStartUV(char alphabet, float& outStartU, float& outStartV);
     void setStartUV(wchar_t hangul, float& outStartU, float& outStartV);
-    void CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex, UINT byteWidth);
 };

@@ -16,8 +16,7 @@ public:
     FWString GetText() { return text; }
     void SetRowColumnCount(int32 InRowCount, int32 InColumnCount);
     virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
-
-    ID3D11Buffer* vertexTextBuffer;
+    
     TArray<FVertexTexture> vertexTextureArr;
     UINT numTextVertices;
 protected:
@@ -35,5 +34,4 @@ protected:
 
     void setStartUV(char alphabet, float& outStartU, float& outStartV);
     void setStartUV(wchar_t hangul, float& outStartU, float& outStartV);
-    void CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex, UINT byteWidth);
 };

@@ -318,7 +318,6 @@ void FEngineLoop::Exit()
     UIMgr->Shutdown();
     delete UIMgr;
     resourceMgr.Release(&renderer);
-    renderer.Release();
 }
 
 

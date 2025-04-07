@@ -164,9 +164,9 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateImmutableVertexBuffer(cons
     D3D11_SUBRESOURCE_DATA vertexbufferSRD = {};
     vertexbufferSRD.pSysMem = vertices.GetData();
 
-    ID3D11Buffer* vertexBuffer = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = nullptr;
 
-    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
+    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, vertexBuffer.GetAddressOf());
     if (FAILED(hr))
     {
         UE_LOG(LogLevel::Warning, "VertexBuffer Creation failed");
@@ -196,9 +196,9 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateDynamicVertexBuffer(const 
     D3D11_SUBRESOURCE_DATA vertexbufferSRD = {};
     vertexbufferSRD.pSysMem = vertices.GetData();
 
-    ID3D11Buffer* vertexBuffer = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = nullptr;
 
-    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
+    HRESULT hr = Graphics->Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, vertexBuffer.GetAddressOf());
     if (FAILED(hr))
     {
         UE_LOG(LogLevel::Warning, "VertexBuffer Creation failed");
@@ -259,8 +259,8 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateStructuredBuffer(const uin
     bufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
     bufferDesc.StructureByteStride = sizeof(T);
 
-    ID3D11Buffer* buffer = nullptr;
-    HRESULT hr = Graphics->Device->CreateBuffer(&bufferDesc, nullptr, &buffer);
+    Microsoft::WRL::ComPtr<ID3D11Buffer> buffer = nullptr;
+    HRESULT hr = Graphics->Device->CreateBuffer(&bufferDesc, nullptr, buffer.GetAddressOf());
     if (FAILED(hr))
     {
         UE_LOG(LogLevel::Warning, "Structured Buffer Creation failed");
@@ -281,8 +281,8 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateStaticVertexBuffer(const T
     D3D11_SUBRESOURCE_DATA vbInitData = {};
     vbInitData.pSysMem = vertices.GetData();
 
-    ID3D11Buffer* pVertexBuffer = nullptr;
-    HRESULT hr = Graphics->Device->CreateBuffer(&vbDesc, &vbInitData, &pVertexBuffer);
+    Microsoft::WRL::ComPtr<ID3D11Buffer> pVertexBuffer = nullptr;
+    HRESULT hr = Graphics->Device->CreateBuffer(&vbDesc, &vbInitData, pVertexBuffer.GetAddressOf());
     if (FAILED(hr))
     {
         UE_LOG(LogLevel::Warning, "Static Vertex Buffer Creation failed");

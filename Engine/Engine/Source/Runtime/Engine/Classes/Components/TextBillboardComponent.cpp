@@ -12,11 +12,6 @@ UTextBillboardComponent::UTextBillboardComponent()
 
 UTextBillboardComponent::~UTextBillboardComponent()
 {
-	if (vertexTextBuffer)
-	{
-		vertexTextBuffer->Release();
-		vertexTextBuffer = nullptr;
-	}
 }
 
 void UTextBillboardComponent::InitializeComponent()
@@ -74,13 +69,7 @@ void UTextBillboardComponent::SetText(FWString _text)
 
 		vertexTextureArr.Empty();
 		quad.Empty();
-
-		// 기존 버텍스 버퍼가 있다면 해제
-		if (vertexTextBuffer)
-		{
-			vertexTextBuffer->Release();
-			vertexTextBuffer = nullptr;
-		}
+	    
 		return;
 	}
 	int textSize = static_cast<int>(_text.size());
@@ -139,7 +128,26 @@ void UTextBillboardComponent::SetText(FWString _text)
 	quad.Add(FVector(lastX,1.0f,0.0f));
 	quad.Add(FVector(lastX,-1.0f,0.0f));
 
-	CreateTextTextureVertexBuffer(vertexTextureArr,byteWidth);
+    TArray<uint32> indices;
+    const uint32 numLetters = static_cast<uint32>(_text.size());
+    for (uint32 letter = 0; letter < numLetters; letter++)
+    {
+        uint32 baseIndex = letter * 6;
+        // 첫 번째 삼각형
+        indices.Add(baseIndex);
+        indices.Add(baseIndex + 1);
+        indices.Add(baseIndex + 2);
+        // 두 번째 삼각형
+        indices.Add(baseIndex + 3);
+        indices.Add(baseIndex + 4);
+        indices.Add(baseIndex + 5);
+    }
+
+    const Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer(vertexTextureArr);
+    const Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer = FEngineLoop::renderer.CreateIndexBuffer(indices);
+    
+    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture));
+    FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexBuffer, sizeof(uint32));
 }
 void UTextBillboardComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
 {
@@ -229,29 +237,5 @@ void UTextBillboardComponent::setStartUV(char alphabet, float& outStartU, float&
 
     outStartU = static_cast<float>(offsetU);
     outStartV = static_cast<float>(StartV + offsetV);
-
-}
-void UTextBillboardComponent::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,UINT byteWidth)
-{
-	numTextVertices = static_cast<UINT>(_vertex.Num());
-	// 2. Create a vertex buffer
-	D3D11_BUFFER_DESC vertexbufferdesc = {};
-	vertexbufferdesc.ByteWidth = byteWidth;
-	vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
-	vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-	D3D11_SUBRESOURCE_DATA vertexbufferSRD = { _vertex.GetData()};
-
-	ID3D11Buffer* vertexBuffer;
-	
-	HRESULT hr = FEngineLoop::graphicDevice.Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
-	if (FAILED(hr))
-	{
-		UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
-	}
-	vertexTextBuffer = vertexBuffer;
-
-	//FEngineLoop::resourceMgr.RegisterMesh(&FEngineLoop::renderer, "JungleText", _vertex, _vertex.Num() * sizeof(FVertexTexture),
-	//	nullptr, 0);
 
 }

@@ -279,10 +279,6 @@ void FRenderer::CreateLineShader()
     ShaderConstantNames.Add(TEXT("Line"), ShaderStageToCB);
 }
 
-void FRenderer::ReleaseShader()
-{
-}
-
 void FRenderer::PrepareShader(const FString& InShaderName) const
 {
     ShaderPrograms[InShaderName]->Bind(Graphics->DeviceContext.Get());
@@ -363,13 +359,13 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateConstantBuffer(const uint3
     D3D11_SUBRESOURCE_DATA sub = {};
     sub.pSysMem = InData;
     
-    ID3D11Buffer* constantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
 
     HRESULT hr;
     if (InData == nullptr)
-        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
+        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, nullptr, constantBuffer.GetAddressOf());
     else
-        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, &sub, &constantBuffer);
+        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, &sub, constantBuffer.GetAddressOf());
 
     if (FAILED(hr))
         assert(NULL/*"Create constant buffer failed!"*/);

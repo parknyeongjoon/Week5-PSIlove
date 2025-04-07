@@ -65,7 +65,7 @@ public:
     void OnResize(HWND hWindow);
     Microsoft::WRL::ComPtr<ID3D11RasterizerState> GetCurrentRasterizer() { return CurrentRasterizer; }
     void ChangeRasterizer(EViewModeIndex evi);
-    inline void ChangeDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState> newDetptStencil) const
+    inline void ChangeDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& newDetptStencil) const
     {
         DeviceContext->OMSetDepthStencilState(newDetptStencil.Get(), 0);
     }

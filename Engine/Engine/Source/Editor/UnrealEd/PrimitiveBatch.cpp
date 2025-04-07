@@ -10,21 +10,8 @@ UPrimitiveBatch::UPrimitiveBatch()
 
 UPrimitiveBatch::~UPrimitiveBatch()
 {
-    if (pVertexBuffer) {
-        pVertexBuffer->Release();
-        pVertexBuffer = nullptr;
-    }
-    ReleaseOBBResources();
-    ReleaseBoundingBoxResources();
-   // ReleaseConeResources();
 }
 
-void UPrimitiveBatch::Release()
-{
-    ReleaseOBBResources();
-    ReleaseBoundingBoxResources();
-    //ReleaseConeResources();
-}
 
 void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
 {
@@ -87,8 +74,7 @@ void UPrimitiveBatch::UpdateBoundingBoxResources()
 
 void UPrimitiveBatch::ReleaseBoundingBoxResources()
 {
-    if (pBoundingBoxBuffer) pBoundingBoxBuffer->Release();
-    if (pBoundingBoxSRV) pBoundingBoxSRV->Release();
+
 }
 
 //void UPrimitiveBatch::UpdateConeResources()
@@ -146,12 +132,6 @@ void UPrimitiveBatch::ReleaseBoundingBoxResources()
 //        FEngineLoop::renderer.UpdateStructuredBuffer(SB, BoundingBoxes);
 //    }
 //}
-
-void UPrimitiveBatch::ReleaseOBBResources()
-{
-    if (pOBBBuffer) pOBBBuffer->Release();
-    if (pOBBSRV) pOBBSRV->Release();
-}
 
 void UPrimitiveBatch::RenderAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix)
 {

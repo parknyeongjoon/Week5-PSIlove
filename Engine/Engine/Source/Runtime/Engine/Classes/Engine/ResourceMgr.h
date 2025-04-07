@@ -17,7 +17,7 @@ public:
     void Initialize(FRenderer* renderer, FGraphicsDevice* device);
     void Release(FRenderer* renderer);
     HRESULT LoadTextureFromFile(Microsoft::WRL::ComPtr<ID3D11Device> device, const wchar_t* filename);
-    HRESULT LoadTextureFromDDS(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, const wchar_t* filename);
+    HRESULT LoadTextureFromDDS(const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context, const wchar_t* filename);
 
     std::shared_ptr<FTexture> GetTexture(const FWString& name);
 
