@@ -187,6 +187,7 @@ public:
     void PrepareFogShader() const;
     void CreatePostProcessVertexBuffer();
     void CreatePostProcessIndexBuffer();
+    void UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport);
     void UpdateFogConstant(const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition, const FLinearColor& fogColor, float fogDensity);
     void UpdateFogTexture(ID3D11ShaderResourceView* fogSRV, int slot) const;
     void RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);

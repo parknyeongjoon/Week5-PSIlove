@@ -1125,7 +1125,7 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
         RenderBillboards(Level, ActiveViewport);
         RenderTexts(Level, ActiveViewport);
     }
-    RenderLight(Level, ActiveViewport);
+    //RenderLight(Level, ActiveViewport);
     RenderFog(Level, ActiveViewport);
     RenderFinal(Level, ActiveViewport);
     ClearRenderArr();
@@ -1472,6 +1472,32 @@ void FRenderer::CreatePostProcessIndexBuffer()
     Graphics->Device->CreateBuffer(&bufferDesc, &initData, &PostProcessIndexBuffer);
 }
 
+void FRenderer::UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport)
+{
+    float screenWidth = static_cast<float>(Graphics->screenWidth);
+    float screenHeight = static_cast<float>(Graphics->screenHeight);
+
+    float uvMinX = viewport.TopLeftX / screenWidth;
+    float uvMinY = viewport.TopLeftY / screenHeight;
+    float uvMaxX = (viewport.TopLeftX + viewport.Width) / screenWidth;
+    float uvMaxY = (viewport.TopLeftY + viewport.Height) / screenHeight;
+
+    FScreenVertex vertices[4] = {
+        { FVector4(-1.0f,    1.0f,    0.0f, 1.0f), uvMinX, uvMinY }, // top-left
+        { FVector4(1.0f,   1.0f,    0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
+        { FVector4(1.0f,   -1.0f , 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
+        { FVector4(-1.0f,   -1.0f , 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
+    };
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    if (SUCCEEDED(Graphics->DeviceContext->Map(PostProcessVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+    {
+        memcpy(mapped.pData, vertices, sizeof(vertices));
+        Graphics->DeviceContext->Unmap(PostProcessVertexBuffer, 0);
+    }
+}
+
+
 void FRenderer::UpdateFogConstant(const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition, const FLinearColor& fogColor, float fogDensity)
 {
     Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &FogConstantBuffer);
@@ -1491,14 +1517,6 @@ void FRenderer::UpdateFogConstant(const FMatrix& InvProjectionMatrix, const FMat
     data->InvViewMatrix = InvViewMatrix;
 
     Graphics->DeviceContext->Unmap(FogConstantBuffer, 0);
-
-    // 픽셀 셰이더 0번 슬롯에 바인딩
-}
-
-void FRenderer::UpdateFogTexture(ID3D11ShaderResourceView* fogSRV, int slot) const
-{
-    // PS에서 사용할 텍스처(SRV) 바인딩
-    Graphics->DeviceContext->PSSetShaderResources(slot, 1, &fogSRV);
 }
 
 void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
@@ -1510,8 +1528,9 @@ void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> 
         FMatrix::Inverse(ActiveViewport->GetViewMatrix()),
         ActiveViewport->ViewTransformPerspective.GetLocation(),
         FLinearColor(0.5f, 0.5f, 0.5f, 1.0f),
-        0.1f
+        0.1f 
     );
+    UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
     ID3D11ShaderResourceView* SRVs[] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV() };
@@ -1538,6 +1557,8 @@ void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> 
 void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     Graphics->PrepareFinalRender();
+    PrepareFogShader();
+    UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
     ID3D11ShaderResourceView* SRVs[] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV() };

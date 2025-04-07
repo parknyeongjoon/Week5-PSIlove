@@ -71,6 +71,7 @@ public:
     void ReleaseDepthStencilResources();
     void Release();
     void SwapBuffer();
+    void ClearRenderTarget();
     void Prepare();
     void Prepare(D3D11_VIEWPORT* viewport);
     void PrepareFogRender();    

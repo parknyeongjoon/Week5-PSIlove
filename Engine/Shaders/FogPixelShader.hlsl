@@ -45,8 +45,8 @@ float4 MainPS(PS_INPUT input) : SV_Target
         return SceneColorTexture.Sample(SceneSampler, input.UV);
 
     // Height falloff
-    float heightDiff = worldPos.y - CameraWorldPos.y;
-    float heightFog = exp(-worldPos.z * Fog.FogHeightFalloff);
+    float heightDiff = max(0.0, worldPos.z);
+    float heightFog = exp(-heightDiff * Fog.FogHeightFalloff);
     float distanceFog = exp(-distance * Fog.FogDensity);
     float fogFactor = saturate(1.0 - distanceFog * heightFog);
 
