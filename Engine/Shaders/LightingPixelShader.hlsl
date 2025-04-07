@@ -11,16 +11,16 @@ struct FLighting
     float Intensity;
     float3 LightDirection;
     float AmbientFactor;
-    float3 LightColor;
+    float4 LightColor;
     float AttenuationRadius;
+    float3 pad0;
 };
 
 cbuffer LightBuffer : register(b0) 
 {
     FLighting Lights[100];
-    float4 EyePosition;  // xyz: 카메라 위치, w: 패딩 또는 추가 정보
-    uint LightCount;
-    float3 padding;      // 16바이트 정렬을 위한 패딩
+    float3 EyePosition;  // xyz: 카메라 위치, w: 패딩 또는 추가 정보
+    float LightCount;
 };
 
 struct PS_INPUT
@@ -44,7 +44,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float4 diffuse = DiffuseBuffer.Sample(SamLinear, input.texCoord);
     float4 material = MaterialBuffer.Sample(SamLinear, input.texCoord);
 
-    // // 유효한 픽셀인지 확인 (깊이 값이 0이면 스킵)
+     // 유효한 픽셀인지 확인 (깊이 값이 0이면 스킵)
     if (position.w == 0.0f)
     {
         discard;
@@ -56,7 +56,8 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float specularIntensity = material.b;
     
     // 법선 벡터 정규화
-    float3 N = normalize(normal.xyz);
+    float3 N = normal.xyz;
+    N = (N - 0.5) * 2;
     
     // 시점 방향 계산
     float3 worldPos = position.xyz;
@@ -70,10 +71,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
     for (uint i = 0; i < LightCount; i++)
     {
         // 주변광(Ambient) 계산
-        ambientColor += diffuse.rgb * Lights[i].LightColor * Lights[i].AmbientFactor;
+        //ambientColor += diffuse.rgb * Lights[i].LightColor * Lights[i].AmbientFactor;
         
         // 광원 방향 계산
-        float3 lightVector = Lights[i].Position - worldPos;
+        float3 lightVector = Lights[i].Position-worldPos;
         float distance = length(lightVector);
         float3 L = normalize(lightVector);
         
@@ -81,9 +82,14 @@ PS_OUTPUT mainPS(PS_INPUT input)
         float attenuation = 1.0f;
         if (Lights[i].AttenuationRadius > 0.0f)
         {
-            // 거리에 따른 감쇠 계산
-            float attenuationFactor = saturate(1.0f - (distance * distance) / (Lights[i].AttenuationRadius * Lights[i].AttenuationRadius));
-            attenuation = attenuationFactor * attenuationFactor;
+            float distanceSquared = distance * distance;
+            float radiusSquared = Lights[i].AttenuationRadius * Lights[i].AttenuationRadius;
+        
+            // 선형-제곱 감쇠 조합 (보다 현실적인 빛 감쇠 표현)
+            float att = 1.0f / (1.0f + 0.1f * distance + 0.01f * distanceSquared);
+        
+            // 감쇠 반경에 따른 클램핑
+            attenuation = att * saturate(1.0f - (distanceSquared / radiusSquared));
         }
         
         // 디퓨즈(Diffuse) 계산 - Lambert 모델
@@ -102,7 +108,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         float3 specularTerm = specularColor * specularIntensity * pow(NdotH, specPower) * Lights[i].Intensity * attenuation;
         
         // 최종 색상에 더하기
-        finalColor += diffuseTerm + specularTerm;
+        finalColor += diffuseTerm;//+ specularTerm;
     }
     
     // 주변광 더하기

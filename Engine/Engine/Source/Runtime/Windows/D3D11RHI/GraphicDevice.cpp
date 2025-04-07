@@ -195,24 +195,30 @@ void FGraphicsDevice::CreateGBuffer()
     textureDesc.Height = screenHeight;
     textureDesc.MipLevels = 1;
     textureDesc.ArraySize = 1;
-    textureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
     textureDesc.SampleDesc.Count = 1;
     textureDesc.Usage = D3D11_USAGE_DEFAULT;
     textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
+    textureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
     Device->CreateTexture2D(&textureDesc, nullptr, &PositionBuffer);
+    textureDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
     Device->CreateTexture2D(&textureDesc, nullptr, &NormalBuffer);
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     Device->CreateTexture2D(&textureDesc, nullptr, &DiffuseBuffer);
+    textureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
     Device->CreateTexture2D(&textureDesc, nullptr, &MaterialBuffer);
     
     // 렌더 타겟 뷰 생성
     D3D11_RENDER_TARGET_VIEW_DESC GBufferRTVdesc = {};
-    GBufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // 색상 포맷
     GBufferRTVdesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D 텍스처
     
+    GBufferRTVdesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // 색상 포맷
     Device->CreateRenderTargetView(PositionBuffer, &GBufferRTVdesc, &PositionRTV);
+    GBufferRTVdesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM; // 색상 포맷
     Device->CreateRenderTargetView(NormalBuffer, &GBufferRTVdesc, &NormalRTV);
+    GBufferRTVdesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 색상 포맷
     Device->CreateRenderTargetView(DiffuseBuffer, &GBufferRTVdesc, &DiffuseRTV);
+    GBufferRTVdesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // 색상 포맷
     Device->CreateRenderTargetView(MaterialBuffer, &GBufferRTVdesc, &MaterialRTV);
 
     RTVs[1] = PositionRTV;
@@ -303,7 +309,7 @@ void FGraphicsDevice::SwapBuffer() const
 void FGraphicsDevice::Prepare() const
 {
     DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearRenderTargetView(PositionRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->ClearRenderTargetView(PositionRTV, PositionClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(NormalRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(DiffuseRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(MaterialRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제

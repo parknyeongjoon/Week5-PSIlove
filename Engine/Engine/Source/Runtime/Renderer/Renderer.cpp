@@ -410,12 +410,13 @@ void FRenderer::UpdateLightBuffer(TArray<ULightComponent*> lightComponents) cons
     {
         FLightingArr* constants = static_cast<FLightingArr*>(mappedResource.pData);
         constants->EyePosition = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->ViewTransformPerspective.ViewLocation;
+        int num = lightComponents.Num();
         constants->LightCount = lightComponents.Num();
         for (int index = 0; index< lightComponents.Num();index++)
         {
             constants->Lights[index].Intensity = lightComponents[index]->GetIntensity();
             constants->Lights[index].Position = lightComponents[index]->GetWorldLocation();
-            constants->Lights[index].AmbientFactor = 1.0f;
+            constants->Lights[index].AmbientFactor = 0.0f;
             constants->Lights[index].LightColor = lightComponents[index]->GetLightColor();
             constants->Lights[index].LightDirection = FVector(-1,-1,-1);
             constants->Lights[index].AttenuationRadius = lightComponents[index]->GetAttenuationRadius();
@@ -1100,9 +1101,11 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     {
         RenderStaticMeshes(Level, ActiveViewport);
     }
-    
-    UpdateLightBuffer(LightObjs);
-    RenderLighting(Level, ActiveViewport);
+
+    if (ActiveViewport->ViewMode == VMI_Lit)
+    {
+        RenderLighting(Level, ActiveViewport);
+    }
     
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
     RenderGizmos(Level, ActiveViewport);
@@ -1306,6 +1309,8 @@ void FRenderer::RenderTexts(ULevel* Level, std::shared_ptr<FEditorViewportClient
 void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport) const
 {
     PrepareLightingShader();
+
+    UpdateLightBuffer(LightObjs);
     
     // 화면 크기 사각형 렌더링
     Graphics->DeviceContext->Draw(6, 0); // 4개의 정점으로 화면 전체 사각형 그리기

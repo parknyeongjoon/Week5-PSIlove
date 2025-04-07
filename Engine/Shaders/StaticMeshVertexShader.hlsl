@@ -36,7 +36,7 @@ PS_INPUT mainVS(VS_INPUT input)
     if (isSelected)
         output.color *= 0.5;
     
-    output.normal = mul(input.normal, MInverseTranspose);
+    output.normal = input.normal * 0.5 + 0.5;
     output.texcoord = input.texcoord;
     
     return output;

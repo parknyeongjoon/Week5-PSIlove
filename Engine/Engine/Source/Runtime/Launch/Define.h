@@ -254,13 +254,14 @@ struct FLighting
 	float AmbientFactor;
 	FLinearColor LightColor;
     float AttenuationRadius;
+    FVector pad0;
 };
 
 struct FLightingArr
 {
     FLighting Lights[100];
     FVector EyePosition;
-    UINT LightCount;
+    float LightCount;
 };
 
 struct FMaterialConstants {
