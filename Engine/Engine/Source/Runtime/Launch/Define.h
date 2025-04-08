@@ -300,8 +300,8 @@ struct FSubMeshConstants {
 struct FTextureConstants {
     float UOffset;
     float VOffset;
-    float pad0;
-    float pad1;
+    float UTiles;
+    float VTiles;
 };
 
 struct FScreenVertex {
@@ -326,4 +326,3 @@ struct FFogConstants
     FMatrix InvProjectionMatrix; // 64 bytes (4x4 floats)
     FMatrix InvViewMatrix;       // 64 bytes
 };
-

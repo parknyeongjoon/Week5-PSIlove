@@ -18,7 +18,7 @@ public:
 
 private:
     FLinearColor LightColor;
-    float Intensity = 1.0f;
+    float Intensity = 3.0f;
     float AttenuationRadius;
     FBoundingBox AABB;
     

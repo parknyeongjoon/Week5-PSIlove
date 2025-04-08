@@ -9,12 +9,10 @@ class AStaticMeshActor : public AActor
 public:
     AStaticMeshActor();
 
-    virtual void DuplicateSubObjects();
-    virtual UObject* Duplicate();
-
-public:
+    virtual UObject* Duplicate() override;
+    
     UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
 
-private:
+protected:
     UStaticMeshComponent* StaticMeshComponent = nullptr;
 };

@@ -21,7 +21,15 @@ cbuffer LightBuffer : register(b0)
     FLighting Lights[100];
     float3 EyePosition;  // xyz: 카메라 위치, w: 패딩 또는 추가 정보
     float LightCount;
-};
+}
+
+cbuffer UVBuffer : register(b1)
+{
+    float UOffset;
+    float VOffset;
+    float UTiles;
+    float VTiles;
+}
 
 struct PS_INPUT
 {
@@ -39,10 +47,11 @@ PS_OUTPUT mainPS(PS_INPUT input)
     PS_OUTPUT output;
 
     // G-Buffer에서 데이터 샘플링
-    float4 position = PositionBuffer.Sample(SamLinear, input.texCoord);
-    float4 normal = NormalBuffer.Sample(SamLinear, input.texCoord);
-    float4 diffuse = DiffuseBuffer.Sample(SamLinear, input.texCoord);
-    float4 material = MaterialBuffer.Sample(SamLinear, input.texCoord);
+    float2 texCoord = float2(UOffset + input.texCoord.x * UTiles, VOffset + input.texCoord.y * VTiles);
+    float4 position = PositionBuffer.Sample(SamLinear, texCoord);
+    float4 normal = NormalBuffer.Sample(SamLinear, texCoord);
+    float4 diffuse = DiffuseBuffer.Sample(SamLinear, texCoord);
+    float4 material = MaterialBuffer.Sample(SamLinear, texCoord);
 
      // 유효한 픽셀인지 확인 (깊이 값이 0이면 스킵)
     if (position.w == 0.0f)
@@ -108,11 +117,13 @@ PS_OUTPUT mainPS(PS_INPUT input)
         float3 specularTerm = specularColor * specularIntensity * pow(NdotH, specPower) * Lights[i].Intensity * attenuation;
         
         // 최종 색상에 더하기
-        finalColor += diffuseTerm;//+ specularTerm;
+        finalColor += diffuseTerm + specularTerm;
     }
     
     // 주변광 더하기
     finalColor += ambientColor;
+    
+    finalColor += diffuse.rgb * 0.1f;
     
     // HDR 톤 매핑 (간단한 Reinhard 톤 매핑)
     finalColor = finalColor / (finalColor + 1.0f);

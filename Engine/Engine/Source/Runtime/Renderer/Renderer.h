@@ -83,7 +83,7 @@ public:
     void UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const;
     void UpdateLitUnlitConstant(int isLit) const;
     void UpdateSubMeshConstant(bool isSelected) const;
-    void UpdateTextureConstant(float UOffset, float VOffset);
+    void UpdateTextureConstant(float UOffset, float VOffset, float UTiles, float VTiles) const;
 
 public://텍스쳐용 기능 추가
     ID3D11VertexShader* TextureVertexShader = nullptr;
@@ -152,7 +152,7 @@ public: // line shader
     void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
-    void RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport) const;
+    void RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport) const;
     void RenderBillboards(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderTexts(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     

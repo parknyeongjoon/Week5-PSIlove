@@ -267,7 +267,7 @@ void FGraphicsDevice::CreateGBuffer()
     Device->CreateTexture2D(&textureDesc, nullptr, &NormalBuffer);
     textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     Device->CreateTexture2D(&textureDesc, nullptr, &DiffuseBuffer);
-    textureDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     Device->CreateTexture2D(&textureDesc, nullptr, &MaterialBuffer);
     
     // 렌더 타겟 뷰 생성
@@ -280,7 +280,7 @@ void FGraphicsDevice::CreateGBuffer()
     Device->CreateRenderTargetView(NormalBuffer, &GBufferRTVdesc, &NormalRTV);
     GBufferRTVdesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 색상 포맷
     Device->CreateRenderTargetView(DiffuseBuffer, &GBufferRTVdesc, &DiffuseRTV);
-    GBufferRTVdesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // 색상 포맷
+    GBufferRTVdesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 색상 포맷
     Device->CreateRenderTargetView(MaterialBuffer, &GBufferRTVdesc, &MaterialRTV);
 
     RTVs[1] = PositionRTV;
