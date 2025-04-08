@@ -18,7 +18,7 @@ public:
     float FogDensity = 0.1f;
     float FogHeightFalloff = 0.5f;
     float StartDistance = 100.0f;
-    float FogCutoffDistance = 2000.0f;
+    float FogCutoffDistance = 500.0f;
     float FogMaxOpacity = 1.0f;
 
     FLinearColor FogInscatteringColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f);
