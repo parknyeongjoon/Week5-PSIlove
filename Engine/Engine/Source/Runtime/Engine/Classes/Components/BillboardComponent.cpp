@@ -98,7 +98,7 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 
     ID3D11Buffer* vertexTextureBuffer = nullptr;
 	vertexTextureBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(quadTextureVertices, numVertices);
-    FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Quad"), vertexTextureBuffer, sizeof(FVertexTexture));
+    FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Quad"), vertexTextureBuffer, sizeof(FVertexTexture), numVertices);
     
     ID3D11Buffer* indexTextureBuffer = nullptr;
 	indexTextureBuffer = FEngineLoop::renderer.CreateIndexBuffer(quadTextureInices, numIndices);

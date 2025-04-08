@@ -2,6 +2,7 @@
 #include "BaseRenderPass.h"
 #include "Container/Array.h"
 
+struct FObjMaterialInfo;
 class UMaterial;
 class USkySphereComponent;
 struct FMatrix;
@@ -22,7 +23,7 @@ private:
     static void UpdateMatrixConstants(UStaticMeshComponent* InStaticMeshComponent, const FMatrix& InView, const FMatrix& InProjection);
     static void UpdateSkySphereTextureConstants(const USkySphereComponent* InSkySphereComponent);
     static void UpdateSubMeshConstants(bool bIsSelectedSubMesh);
-    static void UpdateMaterialConstants(const UMaterial* CurrentMaterial);
+    static void UpdateMaterialConstants(const FObjMaterialInfo& MaterialInfo);
     
     TArray<UStaticMeshComponent*> StaticMesheComponents;
 };

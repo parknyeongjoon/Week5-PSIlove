@@ -1,9 +1,7 @@
 #include "SphereComp.h"
 #include "Engine/Source/Runtime/Core/Math/JungleMath.h"
 #include "Engine/Source/Runtime/Engine/Level.h"
-#include "Engine/Source/Editor/PropertyEditor/ShowFlags.h"
 #include "UnrealEd/EditorViewportClient.h"
-#include "LevelEditor/SLevelEditor.h"
 #include "UnrealEd/PrimitiveBatch.h"
 
 

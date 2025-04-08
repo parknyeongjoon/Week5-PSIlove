@@ -74,8 +74,8 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpo
             UpdateSubMeshConstants(bIsSelectedSubMesh);
 
             // 재질 상수 버퍼 업데이트
-            const UMaterial* CurrentMaterial = item->GetMaterial(materialIndex);
-            UpdateMaterialConstants(CurrentMaterial);
+            UMaterial* CurrentMaterial = item->GetMaterial(materialIndex);
+            UpdateMaterialConstants(CurrentMaterial->GetMaterialInfo());
             
             if (currentVIBuffer != nullptr)
             {
@@ -159,18 +159,27 @@ void StaticMeshRenderPass::UpdateSubMeshConstants(const bool bIsSelectedSubMesh)
     GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
 }
 
-void StaticMeshRenderPass::UpdateMaterialConstants(const UMaterial* CurrentMaterial)
+void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& MaterialInfo)
 {
     FMaterialConstants MaterialConstants;
-    if (CurrentMaterial != nullptr)
-    {
-        MaterialConstants.DiffuseColor = CurrentMaterial->GetDiffuse();
-        MaterialConstants.TransparencyScalar = CurrentMaterial->GetTransparency();
-        MaterialConstants.AmbientColor = CurrentMaterial->GetAmbient();
-        MaterialConstants.DensityScalar = CurrentMaterial->GetDensity();
-        MaterialConstants.SpecularColor = CurrentMaterial->GetSpecular();
-        MaterialConstants.SpecularScalar = CurrentMaterial->GetSpecularScalar();
-        MaterialConstants.EmissiveColor = CurrentMaterial->GetEmissive();
-    }
+    MaterialConstants.DiffuseColor = MaterialInfo.Diffuse;
+    MaterialConstants.TransparencyScalar = MaterialInfo.TransparencyScalar;
+    MaterialConstants.AmbientColor = MaterialInfo.Ambient;
+    MaterialConstants.DensityScalar = MaterialInfo.DensityScalar;
+    MaterialConstants.SpecularColor = MaterialInfo.Specular;
+    MaterialConstants.SpecularScalar = MaterialInfo.SpecularScalar;
+    MaterialConstants.EmissiveColor = MaterialInfo.Emissive;
     GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
+    
+    if (MaterialInfo.bHasTexture == true)
+    {
+        const std::shared_ptr<FTexture> texture = GEngineLoop.resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
+        GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
+    }
+    else
+    {
+        ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
+
+        GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
+    }
 }

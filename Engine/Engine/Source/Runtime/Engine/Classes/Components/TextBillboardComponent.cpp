@@ -122,32 +122,15 @@ void UTextBillboardComponent::SetText(FWString _text)
 	}
 	UINT byteWidth = static_cast<UINT>(vertexTextureArr.Num() * sizeof(FVertexTexture));
 
-	float lastX = -1.0f + quadSize* _text.size();
+	float lastX = -1.0f + quadSize * _text.size();
 	quad.Add(FVector(-1.0f,1.0f,0.0f));
 	quad.Add(FVector(-1.0f,-1.0f,0.0f));
 	quad.Add(FVector(lastX,1.0f,0.0f));
 	quad.Add(FVector(lastX,-1.0f,0.0f));
 
-    TArray<uint32> indices;
-    const uint32 numLetters = static_cast<uint32>(_text.size());
-    for (uint32 letter = 0; letter < numLetters; letter++)
-    {
-        uint32 baseIndex = letter * 6;
-        // 첫 번째 삼각형
-        indices.Add(baseIndex);
-        indices.Add(baseIndex + 1);
-        indices.Add(baseIndex + 2);
-        // 두 번째 삼각형
-        indices.Add(baseIndex + 3);
-        indices.Add(baseIndex + 4);
-        indices.Add(baseIndex + 5);
-    }
-
     ID3D11Buffer* vertexBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer(vertexTextureArr);
-    ID3D11Buffer* indexBuffer = FEngineLoop::renderer.CreateIndexBuffer(indices);
     
-    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture));
-    FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexBuffer, sizeof(uint32));
+    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture), vertexTextureArr.Num());
     VIBufferName = Texture->Name;
 }
 void UTextBillboardComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)

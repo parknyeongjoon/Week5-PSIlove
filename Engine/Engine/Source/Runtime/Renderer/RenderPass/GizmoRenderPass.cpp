@@ -60,28 +60,28 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
         {
             GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
         }
-        // const int selectedSubMeshIndex = item->GetselectedSubMeshIndex();
-        //
-        // // SubSet마다 Material Update 및 Draw
-        // for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); subMeshIndex++)
-        // {
-        //     const int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
-        //
-        //     const bool bIsSelectedSubMesh = (subMeshIndex == selectedSubMeshIndex);
-        //     UpdateSubMeshConstants(bIsSelectedSubMesh);
-        //
-        //     // 재질 상수 버퍼 업데이트
-        //     const UMaterial* CurrentMaterial = item->GetMaterial(materialIndex);
-        //     UpdateMaterialConstants(CurrentMaterial);
-        //     
-        //     if (currentVIBuffer != nullptr)
-        //     {
-        //         // index draw
-        //         const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
-        //         const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
-        //         GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
-        //     }
-        // }
+        const int selectedSubMeshIndex = item->GetselectedSubMeshIndex();
+        
+        // SubSet마다 Material Update 및 Draw
+        for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); subMeshIndex++)
+        {
+            const int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
+        
+            const bool bIsSelectedSubMesh = (subMeshIndex == selectedSubMeshIndex);
+            UpdateSubMeshConstants(bIsSelectedSubMesh);
+        
+            // 재질 상수 버퍼 업데이트
+            const UMaterial* CurrentMaterial = item->GetMaterial(materialIndex);
+            UpdateMaterialConstants(CurrentMaterial);
+            
+            if (currentVIBuffer != nullptr)
+            {
+                // index draw
+                const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
+                const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
+                GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
+            }
+        }
     }
     
 }
@@ -120,4 +120,27 @@ void GizmoRenderPass::UpdateMatrixConstants(UGizmoBaseComponent* InGizmoComponen
         MatrixConstants.isSelected = false;
     }
     GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
+}
+
+void GizmoRenderPass::UpdateSubMeshConstants(bool bIsSelectedSubMesh)
+{
+    FSubMeshConstants SubMeshConstants;
+    SubMeshConstants.IsSelectedSubMesh = bIsSelectedSubMesh;
+    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
+}
+
+void GizmoRenderPass::UpdateMaterialConstants(const UMaterial* CurrentMaterial)
+{
+    FMaterialConstants MaterialConstants;
+    if (CurrentMaterial != nullptr)
+    {
+        MaterialConstants.DiffuseColor = CurrentMaterial->GetDiffuse();
+        MaterialConstants.TransparencyScalar = CurrentMaterial->GetTransparency();
+        MaterialConstants.AmbientColor = CurrentMaterial->GetAmbient();
+        MaterialConstants.DensityScalar = CurrentMaterial->GetDensity();
+        MaterialConstants.SpecularColor = CurrentMaterial->GetSpecular();
+        MaterialConstants.SpecularScalar = CurrentMaterial->GetSpecularScalar();
+        MaterialConstants.EmissiveColor = CurrentMaterial->GetEmissive();
+    }
+    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
 }

@@ -13,4 +13,7 @@ void BaseRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
     GEngineLoop.graphicDevice.DeviceContext->RSSetViewports(1, viewport->GetD3DViewport());
 
     GEngineLoop.renderer.PrepareShader(ShaderName);
+
+    ID3D11SamplerState* linearSampler = GEngineLoop.renderer.GetSamplerState(ESamplerType::Linear);
+    GEngineLoop.graphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 }

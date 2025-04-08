@@ -121,10 +121,5 @@ void UParticleSubUVComp::CreateSubUVVertexBuffer()
 
     ID3D11Buffer* vertexSubUVBuffer = nullptr;
 	vertexSubUVBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(vertices);
-    FEngineLoop::renderer.AddOrSetVertexBuffer(Name, vertexSubUVBuffer, sizeof(FVertexTexture));
-    
-	numTextVertices = static_cast<UINT>(vertices.Num());
-    // ID3D11Buffer* indexSubUVBuffer = nullptr;
-    // indexSubUVBuffer = FEngineLoop::renderer.CreateIndexBuffer(vertices, indexSubUVBuffer);
-    FEngineLoop::renderer.AddOrSetIndexBuffer(Name, vertexSubUVBuffer, numTextVertices);
+    FEngineLoop::renderer.AddOrSetVertexBuffer(Name, vertexSubUVBuffer, sizeof(FVertexTexture), vertices.Num());
 }

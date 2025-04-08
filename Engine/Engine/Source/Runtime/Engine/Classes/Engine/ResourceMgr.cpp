@@ -97,11 +97,9 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* f
 	hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicFactory));
 	if (FAILED(hr)) return hr;
 
-
 	// 이미지 파일 디코딩
 	hr = wicFactory->CreateDecoderFromFilename(filename, nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &decoder);
 	if (FAILED(hr)) return hr;
-
 
 	hr = decoder->GetFrame(0, &frame);
 	if (FAILED(hr)) return hr;
@@ -141,6 +139,7 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* f
 	initData.SysMemPitch = width * 4;
 	ID3D11Texture2D* Texture2D;
 	hr = device->CreateTexture2D(&textureDesc, &initData, &Texture2D);
+    if (FAILED(hr)) assert(false || TEXT("CreateTexture Failed"));
 	delete[] imageData;
 	if (FAILED(hr)) return hr;
 
@@ -152,6 +151,7 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* f
 	srvDesc.Texture2D.MipLevels = 1;
 	ID3D11ShaderResourceView* TextureSRV;
 	hr = device->CreateShaderResourceView(Texture2D, &srvDesc, &TextureSRV);
+    if (FAILED(hr)) assert(false || TEXT("CreateShaderResourceView Failed"));
 
 	// 리소스 해제
 	wicFactory->Release();
@@ -159,9 +159,7 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* f
 	frame->Release();
 	converter->Release();
     
-	FWString name = FWString(filename);
-
-	textureMap[name] = std::make_shared<FTexture>(name, TextureSRV, Texture2D, width, height);
+	textureMap[filename] = std::make_shared<FTexture>(filename, TextureSRV, Texture2D, width, height);
 
 	Console::GetInstance().AddLog(LogLevel::Warning, "Texture File Load Successs");
 	return hr;

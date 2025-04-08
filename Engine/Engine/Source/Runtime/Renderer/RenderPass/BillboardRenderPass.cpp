@@ -43,10 +43,8 @@ void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpor
          const std::shared_ptr<FVIBuffers> currentVIBuffer = GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
          currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
          GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, &(item->Texture->TextureSRV));
-         ID3D11SamplerState* linearSampler =  GEngineLoop.renderer.GetSamplerState(ESamplerType::Linear);
-         GEngineLoop.graphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 
-         GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
+         GEngineLoop.graphicDevice.DeviceContext->Draw(currentVIBuffer->GetNumVertices(),0);
      }
 }
 

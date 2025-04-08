@@ -17,7 +17,7 @@ public:
     void SetRowColumnCount(int32 InRowCount, int32 InColumnCount);
     virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
 
-    void SetTexture(FWString _fileName);
+    void SetTexture(const FWString& _fileName);
     
     TArray<FVertexTexture> vertexTextureArr;
 
@@ -38,6 +38,6 @@ protected:
     float quadWidth = 2.0f;
     float quadHeight = 2.0f;
 
-    void setStartUV(char alphabet, float& outStartU, float& outStartV);
-    void setStartUV(wchar_t hangul, float& outStartU, float& outStartV);
+    void setStartUV(char alphabet, float& outStartU, float& outStartV) const;
+    void setStartUV(wchar_t hangul, float& outStartU, float& outStartV) const;
 };

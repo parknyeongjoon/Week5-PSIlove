@@ -66,7 +66,7 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
 
     ID3D11Buffer* vertexBuffer = nullptr;
     vertexBuffer = GetEngine().renderer.CreateImmutableVertexBuffer<FVertexSimple>(staticMeshRenderData->Vertices);
-    GetEngine().renderer.AddOrSetVertexBuffer(staticMeshRenderData->DisplayName, vertexBuffer, sizeof(FVertexSimple));
+    GetEngine().renderer.AddOrSetVertexBuffer(staticMeshRenderData->DisplayName, vertexBuffer, sizeof(FVertexSimple), verticeNum);
 
     const uint32 indexNum = staticMeshRenderData->Indices.Num();
     if (indexNum > 0)

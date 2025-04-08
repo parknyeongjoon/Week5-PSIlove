@@ -10,6 +10,11 @@
 #include "D3D11RHI/GraphicDevice.h"
 #include "D3D11RHI/GPUBuffer/TestConstantDefine.h"
 
+class StaticMeshRenderPass;
+class LineBatchRenderPass;
+class GizmoRenderPass;
+class FontRenderPass;
+class BillboardRenderPass;
 class FEditorViewportClient;
 class ULevel;
 class BaseRenderPass;
@@ -25,7 +30,8 @@ public:
     void AddOrSetPixelShader(const FString& InName, ID3D11PixelShader* InShader);
     void AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* InLayout);
 
-    void AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 InStride, D3D11_PRIMITIVE_TOPOLOGY InTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    void AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 InStride, uint32 InNumVertices, D3D11_PRIMITIVE_TOPOLOGY
+                              InTopology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     void AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 numIndices);
 
     void AddOrSetStructuredBuffer(const FString& InName, ID3D11Buffer* InBuffer);
@@ -119,9 +125,14 @@ public:
     void AddRenderObjectsToRenderPass(const ULevel* InLevel);
     
     //Render Pass Demo
-    void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void Render(ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
 private:
-    TArray<std::shared_ptr<BaseRenderPass>> RenderPasses;
+    //TArray<std::shared_ptr<BaseRenderPass>> RenderPasses;
+    std::shared_ptr<BillboardRenderPass> billboardRenderPass;
+    std::shared_ptr<FontRenderPass> fontRenderPass;
+    std::shared_ptr<GizmoRenderPass> gizmoRenderPass;
+    std::shared_ptr<LineBatchRenderPass> lineBatchRenderPass;
+    std::shared_ptr<StaticMeshRenderPass> staticMeshRenderPass;
 };
 
 template <typename T>

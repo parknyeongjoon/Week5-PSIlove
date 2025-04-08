@@ -91,26 +91,10 @@ void UTextRenderComponent::SetText(FWString _text)
 	quad.Add(FVector(lastX,1.0f,0.0f));
 	quad.Add(FVector(lastX,-1.0f,0.0f));
     
-    TArray<uint32> indices;
-    const uint32 numLetters = static_cast<uint32>(_text.size());
-    for (uint32 letter = 0; letter < numLetters; letter++)
-    {
-        uint32 baseIndex = letter * 6;
-        // 첫 번째 삼각형
-        indices.Add(baseIndex);
-        indices.Add(baseIndex + 1);
-        indices.Add(baseIndex + 2);
-        // 두 번째 삼각형
-        indices.Add(baseIndex + 3);
-        indices.Add(baseIndex + 4);
-        indices.Add(baseIndex + 5);
-    }
 
     ID3D11Buffer* vertexBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer(vertexTextureArr);
-    ID3D11Buffer* indexBuffer = FEngineLoop::renderer.CreateIndexBuffer(indices);
     
-    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture));
-    FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexBuffer, sizeof(uint32));
+    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture), vertexTextureArr.Num());
 
     VIBufferName = Texture->Name;
 }
@@ -126,12 +110,12 @@ int UTextRenderComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayD
     return 0;
 }
 
-void UTextRenderComponent::SetTexture(FWString _fileName)
+void UTextRenderComponent::SetTexture(const FWString& _fileName)
 {
     Texture = FEngineLoop::resourceMgr.GetTexture(_fileName);
 }
 
-void UTextRenderComponent::setStartUV(char alphabet, float& outStartU, float& outStartV)
+void UTextRenderComponent::setStartUV(char alphabet, float& outStartU, float& outStartV) const
 {
     //대문자만 받는중
     int StartU=0;
@@ -174,7 +158,7 @@ void UTextRenderComponent::setStartUV(char alphabet, float& outStartU, float& ou
     outStartV = static_cast<float>(StartV + offsetV);
 }
 
-void UTextRenderComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
+void UTextRenderComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV) const
 {
     //대문자만 받는중
     int StartU = 0;

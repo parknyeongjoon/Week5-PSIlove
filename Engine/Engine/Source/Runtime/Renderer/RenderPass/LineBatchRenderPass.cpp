@@ -19,7 +19,7 @@ LineBatchRenderPass::LineBatchRenderPass(const FString& InShaderName)
 {
     FSimpleVertex vertices[2]{{0}, {0}};
     ID3D11Buffer* pVertexBuffer = FEngineLoop::renderer.CreateStaticVertexBuffer<FSimpleVertex>(vertices, 2);
-    FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Line"), pVertexBuffer, sizeof(FSimpleVertex), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+    FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Line"), pVertexBuffer, sizeof(FSimpleVertex), 2, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 }
 
 void LineBatchRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)

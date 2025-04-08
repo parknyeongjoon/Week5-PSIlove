@@ -14,6 +14,7 @@ extern FEngineLoop GEngineLoop;
 void FontRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
 {
     BaseRenderPass::Prepare(viewport);
+    GEngineLoop.graphicDevice.DeviceContext->OMSetDepthStencilState(GEngineLoop.renderer .GetDepthStencilState(EDepthStencilState::DepthNone), 0);
 }
 
 void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
@@ -54,12 +55,9 @@ void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
         const std::shared_ptr<FVIBuffers> currentVIBuffer =  GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
         currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
 
-        ID3D11SamplerState* linearSampler = GEngineLoop.renderer.GetSamplerState(ESamplerType::Linear);
-        GEngineLoop.graphicDevice.DeviceContext->PSSetSamplers(0, 1, &linearSampler);
-        GEngineLoop.graphicDevice.DeviceContext->OMSetDepthStencilState(GEngineLoop.renderer .GetDepthStencilState(EDepthStencilState::DepthNone), 0);
-
-        GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0, 0);
-
+        GEngineLoop.graphicDevice.DeviceContext->OMSetDepthStencilState(GEngineLoop.renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+        GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0,1, &item->Texture->TextureSRV);
+        GEngineLoop.graphicDevice.DeviceContext->Draw(currentVIBuffer->GetNumVertices(), 0);
     }
 }
 

@@ -2,6 +2,7 @@
 #include "BaseRenderPass.h"
 #include "Container/Array.h"
 
+class UMaterial;
 struct FMatrix;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
@@ -23,4 +24,6 @@ private:
     TArray<UGizmoBaseComponent*> GizmoComponents;
 
     static void UpdateMatrixConstants(UGizmoBaseComponent* InGizmoComponent, const FMatrix& InView, const FMatrix& InProjection);
+    static void UpdateSubMeshConstants(bool bIsSelectedSubMesh);
+    static void UpdateMaterialConstants(const UMaterial* CurrentMaterial);
 };

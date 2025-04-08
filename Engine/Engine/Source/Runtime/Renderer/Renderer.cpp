@@ -14,6 +14,7 @@
 #include "RenderPass/BaseRenderPass.h"
 #include "RenderPass/BillboardRenderPass.h"
 #include "RenderPass/FontRenderPass.h"
+#include "RenderPass/GizmoRenderPass.h"
 #include "RenderPass/LineBatchRenderPass.h"
 #include "RenderPass/StaticMeshRenderPass.h"
 
@@ -44,13 +45,13 @@ void FRenderer::AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* In
     ShaderPrograms[InName]->SetInputLayout(InLayout);
 }
 
-void FRenderer::AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 InStride, const D3D11_PRIMITIVE_TOPOLOGY InTopology)
+void FRenderer::AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 InStride, const uint32 InNumVertices, const D3D11_PRIMITIVE_TOPOLOGY InTopology)
 {
     if (VIBuffers.Contains(InName) == false)
     {
         VIBuffers[InName] = std::make_shared<FVIBuffers>();
     }
-    VIBuffers[InName]->SetVertexBuffer(InBuffer, InStride, InTopology);    
+    VIBuffers[InName]->SetVertexBuffer(InBuffer, InStride, InNumVertices, InTopology);    
 }
 
 void FRenderer::AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 numIndices)
@@ -134,8 +135,8 @@ void FRenderer::CreateStaticMeshShader()
     ShaderPrograms.Add(TEXT("StaticMesh"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FVertexSimple)));
     ShaderConstantNames.Add(TEXT("StaticMesh"), ShaderStageToCB);
 
-    const std::shared_ptr<StaticMeshRenderPass> staticMeshRenderPass = std::make_shared<StaticMeshRenderPass>(TEXT("StaticMesh"));
-    RenderPasses.Add(staticMeshRenderPass);
+    staticMeshRenderPass = std::make_shared<StaticMeshRenderPass>(TEXT("StaticMesh"));
+    gizmoRenderPass = std::make_shared<GizmoRenderPass>(TEXT("StaticMesh"));
 
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
@@ -182,8 +183,7 @@ void FRenderer::CreateTextureShader()
     ShaderPrograms.Add(TEXT("Texture"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FVertexTexture)));
     ShaderConstantNames.Add(TEXT("Texture"), ShaderStageToCB);
 
-    const std::shared_ptr<BillboardRenderPass> billboardRenderPass = std::make_shared<BillboardRenderPass>(TEXT("Texture"));
-    RenderPasses.Add(billboardRenderPass);
+    billboardRenderPass = std::make_shared<BillboardRenderPass>(TEXT("Texture"));
     
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
@@ -232,8 +232,7 @@ void FRenderer::CreateFontShader()
     ShaderPrograms.Add(TEXT("Font"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FVertexTexture)));
     ShaderConstantNames.Add(TEXT("Font"), ShaderStageToCB);
 
-    const std::shared_ptr<FontRenderPass> fontRenderPass = std::make_shared<FontRenderPass>(TEXT("Font"));
-    RenderPasses.Add(fontRenderPass);
+    fontRenderPass = std::make_shared<FontRenderPass>(TEXT("Font"));
     
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
@@ -284,8 +283,7 @@ void FRenderer::CreateLineShader()
     ShaderPrograms.Add(TEXT("Line"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FSimpleVertex)));
     ShaderConstantNames.Add(TEXT("Line"), ShaderStageToCB);
 
-    const std::shared_ptr<LineBatchRenderPass> lineBatchRenderPass = std::make_shared<LineBatchRenderPass>(TEXT("Line"));
-    RenderPasses.Add(lineBatchRenderPass);
+    lineBatchRenderPass = std::make_shared<LineBatchRenderPass>(TEXT("Line"));
     
     VertexShaderCSO->Release();
     PixelShaderCSO->Release();
@@ -302,8 +300,7 @@ void FRenderer::LoadStates()
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	Graphics->Device->CreateSamplerState(&samplerDesc,
-		                            &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+	Graphics->Device->CreateSamplerState(&samplerDesc, &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
 
 	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
@@ -313,8 +310,7 @@ void FRenderer::LoadStates()
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    Graphics->Device->CreateSamplerState(&samplerDesc,
-                                    &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+    Graphics->Device->CreateSamplerState(&samplerDesc, &SamplerStates[static_cast<uint32>(ESamplerType::Point)]);
 
 	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -324,8 +320,7 @@ void FRenderer::LoadStates()
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    Graphics->Device->CreateSamplerState(&samplerDesc,
-                                    &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+    Graphics->Device->CreateSamplerState(&samplerDesc, &SamplerStates[static_cast<uint32>(ESamplerType::Linear)]);
 
 	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -335,17 +330,12 @@ void FRenderer::LoadStates()
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-    Graphics->Device->CreateSamplerState(&samplerDesc,
-                                    &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+    Graphics->Device->CreateSamplerState(&samplerDesc, &SamplerStates[static_cast<uint32>(ESamplerType::PostProcess)]);
 
-	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Point), 1,
-		                      &SamplerStates[static_cast<uint32>(ESamplerType::Point)]);
-	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Linear), 1,
-		                      &SamplerStates[static_cast<uint32>(ESamplerType::Linear)]);
-	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Anisotropic), 1,
-		                      &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
-	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::PostProcess), 1,
-		                      &SamplerStates[static_cast<uint32>(ESamplerType::PostProcess)]);
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Point), 1, &SamplerStates[static_cast<uint32>(ESamplerType::Point)]);
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &SamplerStates[static_cast<uint32>(ESamplerType::Linear)]);
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Anisotropic), 1, &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::PostProcess), 1, &SamplerStates[static_cast<uint32>(ESamplerType::PostProcess)]);
 #pragma endregion
 #pragma region rasterize state
     D3D11_RASTERIZER_DESC rsDesc = {};
@@ -606,21 +596,42 @@ ID3D11ShaderResourceView* FRenderer::CreateBufferSRV(ID3D11Buffer* pBuffer, cons
 
 void FRenderer::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
-    for (const auto renderPass : RenderPasses)
-    {
-        renderPass->AddRenderObjectsToRenderPass(InLevel);
-    }
+    staticMeshRenderPass->AddRenderObjectsToRenderPass(InLevel);
+    lineBatchRenderPass->AddRenderObjectsToRenderPass(InLevel);
+    fontRenderPass->AddRenderObjectsToRenderPass(InLevel);
+    billboardRenderPass->AddRenderObjectsToRenderPass(InLevel);
+    
+    // for (const auto renderPass : RenderPasses)
+    // {
+    //     renderPass->AddRenderObjectsToRenderPass(InLevel);
+    // }
 }
 
 
-void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::Render(ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
     ChangeViewMode(ActiveViewport->GetViewMode());
-    for (const auto renderPass : RenderPasses)
-    {
-        renderPass->Prepare(ActiveViewport);
-        renderPass->Execute(ActiveViewport);
-    }
+
+    staticMeshRenderPass->Prepare(ActiveViewport);
+    staticMeshRenderPass->Execute(ActiveViewport);
+
+    gizmoRenderPass->Prepare(ActiveViewport);
+    gizmoRenderPass->Execute(ActiveViewport);
+    
+    lineBatchRenderPass->Prepare(ActiveViewport);
+    lineBatchRenderPass->Execute(ActiveViewport);
+
+    billboardRenderPass->Prepare(ActiveViewport);
+    billboardRenderPass->Execute(ActiveViewport);
+
+    fontRenderPass->Prepare(ActiveViewport);
+    fontRenderPass->Execute(ActiveViewport);
+    
+    // for (const auto renderPass : RenderPasses)
+    // {
+    //     renderPass->Prepare(ActiveViewport);
+    //     renderPass->Execute(ActiveViewport);
+    // }
     //RenderLight(Level, ActiveViewport);
 }
 

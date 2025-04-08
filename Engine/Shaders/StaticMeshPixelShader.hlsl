@@ -58,7 +58,7 @@ struct PS_INPUT
     float3 normal : NORMAL; // 정규화된 노멀 벡터
     bool normalFlag : TEXCOORD0; // 노멀 유효성 플래그 (1.0: 유효, 0.0: 무효)
     float2 texcoord : TEXCOORD1;
-    int materialIndex : MATERIAL_INDEX;
+    uint materialIndex : MATERIAL_INDEX;
 };
 
 struct PS_OUTPUT
@@ -101,7 +101,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 {
     PS_OUTPUT output;
 
-    output.UUID = UUID;
+    output.UUID = ObjectUUID;
     
     float3 texColor = Textures.Sample(linearSampler, input.texcoord + UVOffset);
     float3 color;
