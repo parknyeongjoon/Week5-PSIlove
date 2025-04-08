@@ -40,6 +40,29 @@ public:
     
     ID3D11RasterizerState* RasterizerStateSOLID = nullptr;
     ID3D11RasterizerState* RasterizerStateWIREFRAME = nullptr;
+
+    // post-processing
+    ID3D11Texture2D* pingpongTex[2];
+    ID3D11RenderTargetView* pingpongRTV[2];
+    ID3D11ShaderResourceView* pingpongSRV[2];
+
+    // depth & stencil
+    ID3D11Texture2D* pingpongDepthTex[2];
+    ID3D11DepthStencilView* pingpongDSV[2];
+    ID3D11ShaderResourceView* pingpongDepthSRV[2];
+
+    // sampler
+    ID3D11SamplerState* SamplerState = nullptr;
+
+    int CurrentIndex = 0;
+    void SwapRTV() { CurrentIndex = 1 - CurrentIndex; }
+
+    ID3D11RenderTargetView* GetWriteRTV() const { return pingpongRTV[CurrentIndex]; }
+    ID3D11ShaderResourceView* GetReadSRV() const { return pingpongSRV[1 - CurrentIndex]; }
+
+    ID3D11DepthStencilView* GetWriteDSV() const { return pingpongDSV[CurrentIndex]; }
+    ID3D11ShaderResourceView* GetReadDepthSRV() const { return pingpongDepthSRV[1 - CurrentIndex]; }
+
     DXGI_SWAP_CHAIN_DESC SwapchainDesc;
     
     UINT screenWidth = 0;
@@ -69,9 +92,14 @@ public:
     void ReleaseRasterizerState();
     void ReleaseDepthStencilResources();
     void Release();
+    
+    void ClearRenderTarget();
+    void PreparePostProcessRender();
+    void PrepareGridRender();
+    void PrepareFinalRender();
     void SwapBuffer() const;
-    void Prepare() const;
-    void PrepareLighting() const;
+    void Prepare();
+    void PrepareLighting();
     // void Prepare(D3D11_VIEWPORT* viewport) const;
     void OnResize(HWND hWindow);
     ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }

@@ -4,6 +4,7 @@
 #include "Level.h"
 #include "UnrealClient.h"
 #include "Actors/Player.h"
+#include "Actors/Fog.h"
 #include "BaseGizmos/GizmoBaseComponent.h"
 #include "BaseGizmos/TransformGizmo.h"
 #include "Components/LightComponent.h"
@@ -23,8 +24,10 @@
 #include "UObject/UObjectIterator.h"
 #include "Components/SkySphereComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Components/HeightFogComponent.h"
 #include "ImGUI/imgui_internal.h"
 #include "LevelEditor/SLevelEditor.h"
+
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
@@ -33,6 +36,10 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateTextureShader();
     CreateFontShader();
     CreateLineShader();
+    CreateDefaultPostProcessShader();
+    CreateFogShader();
+    CreatePostProcessVertexBuffer();
+    CreatePostProcessIndexBuffer();
     CreateConstantBuffer();
     UpdateLitUnlitConstant(1);
 }
@@ -44,6 +51,8 @@ void FRenderer::Release()
     ReleaseFontShader();
     ReleaseLineShader();
     ReleaseConstantBuffer();
+    ReleaseDefaultPostProcessShader();
+    ReleaseFogShader();
 }
 
 void FRenderer::CreateShader()
@@ -355,6 +364,9 @@ void FRenderer::CreateConstantBuffer()
 
     constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBufer);
+
+    constantbufferdesc.ByteWidth = sizeof(FFogConstants) + 0xf & 0xfffffff0;
+    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &FogConstantBuffer);
 
     constantbufferdesc.ByteWidth = sizeof(FLightingArr) + 0xf & 0xfffffff0;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &LightArrConstantBuffer);
@@ -1018,7 +1030,7 @@ void FRenderer::UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones
 void FRenderer::RenderBatch(
     const FGridParameters& gridParam, ID3D11Buffer* pVertexBuffer, int boundingBoxCount, int coneCount, int coneSegmentCount, int obbCount
 ) const
-{
+{ 
     UINT stride = sizeof(FSimpleVertex);
     UINT offset = 0;
     Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
@@ -1056,6 +1068,14 @@ void FRenderer::PrepareRender(ULevel* Level)
         {
             TextObjs.Add(TextRenderComp);
         }
+        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
+        {
+            LightObjs.Add(pLightComp);
+        }
+        //if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(iter))
+        //{
+        //    HeightFogObjs.Add(pHeightFogComp);
+        //}
     }
     
     for (const auto iter : Ss)
@@ -1087,6 +1107,7 @@ void FRenderer::ClearRenderArr()
     GizmoObjs.Empty();
     TextObjs.Empty();
     LightObjs.Empty();
+    HeightFogObjs.Empty();
 }
 
 void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
@@ -1098,21 +1119,24 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         RenderStaticMeshes(Level, ActiveViewport);
-    }
-
-    if (ActiveViewport->ViewMode == VMI_Lit)
-    {
-        RenderLighting(Level, ActiveViewport);
-    }
-    
-    UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-    RenderGizmos(Level, ActiveViewport);
+    } 
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
     {
         RenderBillboards(Level, ActiveViewport);
         RenderTexts(Level, ActiveViewport);
     }
-    
+    if (ActiveViewport->ViewMode == VMI_Lit)
+    {
+        RenderLighting(Level, ActiveViewport);
+    }
+    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
+    {
+        RenderFog(Level, ActiveViewport);
+    }
+    Graphics->PrepareGridRender();
+    UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+    RenderGizmos(Level, ActiveViewport);
+    RenderFinal(Level, ActiveViewport);
     ClearRenderArr();
 }
 
@@ -1318,6 +1342,319 @@ void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportCli
     // 화면 크기 사각형 렌더링
     Graphics->DeviceContext->Draw(6, 0); // 4개의 정점으로 화면 전체 사각형 그리기
     
-    Graphics->DeviceContext->OMSetRenderTargets(5, Graphics->RTVs, Graphics->DepthStencilView);
-    Graphics->DeviceContext->PSSetShaderResources(0,0,nullptr);
+    // SRV 해제 (다음 패스를 위한 정리)
+    ID3D11ShaderResourceView* nullSRV[4] = { nullptr, nullptr, nullptr, nullptr };
+    Graphics->DeviceContext->PSSetShaderResources(0, 4, nullSRV);
+
+    // Sampler 해제
+    ID3D11SamplerState* nullSamplers[1] = { nullptr };
+    Graphics->DeviceContext->PSSetSamplers(0, 1, nullSamplers);
+    //Graphics->DeviceContext->OMSetRenderTargets(5, Graphics->RTVs, Graphics->DepthStencilView);
+    //Graphics->DeviceContext->PSSetShaderResources(0,0,nullptr);
+}
+
+void FRenderer::CreateDefaultPostProcessShader()
+{
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+    HRESULT hr;
+
+    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+
+    hr = D3DCompileFromFile(L"Shaders/PostProcessVertexShader.hlsl", nullptr, nullptr, "MainVS", "vs_5_0", flags, 0, &VertexShaderCSO, nullptr);
+    if (FAILED(hr))
+    {
+        Console::GetInstance().AddLog(LogLevel::Warning, "VertexShader Error");
+    }
+    Graphics->Device->CreateVertexShader(
+        VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &PostProcessVertexShader
+    );
+    ID3DBlob* errorBlob = nullptr;
+    hr = D3DCompileFromFile(L"Shaders/PostProcessPixelShader.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "MainPS", "ps_5_0", flags, 0, &PixelShaderCSO, &errorBlob);
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+            errorBlob->Release();
+        }
+        else
+        {
+            OutputDebugStringA("❗ Shader compile failed with no error info\n");
+        }
+        Console::GetInstance().AddLog(LogLevel::Warning, "PixelShader Error");
+    }
+    Graphics->Device->CreatePixelShader(
+        PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &PostProcessPixelShader
+    );
+
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+
+    Graphics->Device->CreateInputLayout(
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &PostProcessInputLayout
+    );
+
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
+}
+
+void FRenderer::ReleaseDefaultPostProcessShader()
+{
+    if (PostProcessVertexShader)
+    {
+        PostProcessVertexShader->Release();
+        PostProcessVertexShader = nullptr;
+    }
+    if (PostProcessPixelShader)
+    {
+        PostProcessPixelShader->Release();
+        PostProcessPixelShader = nullptr;
+    }
+    if (PostProcessInputLayout)
+    {
+        PostProcessInputLayout->Release();
+        PostProcessInputLayout = nullptr;
+    }
+}
+
+void FRenderer::PrepareDefaultPostProcessShader() const
+{
+    Graphics->DeviceContext->VSSetShader(PostProcessVertexShader, nullptr, 0);
+    Graphics->DeviceContext->PSSetShader(PostProcessPixelShader, nullptr, 0);
+    Graphics->DeviceContext->IASetInputLayout(PostProcessInputLayout);
+}
+
+void FRenderer::CreateFogShader()
+{
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+    HRESULT hr;
+
+    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+
+    hr = D3DCompileFromFile(L"Shaders/PostProcessVertexShader.hlsl", nullptr, nullptr, "MainVS", "vs_5_0", flags, 0, &VertexShaderCSO, nullptr);
+    if (FAILED(hr))
+    {
+        Console::GetInstance().AddLog(LogLevel::Warning, "VertexShader Error");
+    }
+    Graphics->Device->CreateVertexShader(
+        VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &FogVertexShader
+    );
+    ID3DBlob* errorBlob = nullptr;
+    hr = D3DCompileFromFile(L"Shaders/FogPixelShader.hlsl", nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "MainPS", "ps_5_0", flags, 0, &PixelShaderCSO, &errorBlob);
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+            errorBlob->Release();
+        }
+        else
+        {
+            OutputDebugStringA("❗ Shader compile failed with no error info\n");
+        }
+        Console::GetInstance().AddLog(LogLevel::Warning, "PixelShader Error");
+    }
+    Graphics->Device->CreatePixelShader(
+        PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &FogPixelShader
+    );
+
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+
+    Graphics->Device->CreateInputLayout(
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &FogInputLayout
+    );
+
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
+}
+
+void FRenderer::ReleaseFogShader()
+{
+    if (FogVertexShader)
+    {
+        FogVertexShader->Release();
+        FogVertexShader = nullptr;
+    }
+    if (FogPixelShader)
+    {
+        FogPixelShader->Release();
+        FogPixelShader = nullptr;
+    }
+    if (FogConstantBuffer)
+    {
+        FogConstantBuffer->Release();
+        FogConstantBuffer = nullptr;
+    }
+    if (FogInputLayout)
+    {
+        FogInputLayout->Release();
+        FogInputLayout = nullptr;
+    }
+}
+
+void FRenderer::PrepareFogShader() const
+{
+    Graphics->DeviceContext->VSSetShader(FogVertexShader, nullptr, 0);
+    Graphics->DeviceContext->PSSetShader(FogPixelShader, nullptr, 0);
+    Graphics->DeviceContext->IASetInputLayout(FogInputLayout);
+    if (FogConstantBuffer)
+    {
+        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &FogConstantBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &FogConstantBuffer);
+    }
+}
+
+void FRenderer::CreatePostProcessVertexBuffer()
+{
+    FScreenVertex vertices[4] = {
+    { FVector4(-1.0f,  1.0f, 0.0f, 1.0f), 0.0f, 0.0f },
+    { FVector4(1.0f,  1.0f, 0.0f, 1.0f), 1.0f, 0.0f },
+    { FVector4(1.0f, -1.0f, 0.0f, 1.0f), 1.0f, 1.0f },
+    { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), 0.0f, 1.0f }
+    };
+    D3D11_BUFFER_DESC bufferDesc = {};
+    bufferDesc.ByteWidth = sizeof(vertices);
+    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    bufferDesc.MiscFlags = 0;
+    bufferDesc.StructureByteStride = sizeof(FScreenVertex);
+    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    D3D11_SUBRESOURCE_DATA initData = {};
+    initData.pSysMem = vertices;
+    Graphics->Device->CreateBuffer(&bufferDesc, &initData, &PostProcessVertexBuffer);
+}
+
+void FRenderer::CreatePostProcessIndexBuffer() 
+{
+    uint16 indices[6] = {
+    0, 1, 2, // 첫 번째 삼각형
+    0, 2, 3  // 두 번째 삼각형
+    };
+
+    D3D11_BUFFER_DESC bufferDesc = {};
+    bufferDesc.ByteWidth = sizeof(indices);
+    bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    bufferDesc.MiscFlags = 0;
+    bufferDesc.StructureByteStride = sizeof(uint16);
+    bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    D3D11_SUBRESOURCE_DATA initData = {};
+    initData.pSysMem = indices;
+    Graphics->Device->CreateBuffer(&bufferDesc, &initData, &PostProcessIndexBuffer);
+}
+
+void FRenderer::UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport)
+{
+    float screenWidth = static_cast<float>(Graphics->screenWidth);
+    float screenHeight = static_cast<float>(Graphics->screenHeight);
+
+    float uvMinX = viewport.TopLeftX / screenWidth;
+    float uvMinY = viewport.TopLeftY / screenHeight;
+    float uvMaxX = (viewport.TopLeftX + viewport.Width) / screenWidth;
+    float uvMaxY = (viewport.TopLeftY + viewport.Height) / screenHeight;
+
+    FScreenVertex vertices[4] = {
+        { FVector4(-1.0f, 1.0f, 0.0f, 1.0f), uvMinX, uvMinY }, // top-left
+        { FVector4(1.0f, 1.0f, 0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
+        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
+        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
+    };
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    if (SUCCEEDED(Graphics->DeviceContext->Map(PostProcessVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+    {
+        memcpy(mapped.pData, vertices, sizeof(vertices));
+        Graphics->DeviceContext->Unmap(PostProcessVertexBuffer, 0);
+    }
+}
+
+
+void FRenderer::UpdateFogConstant(UHeightFogComponent* FogComponent, const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition)
+{
+    Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &FogConstantBuffer);
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    Graphics->DeviceContext->Map(FogConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+    FFogConstants* data = reinterpret_cast<FFogConstants*>(mappedResource.pData);
+    data->FogDensity = FogComponent->FogDensity;
+    data->FogHeightFalloff = FogComponent->FogHeightFalloff;
+    data->StartDistance = FogComponent->StartDistance;
+    data->FogCutoffDistance = FogComponent->FogCutoffDistance;
+    data->FogMaxOpacity = FogComponent->FogMaxOpacity;
+    data->FogInscatteringColor = FogComponent->FogInscatteringColor;
+
+    data->CameraPosition = CameraPosition;
+    data->InvProjectionMatrix = InvProjectionMatrix;
+    data->InvViewMatrix = InvViewMatrix;
+
+    Graphics->DeviceContext->Unmap(FogConstantBuffer, 0);
+}
+
+void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+{   
+    Graphics->PreparePostProcessRender();
+    PrepareFogShader();
+    UpdateFogConstant(
+        Cast<UHeightFogComponent>(level->GetFog()->GetRootComponent()),
+        FMatrix::Inverse(ActiveViewport->GetProjectionMatrix()),
+        FMatrix::Inverse(ActiveViewport->GetViewMatrix()),
+        ActiveViewport->ViewTransformPerspective.GetLocation()
+    );
+    UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
+
+    // SceneColor + Depth SRV 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV()};
+    Graphics->DeviceContext->PSSetShaderResources(0, 2, SRVs);
+    Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->SamplerState);
+
+    uint32 stride = sizeof(FScreenVertex);
+    uint32 offset = 0;
+    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &PostProcessVertexBuffer, &stride, &offset);
+    Graphics->DeviceContext->IASetIndexBuffer(PostProcessIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+
+    // 풀스크린 쿼드 그리기
+    Graphics->DeviceContext->DrawIndexed(6, 0, 0);
+
+    // SRV 해제 (다음 패스를 위한 정리)
+    ID3D11ShaderResourceView* nullSRV[2] = { nullptr, nullptr };
+    Graphics->DeviceContext->PSSetShaderResources(0, 2, nullSRV);
+
+    // Sampler 해제
+    ID3D11SamplerState* nullSamplers[1] = { nullptr };
+    Graphics->DeviceContext->PSSetSamplers(0, 1, nullSamplers);
+}
+
+void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+{
+    Graphics->PrepareFinalRender();
+    PrepareDefaultPostProcessShader();
+    UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
+
+    // SceneColor + Depth SRV 바인딩
+    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV()};
+    Graphics->DeviceContext->PSSetShaderResources(0, 2, SRVs);
+    Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->SamplerState);
+
+    uint32 stride = sizeof(FScreenVertex);
+    uint32 offset = 0;
+    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &PostProcessVertexBuffer, &stride, &offset);
+    Graphics->DeviceContext->IASetIndexBuffer(PostProcessIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+
+    // 풀스크린 쿼드 그리기
+    Graphics->DeviceContext->DrawIndexed(6, 0, 0);
+
+    // SRV 해제 (다음 패스를 위한 정리)
+    ID3D11ShaderResourceView* nullSRV[2] = { nullptr, nullptr };
+    Graphics->DeviceContext->PSSetShaderResources(0, 2, nullSRV);
+
+    // Sampler 해제
+    ID3D11SamplerState* nullSamplers[1] = { nullptr };
+    Graphics->DeviceContext->PSSetSamplers(0, 1, nullSamplers);
 }

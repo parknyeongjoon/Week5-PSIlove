@@ -20,6 +20,7 @@ class FEditorViewportClient;
 class UBillboardComponent;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
+class UHeightFogComponent;
 class FRenderer 
 {
 
@@ -161,6 +162,7 @@ private:
     TArray<UPrimitiveComponent*> TextObjs;
     TArray<UBillboardComponent*> BillboardObjs;
     TArray<ULightComponent*> LightObjs;
+    TArray<UHeightFogComponent*> HeightFogObjs;
 
 public:
     ID3D11VertexShader* VertexLineShader = nullptr;
@@ -170,5 +172,33 @@ public:
     ID3D11ShaderResourceView* pBBSRV = nullptr;
     ID3D11ShaderResourceView* pConeSRV = nullptr;
     ID3D11ShaderResourceView* pOBBSRV = nullptr;
+
+    // default postprocess
+public:
+    ID3D11VertexShader* PostProcessVertexShader = nullptr;
+    ID3D11PixelShader* PostProcessPixelShader = nullptr;
+    ID3D11InputLayout* PostProcessInputLayout = nullptr;
+    void CreateDefaultPostProcessShader();
+    void ReleaseDefaultPostProcessShader();
+    void PrepareDefaultPostProcessShader() const;
+    // fogshader
+public:
+    ID3D11VertexShader* FogVertexShader = nullptr;
+    ID3D11PixelShader* FogPixelShader = nullptr;
+    ID3D11InputLayout* FogInputLayout = nullptr;
+    ID3D11Buffer* PostProcessVertexBuffer = nullptr;
+    ID3D11Buffer* PostProcessIndexBuffer = nullptr;
+    ID3D11Buffer* FogConstantBuffer = nullptr;
+    ID3D11ShaderResourceView* FogSRV = nullptr;
+
+    void CreateFogShader();
+    void ReleaseFogShader();
+    void PrepareFogShader() const;
+    void CreatePostProcessVertexBuffer();
+    void CreatePostProcessIndexBuffer();
+    void UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport);
+    void UpdateFogConstant(UHeightFogComponent* FogComponent, const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition);
+    void RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
 };
 
