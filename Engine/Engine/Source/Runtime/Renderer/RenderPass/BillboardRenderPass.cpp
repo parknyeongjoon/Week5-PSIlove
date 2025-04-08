@@ -40,7 +40,7 @@ void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpor
          SubUVConstant.indexV = item->finalIndexV;
          GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
 
-         const std::shared_ptr<FVIBuffers> currentVIBuffer =  GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
+         const std::shared_ptr<FVIBuffers> currentVIBuffer = GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
          currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
          GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, &(item->Texture->TextureSRV));
          ID3D11SamplerState* linearSampler =  GEngineLoop.renderer.GetSamplerState(ESamplerType::Linear);

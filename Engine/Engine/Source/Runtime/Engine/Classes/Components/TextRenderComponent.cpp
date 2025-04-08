@@ -111,6 +111,8 @@ void UTextRenderComponent::SetText(FWString _text)
     
     FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture));
     FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexBuffer, sizeof(uint32));
+
+    VIBufferName = Texture->Name;
 }
 
 void UTextRenderComponent::SetRowColumnCount(int32 InRowCount, int32 InColumnCount)

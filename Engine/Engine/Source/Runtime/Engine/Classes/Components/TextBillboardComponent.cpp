@@ -148,6 +148,7 @@ void UTextBillboardComponent::SetText(FWString _text)
     
     FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture));
     FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexBuffer, sizeof(uint32));
+    VIBufferName = Texture->Name;
 }
 void UTextBillboardComponent::setStartUV(wchar_t hangul, float& outStartU, float& outStartV)
 {

@@ -36,9 +36,8 @@ UObject* UBillboardComponent::Duplicate()
 void UBillboardComponent::InitializeComponent()
 {
     Super::InitializeComponent();
+    CreateQuadTextureVertexBuffer();
 }
-
-
 
 void UBillboardComponent::TickComponent(float DeltaTime)
 {
@@ -56,7 +55,6 @@ int UBillboardComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDi
 	}
 	return CheckPickingOnNDC(quad,pfNearHitDistance);
 }
-
 
 void UBillboardComponent::SetTexture(FWString _fileName)
 {
@@ -100,11 +98,12 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 
     ID3D11Buffer* vertexTextureBuffer = nullptr;
 	vertexTextureBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer<FVertexTexture>(quadTextureVertices, numVertices);
-    FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexTextureBuffer, sizeof(FVertexTexture));
+    FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Quad"), vertexTextureBuffer, sizeof(FVertexTexture));
     
     ID3D11Buffer* indexTextureBuffer = nullptr;
 	indexTextureBuffer = FEngineLoop::renderer.CreateIndexBuffer(quadTextureInices, numIndices);
-    FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexTextureBuffer, numIndices);
+    FEngineLoop::renderer.AddOrSetIndexBuffer(TEXT("Quad"), indexTextureBuffer, numIndices);
+    VIBufferName = TEXT("Quad");
 
 	if (!vertexTextureBuffer) {
 		Console::GetInstance().AddLog(LogLevel::Warning, "Buffer Error");

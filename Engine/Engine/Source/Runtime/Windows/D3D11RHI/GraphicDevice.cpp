@@ -187,36 +187,36 @@ void FGraphicsDevice::OnResize(const HWND hWindow)
     //    - 셰이더 언바인드
     DeviceContext->VSSetShader(nullptr, nullptr, 0);
     DeviceContext->PSSetShader(nullptr, nullptr, 0);
-    DeviceContext->GSSetShader(nullptr, nullptr, 0);
-    DeviceContext->HSSetShader(nullptr, nullptr, 0);
-    DeviceContext->DSSetShader(nullptr, nullptr, 0);
-    DeviceContext->CSSetShader(nullptr, nullptr, 0);
+    // DeviceContext->GSSetShader(nullptr, nullptr, 0);
+    // DeviceContext->HSSetShader(nullptr, nullptr, 0);
+    // DeviceContext->DSSetShader(nullptr, nullptr, 0);
+    // DeviceContext->CSSetShader(nullptr, nullptr, 0);
 
     //    - SRV 언바인드 (모든 스테이지)
     constexpr UINT SRV_SLOTS = D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT;
     ID3D11ShaderResourceView* nullSRV[SRV_SLOTS] = { nullptr };
     DeviceContext->VSSetShaderResources(0, SRV_SLOTS, nullSRV);
     DeviceContext->PSSetShaderResources(0, SRV_SLOTS, nullSRV);
-    DeviceContext->GSSetShaderResources(0, SRV_SLOTS, nullSRV);
-    DeviceContext->HSSetShaderResources(0, SRV_SLOTS, nullSRV);
-    DeviceContext->DSSetShaderResources(0, SRV_SLOTS, nullSRV);
-    DeviceContext->CSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    // DeviceContext->GSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    // DeviceContext->HSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    // DeviceContext->DSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    // DeviceContext->CSSetShaderResources(0, SRV_SLOTS, nullSRV);
 
     //    - UAV 언바인드 (컴퓨트 스테이지)
-    constexpr UINT UAV_SLOTS = D3D11_PS_CS_UAV_REGISTER_COUNT;
-    ID3D11UnorderedAccessView* nullUAV[UAV_SLOTS] = { nullptr };
-    UINT nullCounts[UAV_SLOTS] = { 0 };
-    DeviceContext->CSSetUnorderedAccessViews(0, UAV_SLOTS, nullUAV, nullCounts);
+    // constexpr UINT UAV_SLOTS = D3D11_PS_CS_UAV_REGISTER_COUNT;
+    // ID3D11UnorderedAccessView* nullUAV[UAV_SLOTS] = { nullptr };
+    // UINT nullCounts[UAV_SLOTS] = { 0 };
+    // DeviceContext->CSSetUnorderedAccessViews(0, UAV_SLOTS, nullUAV, nullCounts);
 
     //    - Sampler 언바인드 (모든 스테이지)
     constexpr UINT SMP_SLOTS = D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
     ID3D11SamplerState* nullSMP[SMP_SLOTS] = { nullptr };
     DeviceContext->VSSetSamplers(0, SMP_SLOTS, nullSMP);
     DeviceContext->PSSetSamplers(0, SMP_SLOTS, nullSMP);
-    DeviceContext->GSSetSamplers(0, SMP_SLOTS, nullSMP);
-    DeviceContext->HSSetSamplers(0, SMP_SLOTS, nullSMP);
-    DeviceContext->DSSetSamplers(0, SMP_SLOTS, nullSMP);
-    DeviceContext->CSSetSamplers(0, SMP_SLOTS, nullSMP);
+    // DeviceContext->GSSetSamplers(0, SMP_SLOTS, nullSMP);
+    // DeviceContext->HSSetSamplers(0, SMP_SLOTS, nullSMP);
+    // DeviceContext->DSSetSamplers(0, SMP_SLOTS, nullSMP);
+    // DeviceContext->CSSetSamplers(0, SMP_SLOTS, nullSMP);
 
     // 2) 상태 초기화 & GPU 큐 비우기
     DeviceContext->ClearState();

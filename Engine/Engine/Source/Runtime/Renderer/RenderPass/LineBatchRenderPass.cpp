@@ -47,13 +47,10 @@ void LineBatchRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpor
         MVP = Model * curEditorViewportClient->GetViewMatrix() * curEditorViewportClient->GetProjectionMatrix();
     const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
 
-    FMatrixConstants MatrixConstants;
-    MatrixConstants.MVP = MVP;
-    MatrixConstants.MInverseTranspose = NormalMatrix;
-    MatrixConstants.ObjectUUID = FVector4(0,0,0,0);
-    MatrixConstants.isSelected = false;
+    FMVPConstant MVPConstant;
+    MVPConstant.MVP = MVP;
     
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
+    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMVPConstant")), &MVPConstant);
 
     const FGridParametersData GridParameters = UPrimitiveBatch::GetInstance().GetGridParameters();
     GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FGridParametersData")), &GridParameters);

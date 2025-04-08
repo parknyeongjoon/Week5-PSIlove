@@ -46,12 +46,12 @@ public:
     ERasterizerState GetCurrentRasterizerState() const {  return CurrentRasterizerState; }
     void SetCurrentRasterizerState(const ERasterizerState InState) { CurrentRasterizerState = InState; }
 private:
-    TMap<FString, std::shared_ptr<FShaderProgram>> ShaderPrograms = {};
-    TMap<FString, std::shared_ptr<FVIBuffers>> VIBuffers = {};
+    TMap<FString, std::shared_ptr<FShaderProgram>> ShaderPrograms;
+    TMap<FString, std::shared_ptr<FVIBuffers>> VIBuffers;
 
-    TMap<FString, TMap<FShaderConstantKey, uint32>> ShaderConstantNames = {};
-    TMap<FString, ID3D11Buffer*> ConstantBuffers= {};
-    TMap<FString, TPair<ID3D11Buffer*, ID3D11ShaderResourceView*>> StructuredBuffers= {};
+    TMap<FString, TMap<FShaderConstantKey, uint32>> ShaderConstantNames;
+    TMap<FString, ID3D11Buffer*> ConstantBuffers;
+    TMap<FString, TPair<ID3D11Buffer*, ID3D11ShaderResourceView*>> StructuredBuffers;
 
     ID3D11SamplerState* SamplerStates[static_cast<uint32>(ESamplerType::End)] = {};
     
@@ -70,6 +70,11 @@ public:
     void CreateFontShader();
     void CreateLineShader();
     void LoadStates();
+
+    void Release();
+    void ReleaseShaders();
+    void ReleaseConstantBuffers();
+    void ReleaseStates();
 
     void ReBindSamplers() const;
 
@@ -186,7 +191,11 @@ template <typename T>
 void FRenderer::UpdateConstant(ID3D11Buffer* InBuffer, const T* InData)
 {
     D3D11_MAPPED_SUBRESOURCE sub = {};
-    Graphics->DeviceContext->Map(InBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &sub);
+    const HRESULT hr = Graphics->DeviceContext->Map(InBuffer, 0,D3D11_MAP_WRITE_DISCARD,0, &sub);
+    if (FAILED(hr))
+    {
+        assert(TEXT("Map failed"));
+    }
     memcpy(sub.pData, InData, sizeof(T));
     Graphics->DeviceContext->Unmap(InBuffer, 0);
 }

@@ -136,6 +136,9 @@ void FRenderer::CreateStaticMeshShader()
 
     const std::shared_ptr<StaticMeshRenderPass> staticMeshRenderPass = std::make_shared<StaticMeshRenderPass>(TEXT("StaticMesh"));
     RenderPasses.Add(staticMeshRenderPass);
+
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
 }
 
 void FRenderer::CreateTextureShader()
@@ -181,6 +184,9 @@ void FRenderer::CreateTextureShader()
 
     const std::shared_ptr<BillboardRenderPass> billboardRenderPass = std::make_shared<BillboardRenderPass>(TEXT("Texture"));
     RenderPasses.Add(billboardRenderPass);
+    
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
 }
 
 void FRenderer::CreateFontShader()
@@ -228,6 +234,9 @@ void FRenderer::CreateFontShader()
 
     const std::shared_ptr<FontRenderPass> fontRenderPass = std::make_shared<FontRenderPass>(TEXT("Font"));
     RenderPasses.Add(fontRenderPass);
+    
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
 }
 
 void FRenderer::CreateLineShader()
@@ -277,6 +286,9 @@ void FRenderer::CreateLineShader()
 
     const std::shared_ptr<LineBatchRenderPass> lineBatchRenderPass = std::make_shared<LineBatchRenderPass>(TEXT("Line"));
     RenderPasses.Add(lineBatchRenderPass);
+    
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
 }
 
 void FRenderer::LoadStates()
@@ -399,6 +411,71 @@ void FRenderer::LoadStates()
     Graphics->CreateDepthStencilState(
         &dsDesc, &DepthStencilStates[static_cast<uint32>(EDepthStencilState::DepthNone)]);
 #pragma endregion
+}
+
+void FRenderer::Release()
+{
+    ReleaseStates();
+    ReleaseShaders();
+}
+
+void FRenderer::ReleaseShaders()
+{
+    for (const auto item : ShaderPrograms)
+    {
+        item.Value->Release();
+    }
+}
+
+void FRenderer::ReleaseConstantBuffers()
+{
+    for (auto item : ConstantBuffers)
+    {
+        if (item.Value != nullptr)
+        {
+            item.Value->Release();
+            item.Value = nullptr;
+        }
+    }
+}
+
+void FRenderer::ReleaseStates()
+{
+    for (auto item : SamplerStates)
+    {
+        if (item != nullptr)
+        {
+            item->Release();
+            item = nullptr;
+        }
+    }
+
+    for (auto item : RasterizerStates)
+    {
+        if (item != nullptr)
+        {
+            item->Release();
+            item = nullptr;
+        }
+    }
+
+    for (auto item : BlendStates)
+    {
+        if (item != nullptr)
+        {
+            item->Release();
+            item = nullptr;
+        }
+    }
+
+    for (auto item : DepthStencilStates)
+    {
+        if (item != nullptr)
+        {
+            item->Release();
+            item = nullptr;
+        }
+    }
 }
 
 void FRenderer::ReBindSamplers() const
