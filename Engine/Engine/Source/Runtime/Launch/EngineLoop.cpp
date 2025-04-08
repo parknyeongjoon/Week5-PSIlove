@@ -8,6 +8,7 @@
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "World.h"
+#include "Components/ProjectileMovementComponent.h"
 #include "GameFramework/Actor.h"
 
 
@@ -225,7 +226,7 @@ void FEngineLoop::Tick()
 
 void FEngineLoop::EditorTick(double elapsedTime)
 {
-    Input();
+    EditorInput();
     GLevel->EditorTick(elapsedTime);
     LevelEditor->Tick(elapsedTime);
     Render();
@@ -242,10 +243,24 @@ void FEngineLoop::EditorTick(double elapsedTime)
     graphicDevice.SwapBuffer();
 }
 
+void FEngineLoop::SpawnMeteor()
+{
+    
+}
+
 void FEngineLoop::PIETick(double elapsedTime)
 {
-    Input();
+    accumulatedTime += elapsedTime;
+    
+    PIEInput();
     GLevel->PIETick(elapsedTime);
+    SpawnMeteor();
+    if (movementActor != nullptr)
+    {
+        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetLocation(FVector(-100,0,100) + movementActor->GetOwner()->GetActorLocation());
+        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetRotation(FVector(0,30,0));
+    }
+    LevelEditor->Tick(elapsedTime);
     Render();
 
     UIMgr->BeginFrame();
@@ -268,6 +283,18 @@ void FEngineLoop::TogglePIE()
         WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
         uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() & 14;
         LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
+        // LevelEditor->DisableMultiViewport();
+        for (auto& actor : WorldContexts[1].World->Level->GetActors())
+        {
+            for (auto& comp : actor->GetComponents())
+            {
+                if (auto* movementComp = Cast<UProjectileMovementComponent>(comp))
+                {
+                    movementActor = movementComp;
+                    break;
+                }
+            }
+        }
     }
     else
     {
@@ -285,7 +312,7 @@ float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
     return static_cast<float>(desc.BufferDesc.Width) / static_cast<float>(desc.BufferDesc.Height);
 }
 
-void FEngineLoop::Input()
+void FEngineLoop::EditorInput()
 {
     if (GetAsyncKeyState('M') & 0x8000)
     {
@@ -303,6 +330,29 @@ void FEngineLoop::Input()
     else
     {
         bTestInput = false;
+    }
+}
+
+void FEngineLoop::PIEInput() const
+{
+    if (movementActor != nullptr)
+    {
+        if (GetAsyncKeyState('W') & 0x8000)
+        {
+            movementActor->AddVelocity(FVector(1,0,0) * movementActor->GetAcceleration());
+        }
+        if (GetAsyncKeyState('S') & 0x8000)
+        {
+            movementActor->AddVelocity(FVector(-1,0,0) * movementActor->GetAcceleration());
+        }
+        if (GetAsyncKeyState('D') & 0x8000)
+        {
+            movementActor->AddVelocity(FVector(0,1,0) * movementActor->GetAcceleration());
+        }
+        if (GetAsyncKeyState('A') & 0x8000)
+        {
+            movementActor->AddVelocity(FVector(0,-1,0) * movementActor->GetAcceleration());
+        }
     }
 }
 
