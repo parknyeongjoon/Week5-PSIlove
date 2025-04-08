@@ -65,6 +65,11 @@ struct FLinearColor
     float b;
     float a;
 
+    FLinearColor() : r(0), g(0), b(0), a(1) {}
+    FLinearColor(float InR, float InG, float InB, float InA = 1.0f)
+        : r(InR), g(InG), b(InB), a(InA) {
+    }
+
     FColor ConvertToFColor() const;
 };
 
@@ -297,4 +302,27 @@ struct FTextureConstants {
     float VOffset;
     float UTiles;
     float VTiles;
+};
+
+struct FScreenVertex {
+    FVector4 Position;
+    float U, V;
+    float pad0, pad1;
+};
+
+struct FFogConstants
+{
+    float FogDensity;             // 4 bytes
+    float FogHeightFalloff;      // 4 bytes
+    float StartDistance;         // 4 bytes
+    float FogCutoffDistance;     // 4 bytes
+    float FogMaxOpacity;         // 4 bytes
+    float Padding1[3];           // 12 bytes → 16 bytes 정렬 맞춤
+
+    FLinearColor FogInscatteringColor; // 16 bytes (4 floats)
+
+    FVector CameraPosition;
+    float padding;
+    FMatrix InvProjectionMatrix; // 64 bytes (4x4 floats)
+    FMatrix InvViewMatrix;       // 64 bytes
 };

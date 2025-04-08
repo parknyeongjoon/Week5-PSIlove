@@ -114,7 +114,7 @@ void FGraphicsDevice::CreateDepthStencilState()
     // Depth test parameters
     dsDesc.DepthEnable = true;
     dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+    dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
     // Stencil test parameters
     dsDesc.StencilEnable = true;
@@ -185,7 +185,69 @@ void FGraphicsDevice::CreateFrameBuffer()
 
     Device->CreateRenderTargetView(FrameBuffer, &framebufferRTVdesc, &FrameBufferRTV);
 
-    RTVs[0] = FrameBufferRTV;
+    // 핑퐁 텍스처 생성
+    D3D11_TEXTURE2D_DESC pingpongTextureDesc = {};
+    pingpongTextureDesc.Width = screenWidth;
+    pingpongTextureDesc.Height = screenHeight;
+    pingpongTextureDesc.MipLevels = 1;
+    pingpongTextureDesc.ArraySize = 1;
+    pingpongTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    pingpongTextureDesc.SampleDesc.Count = 1;
+    pingpongTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+    pingpongTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    pingpongTextureDesc.CPUAccessFlags = 0;
+    pingpongTextureDesc.MiscFlags = 0;
+
+    // Depth Texture 생성용
+    D3D11_TEXTURE2D_DESC depthDesc = {};
+    depthDesc.Width = screenWidth;
+    depthDesc.Height = screenHeight;
+    depthDesc.MipLevels = 1;
+    depthDesc.ArraySize = 1;
+    depthDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+    depthDesc.SampleDesc.Count = 1;
+    depthDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    depthDesc.CPUAccessFlags = 0;
+    depthDesc.MiscFlags = 0;
+
+    // Create DSV
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+
+    // Create SRV for depth
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    Device->CreateSamplerState(&samplerDesc, &SamplerState);
+    
+    for (int i = 0;i < 2; i++)
+    {
+        // SceneColor (pingpong)
+        Device->CreateTexture2D(&pingpongTextureDesc, nullptr, &pingpongTex[i]);
+        Device->CreateRenderTargetView(pingpongTex[i], nullptr, &pingpongRTV[i]);
+        Device->CreateShaderResourceView(pingpongTex[i], nullptr, &pingpongSRV[i]);
+
+        // SceneDepth
+        Device->CreateTexture2D(&depthDesc, nullptr, &pingpongDepthTex[i]);
+        Device->CreateDepthStencilView(pingpongDepthTex[i], &dsvDesc, &pingpongDSV[i]);
+        Device->CreateShaderResourceView(pingpongDepthTex[i], &srvDesc, &pingpongDepthSRV[i]);
+    }
+
+//  RTVs[0] = FrameBufferRTV;
+    RTVs[0] = GetWriteRTV();
 }
 
 void FGraphicsDevice::CreateGBuffer()
@@ -255,6 +317,40 @@ void FGraphicsDevice::ReleaseFrameBuffer()
 {
     SAFE_RELEASE(FrameBuffer)
     SAFE_RELEASE(FrameBufferRTV)
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (pingpongTex[i])
+        {
+            pingpongTex[i]->Release();
+            pingpongTex[i] = nullptr;
+        }
+        if (pingpongRTV[i])
+        {
+            pingpongRTV[i]->Release();
+            pingpongRTV[i] = nullptr;
+        }
+        if (pingpongSRV[i])
+        {
+            pingpongSRV[i]->Release();
+            pingpongSRV[i] = nullptr;
+        }
+        if (pingpongDepthTex[i])
+        {
+            pingpongDepthTex[i]->Release();
+            pingpongDepthTex[i] = nullptr;
+        }
+        if (pingpongDSV[i])
+        {
+            pingpongDSV[i]->Release();
+            pingpongDSV[i] = nullptr;
+        }
+        if (pingpongDepthSRV[i])
+        {
+            pingpongDepthSRV[i]->Release();
+            pingpongDepthSRV[i] = nullptr;
+        }
+    }
 }
 
 void FGraphicsDevice::ReleaseGBuffer()
@@ -306,48 +402,62 @@ void FGraphicsDevice::SwapBuffer() const
 {
     SwapChain->Present(1, 0);
 }
-void FGraphicsDevice::Prepare() const
+
+void FGraphicsDevice::ClearRenderTarget()
 {
+    CurrentIndex = 0;
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->ClearRenderTargetView(RenderTarget, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(PositionRTV, PositionClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(NormalRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(DiffuseRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(MaterialRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
+}
 
+
+void FGraphicsDevice::Prepare()
+{
+    CurrentIndex = 0;
+    auto* RenderDepthTarget = GetWriteDSV();
+    DeviceContext->ClearDepthStencilView(RenderDepthTarget, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-
     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-
     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-
-    DeviceContext->OMSetRenderTargets(5, RTVs, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
+    DeviceContext->OMSetRenderTargets(5, RTVs, RenderDepthTarget); // 렌더 타겟 설정
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
-void FGraphicsDevice::PrepareLighting() const
+void FGraphicsDevice::PrepareLighting()
 {
-    DeviceContext->OMSetRenderTargets(1, RTVs, DepthStencilView);
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr);
     DeviceContext->PSSetShaderResources(0, 4, GBufferSRVs);
-    DeviceContext->PSSetSamplers(0, 1, &DefaultSampler);
+    DeviceContext->PSSetSamplers(0, 1, &SamplerState);
 }
 
-// void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport) const
-// {
-//     DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-//     
-//     DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
-//
-//     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-//
-//     DeviceContext->RSSetViewports(1, viewport); // GPU가 화면을 렌더링할 영역 설정
-//     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-//
-//     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-//
-//     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
-//     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
-// }
+void FGraphicsDevice::PreparePostProcessRender()
+{
+    SwapRTV();
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
+}
+
+void FGraphicsDevice::PrepareGridRender()
+{
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, pingpongDSV[0]); // 렌더 타겟 설정
+}
+
+void FGraphicsDevice::PrepareFinalRender()
+{
+    SwapRTV();
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
+}
 
 
 void FGraphicsDevice::OnResize(HWND hWindow) {
