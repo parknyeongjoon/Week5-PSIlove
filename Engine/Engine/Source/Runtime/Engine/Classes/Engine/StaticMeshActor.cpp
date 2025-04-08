@@ -8,12 +8,6 @@ AStaticMeshActor::AStaticMeshActor()
     RootComponent = StaticMeshComponent;
 }
 
-void AStaticMeshActor::DuplicateSubObjects()
-{
-    Super::DuplicateSubObjects();
-    this->StaticMeshComponent = Cast<UStaticMeshComponent>(this->StaticMeshComponent->Duplicate());
-}
-
 UObject* AStaticMeshActor::Duplicate()
 {
     UObject* NewObject = FObjectFactory::ConstructObject<AStaticMeshActor>(this);

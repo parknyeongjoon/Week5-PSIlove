@@ -6,6 +6,7 @@ enum OBJECTS
 	OBJ_SPHERE,
 	OBJ_CUBE,
 	OBJ_SpotLight,
+    OBJ_FireBall,
 	OBJ_PARTICLE,
 	OBJ_Text,
 	OBJ_TRIANGLE,

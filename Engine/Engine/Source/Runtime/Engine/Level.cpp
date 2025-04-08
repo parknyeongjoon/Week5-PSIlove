@@ -7,6 +7,7 @@
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
 #include "Components/SkySphereComponent.h"
+#include "Actors/Fog.h"
 
 
 void ULevel::Initialize(EWorldType worldType)
@@ -16,6 +17,8 @@ void ULevel::Initialize(EWorldType worldType)
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
     FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
+    Fog = SpawnActor<AFog>();
+
 }
 
 void ULevel::CreateBaseObject(EWorldType worldType)
@@ -52,11 +55,21 @@ void ULevel::ReleaseBaseObject()
     }
 }
 
-void ULevel::Tick(float DeltaTime)
+void ULevel::EditorTick(float DeltaTime)
 {
-	if (EditorPlayer) EditorPlayer->Tick(DeltaTime);
-	if (LocalGizmo) LocalGizmo->Tick(DeltaTime);
+    if (EditorPlayer) EditorPlayer->Tick(DeltaTime);
+    if (LocalGizmo) LocalGizmo->Tick(DeltaTime);
 
+    // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
+    for (AActor* Actor : PendingBeginPlayActors)
+    {
+        Actor->BeginPlay();
+    }
+    PendingBeginPlayActors.Empty();
+}
+
+void ULevel::PIETick(float DeltaTime)
+{
     // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
     for (AActor* Actor : PendingBeginPlayActors)
     {
@@ -65,10 +78,10 @@ void ULevel::Tick(float DeltaTime)
     PendingBeginPlayActors.Empty();
 
     // 매 틱마다 Actor->Tick(...) 호출
-	for (AActor* Actor : ActorsArray)
-	{
-	    Actor->Tick(DeltaTime);
-	}
+    for (AActor* Actor : ActorsArray)
+    {
+        Actor->Tick(DeltaTime);
+    }
 }
 
 void ULevel::Release()
@@ -148,8 +161,7 @@ bool ULevel::DestroyActor(AActor* ThisActor)
     }
 
     // World에서 제거
-    ActorsArray.Empty();
-    //ActorsArray.Remove(ThisActor);
+    ActorsArray.Remove(ThisActor);
 
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);

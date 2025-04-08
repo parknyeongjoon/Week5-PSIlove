@@ -10,8 +10,14 @@ UPrimitiveBatch::UPrimitiveBatch()
 
 UPrimitiveBatch::~UPrimitiveBatch()
 {
+    if (pVertexBuffer) {
+        pVertexBuffer->Release();
+        pVertexBuffer = nullptr;
+    }
+    ReleaseOBBResources();
+    ReleaseBoundingBoxResources();
+    ReleaseConeResources();
 }
-
 
 void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
 {

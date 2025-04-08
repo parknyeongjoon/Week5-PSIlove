@@ -2,6 +2,8 @@
 
 #include "Level.h"
 #include "Actors/Player.h"
+#include "Actors/Object/FireBall.h"
+#include "Components/CubeComp.h"
 #include "Components/LightComponent.h"
 #include "Components/SphereComp.h"
 #include "Components/ParticleSubUVComp.h"
@@ -9,6 +11,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Engine/StaticMeshActor.h"
+#include "ImGUI/imgui_internal.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include "UnrealEd/EditorViewportClient.h"
@@ -256,8 +259,8 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
 
         static const Primitive primitives[] = {
             { .label= "Cube",      .obj= OBJ_CUBE },
-            // { .label= "Sphere",    .obj= OBJ_SPHERE },
-            { .label= "SpotLight", .obj= OBJ_SpotLight },
+            //{ .label= "Sphere",    .obj= OBJ_SPHERE },
+            { .label= "FireBall",    .obj= OBJ_FireBall },
             { .label= "Particle",  .obj= OBJ_PARTICLE },
             { .label= "Billboard", .obj= OBJ_BILLBOARD },
             { .label= "Text",      .obj= OBJ_Text }
@@ -280,53 +283,58 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                 //     break;
                 // }
                 case OBJ_CUBE:
-                {
-                    AStaticMeshActor* TempActor = level->SpawnActor<AStaticMeshActor>();
-                    TempActor->SetActorLabel(TEXT("OBJ_CUBE"));
-                    UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
-                    FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
-                    MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"helloBlender.obj"));
-                    break;
-                }
+                    {
+                        AStaticMeshActor* TempActor = level->SpawnActor<AStaticMeshActor>();
+                        TempActor->SetActorLabel(TEXT("OBJ_CUBE"));
+                        UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
+                        FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
+                        MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"helloBlender.obj"));
+                        break;
+                    }
                 case OBJ_SpotLight:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
-                    auto a = SpawnedActor->AddComponent<ULightComponentBase>();
-                    UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
-                    BillboardComp->SetTexture(L"Editor/Icon/SpotLight_64x.png");
-                    
-                    break;
-                }
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
+                        auto a = SpawnedActor->AddComponent<ULightComponent>();
+                        UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
+                        BillboardComp->SetTexture(L"Editor/Icon/SpotLight_64x.png");
+                        break;
+                    }
+                case OBJ_FireBall:
+                    {
+                        SpawnedActor = level->SpawnActor<AFireBall>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_FireBall"));
+                        break;
+                    }
                 case OBJ_PARTICLE:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_PARTICLE"));
-                    UParticleSubUVComp* ParticleComponent = SpawnedActor->AddComponent<UParticleSubUVComp>();
-                    ParticleComponent->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
-                    ParticleComponent->SetRowColumnCount(6, 6);
-                    ParticleComponent->SetScale(FVector(10.0f, 10.0f, 1.0f));
-                    ParticleComponent->Activate();
-                    break;
-                }
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_PARTICLE"));
+                        UParticleSubUVComp* ParticleComponent = SpawnedActor->AddComponent<UParticleSubUVComp>();
+                        ParticleComponent->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
+                        ParticleComponent->SetRowColumnCount(6, 6);
+                        ParticleComponent->SetScale(FVector(10.0f, 10.0f, 1.0f));
+                        ParticleComponent->Activate();
+                        break;
+                    }
                 case OBJ_Text:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_Text"));
-                    UTextRenderComponent* TextComponent = SpawnedActor->AddComponent<UTextRenderComponent>();
-                    TextComponent->SetTexture(L"Assets/Texture/font.png");
-                    TextComponent->SetRowColumnCount(106, 106);
-                    TextComponent->SetText(L"안녕하세요 Jungle 1");
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_Text"));
+                        UTextRenderComponent* TextComponent = SpawnedActor->AddComponent<UTextRenderComponent>();
+                        TextComponent->SetTexture(L"Assets/Texture/font.png");
+                        TextComponent->SetRowColumnCount(106, 106);
+                        TextComponent->SetText(L"안녕하세요 Jungle 1");
                         TextComponent->SetRotation(FVector(90.f, 0.f, 0.f));
-                    break;
-                }
+                        break;
+                    }
                 case OBJ_BILLBOARD:
-                {
-                    SpawnedActor = level->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_BILLBOARD"));
-                    UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
-                    BillboardComp->SetTexture(L"Editor/Icon/S_Actor.png");
-                }
+                    {
+                        SpawnedActor = level->SpawnActor<AActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_BILLBOARD"));
+                        UBillboardComponent* BillboardComp = SpawnedActor->AddComponent<UBillboardComponent>();
+                        BillboardComp->SetTexture(L"Editor/Icon/S_Actor.png");
+                    }
                 case OBJ_TRIANGLE:
                 case OBJ_CAMERA:
                 case OBJ_PLAYER:
@@ -413,7 +421,7 @@ void ControlEditorPanel::CreateFlagButton() const
         ImGui::OpenPopup("ShowControl");
     }
     
-    const char* items[] = { "AABB", "Primitive", "BillBoard", "UUID"};
+    const char* items[] = { "AABB", "Primitive", "BillBoard", "UUID", "HeightFog"};
     uint64 ActiveViewportFlags = ActiveViewport->GetShowFlag();
 
     if (ImGui::BeginPopup("ShowControl"))
@@ -423,7 +431,8 @@ void ControlEditorPanel::CreateFlagButton() const
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_AABB)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Primitives)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_BillboardText)) != 0,
-            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_UUIDText)) != 0
+            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_UUIDText)) != 0,
+            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_HeightFog)) != 0
         };  // 각 항목의 체크 상태 저장
         
         for (int i = 0; i < IM_ARRAYSIZE(items); i++)
@@ -500,6 +509,8 @@ uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
         flags |= static_cast<uint64>(EEngineShowFlags::SF_BillboardText);
     if (selected[3])
         flags |= static_cast<uint64>(EEngineShowFlags::SF_UUIDText);
+    if (selected[4])
+        flags |= static_cast<uint64>(EEngineShowFlags::SF_HeightFog);
     return flags;
 }
 

@@ -14,6 +14,7 @@ public:
     }
 
 public:
+    void Release();
     void ClearGrid() {};
     float GetSpacing() { return GridParam.GridSpacing; }
     void GenerateGrid(float spacing, int gridCount);
@@ -46,6 +47,7 @@ public:
     void SetAllocatedConeCapacity(const size_t capacity) { allocatedConeCapacity = capacity; }
     void SetAllocatedOBBCapacity(const size_t capacity) { allocatedOBBCapacity = capacity; }
 private:
+
     size_t allocatedBoundingBoxCapacity;
     size_t allocatedConeCapacity;
     size_t allocatedOBBCapacity;
@@ -54,4 +56,5 @@ private:
     TArray<FCone> Cones;
     FGridParametersData GridParam;
     int ConeSegmentCount = 0;
+
 };

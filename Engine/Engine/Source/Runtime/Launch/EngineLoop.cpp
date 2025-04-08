@@ -139,23 +139,24 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 
 void FEngineLoop::Render()
 {
-    graphicDevice.Prepare();
     if (LevelEditor->IsMultiViewport())
     {
+        graphicDevice.ClearRenderTarget();
         std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
         for (int i = 0; i < 4; ++i)
         {
+            graphicDevice.Prepare();
             LevelEditor->SetViewportClient(i);
-            renderer.AddRenderObjectsToRenderPass(GLevel);
-            //renderer.PrepareRender(GLevel);
-            renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
+            renderer.PrepareRender(GLevel);
+            renderer.Render(GetLevel(), LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
     {
         renderer.AddRenderObjectsToRenderPass(GLevel);
-        //renderer.PrepareRender(GLevel);
+        graphicDevice.ClearRenderTarget();
+        graphicDevice.Prepare();
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
 }
@@ -216,7 +217,7 @@ void FEngineLoop::Tick()
 void FEngineLoop::EditorTick(double elapsedTime)
 {
     Input();
-    GLevel->Tick(elapsedTime);
+    GLevel->EditorTick(elapsedTime);
     LevelEditor->Tick(elapsedTime);
     Render();
     UIMgr->BeginFrame();
@@ -235,11 +236,7 @@ void FEngineLoop::EditorTick(double elapsedTime)
 void FEngineLoop::PIETick(double elapsedTime)
 {
     Input();
-    GLevel->Tick(elapsedTime);
-    for (auto& actor : GLevel->GetActors())
-    {
-        actor->SetActorRotation(actor->GetActorRotation() + FVector(0.1,0.1,0.1));
-    }
+    GLevel->PIETick(elapsedTime);
     Render();
 
     UIMgr->BeginFrame();
@@ -272,7 +269,7 @@ void FEngineLoop::TogglePIE()
     GLevel = GWorld->Level;
 }
 
-float FEngineLoop::GetAspectRatio(const Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain) const
+float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
 {
     DXGI_SWAP_CHAIN_DESC desc;
     swapChain->GetDesc(&desc);
@@ -308,6 +305,8 @@ void FEngineLoop::Exit()
     UIMgr->Shutdown();
     delete UIMgr;
     resourceMgr.Release(&renderer);
+    renderer.Release();
+    graphicDevice.Release();
 }
 
 

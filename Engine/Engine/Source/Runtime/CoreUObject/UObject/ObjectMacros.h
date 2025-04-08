@@ -26,6 +26,6 @@ public: \
 //     void Set##VarName(const Type& New##VarName) { VarName = New##VarName; }
 
 // Getter & Setter 생성
-#define PROPERTY(type, name) \
+#define UPROPERTY(type, name) \
     void Set##name(const type& value) { name = value; } \
     type Get##name() const { return name; }

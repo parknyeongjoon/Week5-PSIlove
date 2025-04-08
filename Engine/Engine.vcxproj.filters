@@ -243,30 +243,6 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\SphereComp.h">
       <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
     </ClInclude>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\UBillboardComponent.cpp">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClCompile>
-    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\UBillboardComponent.h">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClInclude>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\UParticleSubUVComp.cpp">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClCompile>
-    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\UParticleSubUVComp.h">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClInclude>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\UText.cpp">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClCompile>
-    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\UText.h">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClInclude>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\UTextUUID.cpp">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClCompile>
-    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\UTextUUID.h">
-      <Filter>Engine\Source\Runtime\Engine\Classes\Components</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\Texture.h">
       <Filter>Engine\Source\Runtime\Engine\Classes\Components\Engine</Filter>
     </ClInclude>
@@ -421,6 +397,14 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Player.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.cpp" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\BillboardComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\ParticleSubUVComp.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\TextBillboardComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\TextRenderComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Level.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\FogRenderer.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -487,16 +471,10 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\PixelTextureShader.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\ShaderLine.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ShaderW0.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\VertexTextureShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\StaticMeshVertexShader.hlsl">
@@ -505,8 +483,28 @@
     <FxCompile Include="Shaders\StaticMeshPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\FontPixelShader.hlsl" />
+    <FxCompile Include="Shaders\FontVertexShader.hlsl" />
+    <FxCompile Include="Shaders\TexturePixelShader.hlsl" />
+    <FxCompile Include="Shaders\TextureVertexShader.hlsl" />
+    <FxCompile Include="Shaders\LightingPixelShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="QuadVertexShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Engine.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\BillboardComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ParticleSubUVComp.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\TextBillboardComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\TextRenderComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Level.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\FogRenderer.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.cpp" />
   </ItemGroup>
 </Project>

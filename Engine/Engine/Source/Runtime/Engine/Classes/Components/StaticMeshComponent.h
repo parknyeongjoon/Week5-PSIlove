@@ -13,7 +13,7 @@ public:
     virtual UObject* Duplicate() override;
 
 public:
-    PROPERTY(int, selectedSubMeshIndex);
+    UPROPERTY(int, selectedSubMeshIndex);
 
     virtual uint32 GetNumMaterials() const override;
     virtual UMaterial* GetMaterial(uint32 ElementIndex) const override;

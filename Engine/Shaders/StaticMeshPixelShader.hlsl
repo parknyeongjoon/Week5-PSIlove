@@ -2,12 +2,13 @@
 #include "ShaderHeaders/Samplers.hlsli"
 
 Texture2D Textures : register(t0);
+SamplerState Sampler : register(s0);
 
 cbuffer FMatrixConstants : register(b0)
 {
-    row_major float4x4 MVP;
+    row_major float4x4 M;
+    row_major float4x4 VP;
     row_major float4x4 MInverseTranspose;
-    float4 ObjectUUID;
     bool isSelected;
     float3 MatrixPad0;
 };
@@ -22,20 +23,11 @@ cbuffer FMaterialConstants : register(b1)
     float SpecularScalar;
     float3 EmissiveColor;
     float MaterialPad0;
-}
-
-// LightingBuffer: 조명 관련 파라미터 관리
-cbuffer FLightingBuffer : register(b2)
-{
-    float3 LightDirection; // 조명 방향 (단위 벡터; 빛이 들어오는 방향의 반대 사용)
-    float AmbientFactor; // ambient 계수 (예: 0.1)
-    float3 LightColor; // 조명 색상 (예: (1, 1, 1))
-    float LightPad0; // 16바이트 정렬용 패딩
 };
 
-cbuffer FFlagConstants : register(b3)
+cbuffer FlagConstants : register(b3)
 {
-    bool IsLit;
+    bool IsLit; // TODO: Lit Shader, Unlit Shader 분리
     float3 flagPad0;
 }
 
@@ -54,17 +46,19 @@ cbuffer FTextureConstants : register(b5)
 struct PS_INPUT
 {
     float4 position : SV_POSITION; // 변환된 화면 좌표
+    float4 vertexWorldPosition : VERTEX_POSITION;
     float4 color : COLOR; // 전달할 색상
     float3 normal : NORMAL; // 정규화된 노멀 벡터
-    bool normalFlag : TEXCOORD0; // 노멀 유효성 플래그 (1.0: 유효, 0.0: 무효)
-    float2 texcoord : TEXCOORD1;
-    uint materialIndex : MATERIAL_INDEX;
+    float2 texcoord : TEXCOORD;
 };
 
 struct PS_OUTPUT
 {
-    float4 color : SV_Target0;
-    float4 UUID : SV_Target1;
+    float4 color : SV_TARGET0;
+    float4 position : SV_Target1;
+    float4 normal : SV_Target2;
+    float4 diffuse : SV_Target3;
+    float4 material : SV_Target4;
 };
 
 float noise(float3 p)
@@ -101,10 +95,11 @@ PS_OUTPUT mainPS(PS_INPUT input)
 {
     PS_OUTPUT output;
 
-    output.UUID = ObjectUUID;
+    output.position = input.vertexWorldPosition;
+    output.normal = float4(input.normal,0);
     
-    float3 texColor = Textures.Sample(linearSampler, input.texcoord + UVOffset);
-    float3 color;
+    float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);
+    float3 color;// = Material.AmbientColor;
     if (texColor.g == 0) // TODO: boolean으로 변경
         color = saturate(DiffuseColor);
     else
@@ -120,47 +115,17 @@ PS_OUTPUT mainPS(PS_INPUT input)
     }
     
     // 발광 색상 추가
-
-    if (IsLit == 1) // 조명이 적용되는 경우
+    if (IsLit == true) // 조명이 적용되는 경우
     {
-        if (input.normalFlag > 0.5)
-        {
-            float3 N = normalize(input.normal);
-            float3 L = normalize(LightDirection);
-            
-            // 기본 디퓨즈 계산
-            float diffuse = saturate(dot(N, L));
-            
-            // 스페큘러 계산 (간단한 Blinn-Phong)
-            float3 V = float3(0, 0, 1); // 카메라가 Z 방향을 향한다고 가정
-            float3 H = normalize(L + V);
-            float specular = pow(saturate(dot(N, H)), SpecularScalar * 32) * SpecularScalar;
-            
-            // 최종 라이팅 계산
-            float3 ambient = AmbientColor * AmbientFactor;
-            float3 diffuseLight = diffuse * LightColor;
-            float3 specularLight = specular * SpecularColor * LightColor;
-            
-            color = ambient + (diffuseLight * color) + specularLight;
-        }
-        
-        // 투명도 적용
-        color += EmissiveColor;
-        output.color = float4(color, TransparencyScalar);
-        return output;
+        color += Material.EmissiveColor;
+        output.material = float4(Material.SpecularScalar, length(Material.SpecularColor), Material.DensityScalar, 0.0f);
     }
-    else // unlit 상태일 때 PaperTexture 효과 적용
+    else // unlit 상태
     {
-        if (input.normalFlag < 0.5)
-        {
-            output.color = float4(color, TransparencyScalar);
-            return output;
-        }
-        
-        output.color = float4(color, 1);
-        // 투명도 적용
-        output.color.a = TransparencyScalar;
-            
-        return output;
+        output.material = float4(-1,-1,-1, 0);
     }
+    
+    output.diffuse = float4(color, Material.TransparencyScalar);
+    output.color = float4(color,Material.TransparencyScalar);
+    return output;
 }

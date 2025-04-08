@@ -1,66 +1,38 @@
 #include "LightComponent.h"
-#include "BillboardComponent.h"
-#include "Math/JungleMath.h"
-#include "UnrealEd/PrimitiveBatch.h"
 
-ULightComponentBase::ULightComponentBase()
+ULightComponent::ULightComponent()
 {
-    // FString name = "SpotLight";
-    // SetName(name);
     InitializeLight();
 }
 
-ULightComponentBase::~ULightComponentBase()
-{
-}
-void ULightComponentBase::DuplicateSubObjects()
+void ULightComponent::DuplicateSubObjects()
 {
     Super::DuplicateSubObjects();
 }
-UObject* ULightComponentBase::Duplicate()
+UObject* ULightComponent::Duplicate()
 {
-    UObject* NewObject = FObjectFactory::ConstructObject<ULightComponentBase>(this);
+    UObject* NewObject = FObjectFactory::ConstructObject<ULightComponent>(this);
 
-    Cast<ULightComponentBase>(NewObject)->DuplicateSubObjects();
+    Cast<ULightComponent>(NewObject)->DuplicateSubObjects();
     return NewObject;
 }
-void ULightComponentBase::SetColor(FVector4 newColor)
+
+void ULightComponent::InitializeLight()
 {
-    color = newColor;
+    AABB.max = { 1.f,1.f,1.f };
+    AABB.min = { -1.f,-1.f,-1.f };
+    LightColor = { 1,1,1, 1 };
+    AttenuationRadius = 10;
 }
 
-FVector4 ULightComponentBase::GetColor() const
-{
-    return color;
-}
-
-float ULightComponentBase::GetRadius() const
-{
-    return radius;
-}
-
-void ULightComponentBase::SetRadius(float r)
-{
-    radius = r;
-}
-
-void ULightComponentBase::InitializeLight()
-{
-    AABB.max = { 1.f,1.f,0.1f };
-    AABB.min = { -1.f,-1.f,-0.1f };
-    color = { 1,1,1,1 };
-    radius = 5;
-}
-
-void ULightComponentBase::TickComponent(float DeltaTime)
+void ULightComponent::TickComponent(float DeltaTime)
 {
     Super::TickComponent(DeltaTime);
 
 }
 
-int ULightComponentBase::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int ULightComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
 {
-    bool res =AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance);
-    return res;
+    return AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance);
 }
 

@@ -10,15 +10,33 @@
 #include "Math/Vector4.h"
 #include "Math/Matrix.h"
 
+
 #define UE_LOG Console::GetInstance().AddLog
 
 #define _TCHAR_DEFINED
 #include <d3d11.h>
-#include <wrl.h>
 
 #include "UserInterface/Console.h"
 
 class UWorld;
+
+enum class EWorldType
+{
+    Editor,
+    EditorPreview,
+    PIE,
+    Game,
+};
+
+enum class GBufferType : uint8
+{
+    None,
+    Position,
+    Diffuse,
+    Normal,
+
+    Max,
+};
 
 struct FVertexSimple
 {
@@ -27,6 +45,32 @@ struct FVertexSimple
     float nx, ny, nz;
     float u=0, v=0;
     uint32 MaterialIndex;
+};
+
+struct FLinearColor;
+struct FColor
+{
+    uint8 r;
+    uint8 g;
+    uint8 b;
+    uint8 a;
+
+    FLinearColor ConvertToFLinearColor() const;
+};
+
+struct FLinearColor
+{
+    float r;
+    float g;
+    float b;
+    float a;
+
+    FLinearColor() : r(0), g(0), b(0), a(1) {}
+    FLinearColor(float InR, float InG, float InB, float InA = 1.0f)
+        : r(InR), g(InG), b(InB), a(InA) {
+    }
+
+    FColor ConvertToFColor() const;
 };
 
 // Material Subset
@@ -107,14 +151,6 @@ struct FObjMaterialInfo
     
     FString AlphaTextureName;    // map_d : Alpha texture
     FWString AlphaTexturePath;
-};
-
-enum class EWorldType
-{
-    Editor,
-    EditorPreview,
-    PIE,
-    Game,
 };
 
 struct FWorldContext
@@ -276,81 +312,7 @@ struct FBoundingBox
 	float pad;
 	FVector max; // Maximum extents
 	float pad1;
-    bool Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance)
-    {
-        float tmin = -FLT_MAX;
-        float tmax = FLT_MAX;
-        const float epsilon = 1e-6f;
-
-        // X축 처리
-        if (fabs(rayDir.x) < epsilon)
-        {
-            // 레이가 X축 방향으로 거의 평행한 경우,
-            // 원점의 x가 박스 [min.x, max.x] 범위 밖이면 교차 없음
-            if (rayOrigin.x < min.x || rayOrigin.x > max.x)
-                return false;
-        }
-        else
-        {
-            float t1 = (min.x - rayOrigin.x) / rayDir.x;
-            float t2 = (max.x - rayOrigin.x) / rayDir.x;
-            if (t1 > t2)  std::swap(t1, t2);
-
-            // tmin은 "현재까지의 교차 구간 중 가장 큰 min"
-            tmin = (t1 > tmin) ? t1 : tmin;
-            // tmax는 "현재까지의 교차 구간 중 가장 작은 max"
-            tmax = (t2 < tmax) ? t2 : tmax;
-            if (tmin > tmax)
-                return false;
-        }
-
-        // Y축 처리
-        if (fabs(rayDir.y) < epsilon)
-        {
-            if (rayOrigin.y < min.y || rayOrigin.y > max.y)
-                return false;
-        }
-        else
-        {
-            float t1 = (min.y - rayOrigin.y) / rayDir.y;
-            float t2 = (max.y - rayOrigin.y) / rayDir.y;
-            if (t1 > t2)  std::swap(t1, t2);
-
-            tmin = (t1 > tmin) ? t1 : tmin;
-            tmax = (t2 < tmax) ? t2 : tmax;
-            if (tmin > tmax)
-                return false;
-        }
-
-        // Z축 처리
-        if (fabs(rayDir.z) < epsilon)
-        {
-            if (rayOrigin.z < min.z || rayOrigin.z > max.z)
-                return false;
-        }
-        else
-        {
-            float t1 = (min.z - rayOrigin.z) / rayDir.z;
-            float t2 = (max.z - rayOrigin.z) / rayDir.z;
-            if (t1 > t2)  std::swap(t1, t2);
-
-            tmin = (t1 > tmin) ? t1 : tmin;
-            tmax = (t2 < tmax) ? t2 : tmax;
-            if (tmin > tmax)
-                return false;
-        }
-
-        // 여기까지 왔으면 교차 구간 [tmin, tmax]가 유효하다.
-        // tmax < 0 이면, 레이가 박스 뒤쪽에서 교차하므로 화면상 보기엔 교차 안 한다고 볼 수 있음
-        if (tmax < 0.0f)
-            return false;
-
-        // outDistance = tmin이 0보다 크면 그게 레이가 처음으로 박스를 만나는 지점
-        // 만약 tmin < 0 이면, 레이의 시작점이 박스 내부에 있다는 의미이므로, 거리를 0으로 처리해도 됨.
-        outDistance = (tmin >= 0.0f) ? tmin : 0.0f;
-
-        return true;
-    }
+    bool Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const;
 };
 
 struct FCone
@@ -360,11 +322,40 @@ struct FCone
 
     FVector ConeBaseCenter; // 원뿔 밑면 중심
     float ConeHeight; // 원뿔 높이 (Apex와 BaseCenter 간 차이)
-    FVector4 Color;
+    FLinearColor Color;
 
     int ConeSegmentCount; // 원뿔 밑면 분할 수
     float pad[3];
 
+};
+struct FPrimitiveCounts 
+{
+	int BoundingBoxCount;
+	int pad;
+	int ConeCount; 
+	int pad1;
+};
+struct FLighting
+{
+	float lightDirX, lightDirY, lightDirZ; // 조명 방향
+	float pad1;                      // 16바이트 정렬용 패딩
+	float lightColorX, lightColorY, lightColorZ;    // 조명 색상
+	float pad2;                      // 16바이트 정렬용 패딩
+	float AmbientFactor;             // ambient 계수
+	float pad3; // 16바이트 정렬 맞춤 추가 패딩
+	float pad4; // 16바이트 정렬 맞춤 추가 패딩
+	float pad5; // 16바이트 정렬 맞춤 추가 패딩
+};
+
+struct FMaterialConstants {
+    FVector DiffuseColor;
+    float TransparencyScalar;
+    FVector AmbientColor;
+    float DensityScalar;
+    FVector SpecularColor;
+    float SpecularScalar;
+    FVector EmmisiveColor;
+    float MaterialPad0;
 };
 
 struct FOBB
@@ -372,3 +363,37 @@ struct FOBB
     FVector corners[8];
 };
 
+struct FSubMeshConstants {
+    float isSelectedSubMesh;
+    FVector pad;
+};
+
+struct FTextureConstants {
+    float UOffset;
+    float VOffset;
+    float UTiles;
+    float VTiles;
+};
+
+struct FScreenVertex {
+    FVector4 Position;
+    float U, V;
+    float pad0, pad1;
+};
+
+struct FFogConstants
+{
+    float FogDensity;             // 4 bytes
+    float FogHeightFalloff;      // 4 bytes
+    float StartDistance;         // 4 bytes
+    float FogCutoffDistance;     // 4 bytes
+    float FogMaxOpacity;         // 4 bytes
+    float Padding1[3];           // 12 bytes → 16 bytes 정렬 맞춤
+
+    FLinearColor FogInscatteringColor; // 16 bytes (4 floats)
+
+    FVector CameraPosition;
+    float padding;
+    FMatrix InvProjectionMatrix; // 64 bytes (4x4 floats)
+    FMatrix InvViewMatrix;       // 64 bytes
+};

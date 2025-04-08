@@ -42,14 +42,8 @@ void AEditorPlayer::Input()
             GetCursorPos(&mousePos);
             GetCursorPos(&m_LastMousePos);
 
-            //uint32 UUID = GetEngine().graphicDevice.GetPixelUUID(mousePos);
+            // uint32 UUID = GetEngine().graphicDevice.GetPixelUUID(mousePos);
             // TArray<UObject*> objectArr = GetWorld()->GetObjectArr();
-            //for ( const auto obj : TObjectRange<USceneComponent>())
-            //{
-            //    if (obj->GetUUID() != UUID) continue;
-
-            //    UE_LOG(LogLevel::Display, *obj->GetName());
-            //}
             ScreenToClient(GetEngine().hWnd, &mousePos);
 
             FVector pickPosition;
@@ -228,7 +222,7 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     for (const auto iter : TObjectRange<UPrimitiveComponent>())
     {
         UPrimitiveComponent* pObj;
-        if (iter->IsA<UPrimitiveComponent>() || iter->IsA<ULightComponentBase>())
+        if (iter->IsA<UPrimitiveComponent>() || iter->IsA<ULightComponent>())
         {
             pObj = static_cast<UPrimitiveComponent*>(iter);
         }

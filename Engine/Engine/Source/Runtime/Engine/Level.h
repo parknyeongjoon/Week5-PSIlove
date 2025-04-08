@@ -12,6 +12,7 @@ class UCameraComponent;
 class AEditorPlayer;
 class USceneComponent;
 class UTransformGizmo;
+class AFog;
 
 
 class ULevel : public UObject
@@ -23,7 +24,8 @@ public:
     void Initialize(EWorldType worldType);
     void CreateBaseObject(EWorldType worldType);
     void ReleaseBaseObject();
-    void Tick(float DeltaTime);
+    void EditorTick(float DeltaTime);
+    void PIETick(float DeltaTime);
     void Release();
 
     virtual UObject* Duplicate() override;
@@ -54,6 +56,7 @@ private:
 
     USceneComponent* pickingGizmo = nullptr;
     AEditorPlayer* EditorPlayer = nullptr;
+    AFog* Fog = nullptr;
 
 public:
     UObject* worldGizmo = nullptr;
@@ -63,6 +66,7 @@ public:
 
     UTransformGizmo* LocalGizmo = nullptr;
     AEditorPlayer* GetEditorPlayer() const { return EditorPlayer; }
+    AFog* GetFog() const { return Fog; }
 
 
     // EditorManager 같은데로 보내기
