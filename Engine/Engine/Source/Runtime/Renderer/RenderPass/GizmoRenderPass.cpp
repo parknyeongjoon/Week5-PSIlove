@@ -60,14 +60,13 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
         {
             GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
         }
-        const int selectedSubMeshIndex = item->GetselectedSubMeshIndex();
         
         // SubSet마다 Material Update 및 Draw
         for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); subMeshIndex++)
         {
             const int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
         
-            const bool bIsSelectedSubMesh = (subMeshIndex == selectedSubMeshIndex);
+            const bool bIsSelectedSubMesh = (subMeshIndex == -1);
             UpdateSubMeshConstants(bIsSelectedSubMesh);
         
             // 재질 상수 버퍼 업데이트

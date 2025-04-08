@@ -76,7 +76,8 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
         GetEngine().renderer.AddOrSetIndexBuffer(staticMeshRenderData->DisplayName, indexBuffer, indexNum);
     }
 
-    for (int materialIndex = 0; materialIndex < staticMeshRenderData->Materials.Num(); materialIndex++) {
+    for (int materialIndex = 0; materialIndex < staticMeshRenderData->Materials.Num(); materialIndex++)
+    {
         FStaticMaterial* newMaterialSlot = new FStaticMaterial();
         UMaterial* newMaterial = FManagerOBJ::CreateMaterial(staticMeshRenderData->Materials[materialIndex]);
 

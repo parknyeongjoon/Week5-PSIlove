@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "UnrealEd/EditorViewportClient.h"
 
+class UParticleSubUVComp;
 extern FEngineLoop GEngineLoop;
 
 void BillboardRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
@@ -26,7 +27,7 @@ void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpor
         Proj = curEditorViewportClient->GetProjectionMatrix();
     }
     
-     for (const auto item : BillboardComponents)
+     for (UBillboardComponent* item : BillboardComponents)
      {
          FMatrix Model = item->CreateBillboardMatrix();
          FMatrix VP = View * Proj;
@@ -44,7 +45,15 @@ void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpor
          currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
          GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, &(item->Texture->TextureSRV));
 
-         GEngineLoop.graphicDevice.DeviceContext->Draw(currentVIBuffer->GetNumVertices(),0);
+         // if (UParticleSubUVComp* SubUVParticle = Cast<UParticleSubUVComp>(item))
+         // {
+         //     GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumVertices(), 0, 0);
+         // }
+         // else
+         {
+             GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0, 0);
+         }
+
      }
 }
 

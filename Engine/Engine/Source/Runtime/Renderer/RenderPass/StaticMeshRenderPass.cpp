@@ -50,6 +50,8 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpo
                 Model
             );
         }
+
+        if (!item->GetStaticMesh()) continue;
         
         // VIBuffer Bind
         const std::shared_ptr<FVIBuffers> currentVIBuffer =  GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
@@ -73,9 +75,15 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpo
             const bool bIsSelectedSubMesh = (subMeshIndex == selectedSubMeshIndex);
             UpdateSubMeshConstants(bIsSelectedSubMesh);
 
-            // 재질 상수 버퍼 업데이트
-            UMaterial* CurrentMaterial = item->GetMaterial(materialIndex);
-            UpdateMaterialConstants(CurrentMaterial->GetMaterialInfo());
+            UMaterial* overrideMaterial = item->GetOverrideMaterial(materialIndex);
+            if (overrideMaterial)
+            {
+                UpdateMaterialConstants(overrideMaterial->GetMaterialInfo());
+            }
+            else
+            {
+                UpdateMaterialConstants(item->GetMaterial(materialIndex)->GetMaterialInfo());
+            }
             
             if (currentVIBuffer != nullptr)
             {
@@ -173,13 +181,17 @@ void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& Mater
     
     if (MaterialInfo.bHasTexture == true)
     {
-        const std::shared_ptr<FTexture> texture = GEngineLoop.resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
+        std::shared_ptr<FTexture> texture = GEngineLoop.resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
         GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
+        ID3D11SamplerState* linearSampler = GEngineLoop.renderer.GetSamplerState(ESamplerType::Linear);
+        GEngineLoop.graphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
     }
     else
     {
         ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
+        ID3D11SamplerState* nullSampler[1] = {nullptr};
 
         GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
+        GEngineLoop.graphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, nullSampler);
     }
 }

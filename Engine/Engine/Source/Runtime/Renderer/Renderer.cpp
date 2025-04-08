@@ -105,10 +105,10 @@ void FRenderer::CreateStaticMeshShader()
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"MATERIAL_INDEX", 0, DXGI_FORMAT_R32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
     
     Graphics->Device->CreateInputLayout(
@@ -156,7 +156,7 @@ void FRenderer::CreateTextureShader()
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
     
     Graphics->Device->CreateInputLayout(
@@ -205,7 +205,7 @@ void FRenderer::CreateFontShader()
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
     
     Graphics->Device->CreateInputLayout(
@@ -512,12 +512,15 @@ void FRenderer::ChangeViewMode(const EViewModeIndex evi)
     case EViewModeIndex::VMI_Lit:
         flag.IsLit = true;
         UpdateConstant<FFlagConstants>(ConstantBuffers[TEXT("FFlagConstants")], &flag);
+        SetCurrentRasterizerState(ERasterizerState::SolidBack);
         break;
     case EViewModeIndex::VMI_Wireframe:
         SetCurrentRasterizerState(ERasterizerState::WireFrame);
+        break;
     case EViewModeIndex::VMI_Unlit:
         flag.IsLit = false;
         UpdateConstant<FFlagConstants>(ConstantBuffers[TEXT("FFlagConstants")], &flag);
+        SetCurrentRasterizerState(ERasterizerState::SolidBack);
         break;
     }
 }
@@ -597,6 +600,7 @@ ID3D11ShaderResourceView* FRenderer::CreateBufferSRV(ID3D11Buffer* pBuffer, cons
 void FRenderer::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
     staticMeshRenderPass->AddRenderObjectsToRenderPass(InLevel);
+    gizmoRenderPass->AddRenderObjectsToRenderPass(InLevel);
     lineBatchRenderPass->AddRenderObjectsToRenderPass(InLevel);
     fontRenderPass->AddRenderObjectsToRenderPass(InLevel);
     billboardRenderPass->AddRenderObjectsToRenderPass(InLevel);
