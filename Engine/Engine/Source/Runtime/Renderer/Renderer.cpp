@@ -1331,6 +1331,13 @@ void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportCli
     // 화면 크기 사각형 렌더링
     Graphics->DeviceContext->Draw(6, 0); // 4개의 정점으로 화면 전체 사각형 그리기
     
+    // SRV 해제 (다음 패스를 위한 정리)
+    ID3D11ShaderResourceView* nullSRV[4] = { nullptr, nullptr, nullptr, nullptr };
+    Graphics->DeviceContext->PSSetShaderResources(0, 4, nullSRV);
+
+    // Sampler 해제
+    ID3D11SamplerState* nullSamplers[1] = { nullptr };
+    Graphics->DeviceContext->PSSetSamplers(0, 1, nullSamplers);
     //Graphics->DeviceContext->OMSetRenderTargets(5, Graphics->RTVs, Graphics->DepthStencilView);
     //Graphics->DeviceContext->PSSetShaderResources(0,0,nullptr);
 }
