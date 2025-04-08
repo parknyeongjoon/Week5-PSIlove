@@ -114,7 +114,7 @@ void FGraphicsDevice::CreateDepthStencilState()
     // Depth test parameters
     dsDesc.DepthEnable = true;
     dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+    dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
     // Stencil test parameters
     dsDesc.StencilEnable = true;
@@ -224,9 +224,9 @@ void FGraphicsDevice::CreateFrameBuffer()
 
     D3D11_SAMPLER_DESC samplerDesc = {};
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
     samplerDesc.MinLOD = 0;
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
@@ -407,9 +407,7 @@ void FGraphicsDevice::ClearRenderTarget()
 {
     CurrentIndex = 0;
     auto* RenderTarget = GetWriteRTV();
-    auto* RenderDepthTarget = GetWriteDSV();
     DeviceContext->ClearRenderTargetView(RenderTarget, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearDepthStencilView(RenderDepthTarget, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
     DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(PositionRTV, PositionClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(NormalRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
@@ -421,8 +419,8 @@ void FGraphicsDevice::ClearRenderTarget()
 void FGraphicsDevice::Prepare()
 {
     CurrentIndex = 0;
-    auto* RenderTarget = GetWriteRTV();
     auto* RenderDepthTarget = GetWriteDSV();
+    DeviceContext->ClearDepthStencilView(RenderDepthTarget, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
@@ -432,12 +430,9 @@ void FGraphicsDevice::Prepare()
 
 void FGraphicsDevice::PrepareLighting()
 {
-    //SwapRTV();
     auto* RenderTarget = GetWriteRTV();
-    auto* RenderDepthTarget = GetWriteDSV();
-    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-    DeviceContext->OMSetRenderTargets(1, &RenderTarget, RenderDepthTarget);
-    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr);
     DeviceContext->PSSetShaderResources(0, 4, GBufferSRVs);
     DeviceContext->PSSetSamplers(0, 1, &SamplerState);
 }
@@ -446,21 +441,22 @@ void FGraphicsDevice::PreparePostProcessRender()
 {
     SwapRTV();
     auto* RenderTarget = GetWriteRTV();
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
     DeviceContext->OMSetDepthStencilState(nullptr, 0);
     DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
-    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+}
+
+void FGraphicsDevice::PrepareGridRender()
+{
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, pingpongDSV[0]); // 렌더 타겟 설정
 }
 
 void FGraphicsDevice::PrepareFinalRender()
 {
     SwapRTV();
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
     DeviceContext->OMSetDepthStencilState(nullptr, 0);
     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
-    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
 

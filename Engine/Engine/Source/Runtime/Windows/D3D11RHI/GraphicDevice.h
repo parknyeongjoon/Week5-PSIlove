@@ -94,7 +94,8 @@ public:
     void Release();
     
     void ClearRenderTarget();
-    void PreparePostProcessRender();    
+    void PreparePostProcessRender();
+    void PrepareGridRender();
     void PrepareFinalRender();
     void SwapBuffer() const;
     void Prepare();
