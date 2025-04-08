@@ -29,6 +29,7 @@ public:
         staticMesh = value;
         OverrideMaterials.SetNum(value->GetMaterials().Num());
         AABB = FBoundingBox(staticMesh->GetRenderData()->BoundingBoxMin, staticMesh->GetRenderData()->BoundingBoxMax);
+        VIBufferName = value->GetRenderData()->DisplayName;
     }
 
 protected:

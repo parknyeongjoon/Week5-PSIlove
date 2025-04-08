@@ -1,18 +1,15 @@
 #pragma once
-#include "IRenderPass.h"
+#include "BaseRenderPass.h"
 
-class UPrimitiveBatch;
-
-class LineBatchRenderPass : public IRenderPass
+class LineBatchRenderPass : public BaseRenderPass
 {
 public:
-    
     explicit LineBatchRenderPass(const FString& InShaderName);
 
-    virtual void Prepare(FViewportClient* viewport) override;
-    virtual void Execute(FViewportClient* viewport) override;
+    virtual void Prepare(std::shared_ptr<FViewportClient> viewport) override;
+    virtual void Execute(std::shared_ptr<FViewportClient> viewport) override;
 
-    void SetPrimitveBatch(UPrimitiveBatch* batch) { PrimitiveBatch = batch; }
+    void AddRenderObjectsToRenderPass(const ULevel* Level) override;
 private:
-    UPrimitiveBatch* PrimitiveBatch;
+    void UpdateBatchResources() const;
 };

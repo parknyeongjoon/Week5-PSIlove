@@ -25,7 +25,7 @@ uint32 UStaticMeshComponent::GetNumMaterials() const
     return staticMesh->GetMaterials().Num();
 }
 
-UMaterial* UStaticMeshComponent::GetMaterial(uint32 ElementIndex) const
+UMaterial* UStaticMeshComponent::GetMaterial(const uint32 ElementIndex) const
 {
     if (staticMesh != nullptr)
     {

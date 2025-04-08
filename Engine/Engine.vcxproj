@@ -191,9 +191,12 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ActorComponent.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\EditorViewportClient.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\Texture.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\ViewportClient.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\World.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\IRenderPass.cpp">
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\BillboardRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\FontRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\BaseRenderPass.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -270,6 +273,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\StaticMeshRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Slate\Widgets\Layout\SSplitter.cpp" />
@@ -440,7 +444,10 @@
     <ClInclude Include="Engine\Source\Runtime\Launch\EngineBaseTypes.h" />
     <ClInclude Include="Engine\Source\Runtime\Launch\EngineLoop.h" />
     <ClInclude Include="Engine\Source\Runtime\Launch\ImGuiManager.h" />
-    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\IRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\BillboardRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\FontRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\BaseRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\StaticMeshRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\SlateCore\Widgets\SWindow.h" />

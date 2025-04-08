@@ -228,10 +228,10 @@ namespace OBJ
         FString DisplayName;
         
         TArray<FVertexSimple> Vertices;
-        TArray<UINT> Indices;
+        TArray<uint32> Indices;
 
-        Microsoft::WRL::ComPtr<ID3D11Buffer> VertexBuffer;
-        Microsoft::WRL::ComPtr<ID3D11Buffer> IndexBuffer;
+        // Microsoft::WRL::ComPtr<ID3D11Buffer> VertexBuffer;
+        // Microsoft::WRL::ComPtr<ID3D11Buffer> IndexBuffer;
         
         TArray<FObjMaterialInfo> Materials;
         TArray<FMaterialSubset> MaterialSubsets;

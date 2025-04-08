@@ -26,5 +26,6 @@ protected:
     TArray<UMaterial*> OverrideMaterials;
 public:
     TArray<UMaterial*>& GetOverrideMaterials() { return OverrideMaterials; }
+    UMaterial* GetOverrideMaterial(uint32 InIndex) const;
 };
 

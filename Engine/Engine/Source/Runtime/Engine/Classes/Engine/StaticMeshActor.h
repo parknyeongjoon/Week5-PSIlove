@@ -1,6 +1,7 @@
 #pragma once
 #include "GameFramework/Actor.h"
 
+class UStaticMeshComponent;
 
 class AStaticMeshActor : public AActor
 {

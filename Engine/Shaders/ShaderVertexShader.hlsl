@@ -1,11 +1,13 @@
+#include "ShaderHeaders/ConstantBuffers.hlsli"
+#include "ShaderHeaders/Samplers.hlsli"
+
 Texture2D Texture : register(t0);
-SamplerState Sampler : register(s0);
 
 cbuffer FMatrixConstants : register(b0)
 {
     row_major float4x4 MVP;
     row_major float4x4 MInverseTranspose;
-    float4 UUID;
+    float4 ObjectUUID;
     bool isSelected;
     float3 MatrixPad0;
 };

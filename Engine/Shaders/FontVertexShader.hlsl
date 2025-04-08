@@ -1,9 +1,14 @@
-struct VSInput {
+#include "ShaderHeaders/ConstantBuffers.hlsli"
+#include "ShaderHeaders/Samplers.hlsli"
+
+struct VSInput
+{
     float3 position : POSITION;
     float2 texCoord : TEXCOORD;
 };
 
-struct PSInput {
+struct PSInput
+{
     float4 position : SV_POSITION;
     float2 texCoord : TEXCOORD;
 };
@@ -14,9 +19,8 @@ cbuffer FConstants : register(b0)
     float Flag;
 }
 
-PSInput mainVS(VSInput input) {
-
-
+PSInput mainVS(VSInput input)
+{
     PSInput output;
     output.position = mul(float4(input.position, 1.0f), MVP);
     

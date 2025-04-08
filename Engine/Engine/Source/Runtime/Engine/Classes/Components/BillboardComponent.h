@@ -33,6 +33,6 @@ public:
 protected:
     bool CheckPickingOnNDC(const TArray<FVector>& checkQuad, float& hitDistance);
 
-private:
+public:
     void CreateQuadTextureVertexBuffer();
 };

@@ -3,8 +3,6 @@
 #include <wrl.h>
 #include <d3d11.h>
 
-#include "Core/HAL/PlatformType.h"
-
 class UImGuiManager
 {
 public:

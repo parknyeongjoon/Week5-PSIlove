@@ -12,15 +12,15 @@ UStaticMesh::~UStaticMesh()
 {
     if (staticMeshRenderData == nullptr) return;
 
-    if (staticMeshRenderData->VertexBuffer) {
-        staticMeshRenderData->VertexBuffer->Release();
-        staticMeshRenderData->VertexBuffer = nullptr;
-    }
-
-    if (staticMeshRenderData->IndexBuffer) {
-        staticMeshRenderData->IndexBuffer->Release();
-        staticMeshRenderData->IndexBuffer = nullptr;
-    }
+    // if (staticMeshRenderData->VertexBuffer) {
+    //     staticMeshRenderData->VertexBuffer;
+    //     staticMeshRenderData->VertexBuffer = nullptr;
+    // }
+    //
+    // if (staticMeshRenderData->IndexBuffer) {
+    //     staticMeshRenderData->IndexBuffer.Reset();
+    //     staticMeshRenderData->IndexBuffer = nullptr;
+    // }
 }
 
 void UStaticMesh::DuplicateSubObjects()
@@ -61,16 +61,20 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
 {
     staticMeshRenderData = renderData;
 
-    uint32 verticeNum = staticMeshRenderData->Vertices.Num();
+    const uint32 verticeNum = staticMeshRenderData->Vertices.Num();
     if (verticeNum <= 0) return;
-    
-    staticMeshRenderData->VertexBuffer = GetEngine().renderer.CreateImmutableVertexBuffer<FVertexSimple>(staticMeshRenderData->Vertices);
-    GetEngine().renderer.AddOrSetVertexBuffer(staticMeshRenderData->DisplayName, staticMeshRenderData->VertexBuffer, sizeof(FVertexSimple));
-    
-    uint32 indexNum = staticMeshRenderData->Indices.Num();
+
+    ID3D11Buffer* vertexBuffer = nullptr;
+    vertexBuffer = GetEngine().renderer.CreateImmutableVertexBuffer<FVertexSimple>(staticMeshRenderData->Vertices);
+    GetEngine().renderer.AddOrSetVertexBuffer(staticMeshRenderData->DisplayName, vertexBuffer, sizeof(FVertexSimple));
+
+    const uint32 indexNum = staticMeshRenderData->Indices.Num();
     if (indexNum > 0)
-        staticMeshRenderData->IndexBuffer = GetEngine().renderer.CreateIndexBuffer(staticMeshRenderData->Indices);
-    GetEngine().renderer.AddOrSetIndexBuffer(staticMeshRenderData->DisplayName, staticMeshRenderData->IndexBuffer, indexNum);
+    {
+        ID3D11Buffer* indexBuffer = nullptr;
+        indexBuffer = GetEngine().renderer.CreateIndexBuffer(staticMeshRenderData->Indices);
+        GetEngine().renderer.AddOrSetIndexBuffer(staticMeshRenderData->DisplayName, indexBuffer, indexNum);
+    }
 
     for (int materialIndex = 0; materialIndex < staticMeshRenderData->Materials.Num(); materialIndex++) {
         FStaticMaterial* newMaterialSlot = new FStaticMaterial();

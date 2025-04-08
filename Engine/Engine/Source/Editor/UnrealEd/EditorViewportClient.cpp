@@ -46,8 +46,10 @@ void FEditorViewportClient::Tick(float DeltaTime)
 void FEditorViewportClient::Release()
 {
     if (Viewport)
+    {
         delete Viewport;
- 
+        Viewport = nullptr;
+    } 
 }
 
 

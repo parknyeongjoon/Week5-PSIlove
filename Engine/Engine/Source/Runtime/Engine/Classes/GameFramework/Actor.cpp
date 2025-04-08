@@ -32,6 +32,7 @@ void AActor::InitUUIDBillboard()
         UUIDComponent->SetRowColumnCount(1, 11);
         UUIDComponent->SetText(std::to_wstring(GetUUID()));
         UUIDComponent->SetupAttachment(RootComponent);
+        UUIDComponent->CreateQuadTextureVertexBuffer();
     }
 }
 

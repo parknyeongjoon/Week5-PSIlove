@@ -69,3 +69,8 @@ void UMeshComponent::GetUsedMaterials(TArray<UMaterial*>& Out) const
         }
     }
 }
+
+UMaterial* UMeshComponent::GetOverrideMaterial(const uint32 InIndex) const
+{
+    return OverrideMaterials[InIndex];
+}

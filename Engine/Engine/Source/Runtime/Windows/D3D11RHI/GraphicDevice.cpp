@@ -4,14 +4,17 @@
 #include <d3dcompiler.h>
 #include <filesystem>
 
+#include "Define.h"
+#include "Renderer/Renderer.h"
+#include "UnrealEd/EditorViewportClient.h"
+
+extern FEngineLoop GEngineLoop;
+
 void FGraphicsDevice::Initialize(const HWND hWindow)
 {
     CreateDeviceAndSwapChain(hWindow);
     CreateFrameBuffer();
     CreateDepthStencilBuffer(hWindow);
-    CreateDepthStencilState();
-    CreateRasterizerState();
-    CurrentRasterizer = RasterizerStateSOLID;
 }
 void FGraphicsDevice::CreateDeviceAndSwapChain(const HWND hWindow)
 {
@@ -33,9 +36,10 @@ void FGraphicsDevice::CreateDeviceAndSwapChain(const HWND hWindow)
     HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
         D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
         featurelevels, ARRAYSIZE(featurelevels), D3D11_SDK_VERSION,
-        &SwapchainDesc, SwapChain.GetAddressOf(), Device.GetAddressOf(), nullptr, DeviceContext.GetAddressOf());
+        &SwapchainDesc, &SwapChain, &Device, nullptr, &DeviceContext);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         MessageBox(hWindow, L"CreateDeviceAndSwapChain failed!", L"Error", MB_ICONERROR | MB_OK);
         return;
     }
@@ -70,9 +74,10 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
     descDepth.CPUAccessFlags = 0; // CPU 접근 방식 설정
     descDepth.MiscFlags = 0; // 기타 플래그 설정
 
-    HRESULT hr = Device->CreateTexture2D(&descDepth, NULL, DepthStencilBuffer.GetAddressOf());
+    HRESULT hr = Device->CreateTexture2D(&descDepth, NULL, &DepthStencilBuffer);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         MessageBox(hWindow, L"Failed to create depth stencilBuffer!", L"Error", MB_ICONERROR | MB_OK);
         return;
     }
@@ -84,9 +89,9 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
     descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D; // 뷰 타입 설정 (2D 텍스처)
     descDSV.Texture2D.MipSlice = 0; // 사용할 미맵 슬라이스 설정
 
-    hr = Device->CreateDepthStencilView(DepthStencilBuffer.Get(), // Depth stencil texture
+    hr = Device->CreateDepthStencilView(DepthStencilBuffer, // Depth stencil texture
         &descDSV, // Depth stencil desc
-        DepthStencilView.GetAddressOf());  // [out] Depth stencil view
+        &DepthStencilView);  // [out] Depth stencil view
 
     if (FAILED(hr)) {
         wchar_t errorMsg[256];
@@ -96,70 +101,33 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
     }
 }
 
-void FGraphicsDevice::CreateDepthStencilState()
+bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const
 {
-    // DepthStencil 상태 설명 설정
-    D3D11_DEPTH_STENCIL_DESC dsDesc;
+    if (FAILED(Device->CreateDepthStencilState(pDepthStencilDesc, ppDepthStencilState)))
+        return false;
 
-    // Depth test parameters
-    dsDesc.DepthEnable = true;
-    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-    // Stencil test parameters
-    dsDesc.StencilEnable = true;
-    dsDesc.StencilReadMask = 0xFF;
-    dsDesc.StencilWriteMask = 0xFF;
-
-    // Stencil operations if pixel is front-facing
-    dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-    dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-    dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-    // Stencil operations if pixel is back-facing
-    dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-    dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-    dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-    dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-    //// DepthStencil 상태 생성
-    const HRESULT hr = Device->CreateDepthStencilState(&dsDesc, DepthStencilState.GetAddressOf());
-    if (FAILED(hr)) {
-        // 오류 처리
-        return;
-    }
-
-    D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-    depthStencilDesc.DepthEnable = FALSE;  // 깊이 테스트 유지
-    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;  // 깊이 버퍼에 쓰지 않음
-    depthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;  // 깊이 비교를 항상 통과
-    Device->CreateDepthStencilState(&depthStencilDesc, DepthStateDisable.GetAddressOf());
+    return true;
 }
 
-void FGraphicsDevice::CreateRasterizerState()
+bool FGraphicsDevice::CreateRasterizerState(const D3D11_RASTERIZER_DESC* pRasterizerDesc, ID3D11RasterizerState** ppRasterizerState) const
 {
-    D3D11_RASTERIZER_DESC rasterizerdesc = {};
-    rasterizerdesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerdesc.CullMode = D3D11_CULL_BACK;
-    Device->CreateRasterizerState(&rasterizerdesc, RasterizerStateSOLID.GetAddressOf());
+    if (FAILED(Device->CreateRasterizerState(pRasterizerDesc, ppRasterizerState)))
+        return false;
 
-    rasterizerdesc.FillMode = D3D11_FILL_WIREFRAME;
-    rasterizerdesc.CullMode = D3D11_CULL_BACK;
-    Device->CreateRasterizerState(&rasterizerdesc, RasterizerStateWIREFRAME.GetAddressOf());
+    return true;
 }
 
 void FGraphicsDevice::CreateFrameBuffer()
 {
     // 스왑 체인으로부터 백 버퍼 텍스처 가져오기
-    SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)FrameBuffer.GetAddressOf());
+    SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&FrameBuffer));
 
     // 렌더 타겟 뷰 생성
     D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
     framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // 색상 포맷
     framebufferRTVdesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D 텍스처
 
-    Device->CreateRenderTargetView(FrameBuffer.Get(), &framebufferRTVdesc, FrameBufferRTV.GetAddressOf());
+    Device->CreateRenderTargetView(FrameBuffer, &framebufferRTVdesc, &RTVs[0]);
     
     D3D11_TEXTURE2D_DESC textureDesc = {};
     textureDesc.Width = screenWidth;
@@ -171,108 +139,228 @@ void FGraphicsDevice::CreateFrameBuffer()
     textureDesc.Usage = D3D11_USAGE_DEFAULT;
     textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-    Device->CreateTexture2D(&textureDesc, nullptr, UUIDFrameBuffer.GetAddressOf());
+    Device->CreateTexture2D(&textureDesc, nullptr, &UUIDFrameBuffer);
 
     D3D11_RENDER_TARGET_VIEW_DESC UUIDFrameBufferRTVDesc = {};
     UUIDFrameBufferRTVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;      // 색상 포맷
     UUIDFrameBufferRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D 텍스처
 
-    Device->CreateRenderTargetView(UUIDFrameBuffer.Get(), &UUIDFrameBufferRTVDesc, UUIDFrameBufferRTV.GetAddressOf());
-
-    RTVs[0] = FrameBufferRTV;
-    RTVs[1] = UUIDFrameBufferRTV;
+    Device->CreateRenderTargetView(UUIDFrameBuffer, &UUIDFrameBufferRTVDesc, &RTVs[1]);
 }
 
-void FGraphicsDevice::SwapBuffer()
+void FGraphicsDevice::SwapBuffer() const
 {
     SwapChain->Present(1, 0);
 }
-void FGraphicsDevice::Prepare()
+void FGraphicsDevice::Prepare() const
 {
-    DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearRenderTargetView(UUIDFrameBufferRTV.Get(), ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
-
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-
-    //DeviceContext->RSSetViewports(1, &ViewportInfo); // GPU가 화면을 렌더링할 영역 설정
-    DeviceContext->RSSetState(CurrentRasterizer.Get()); //레스터 라이저 상태 설정
-
-    DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
-
-    ID3D11RenderTargetView* pRTVs[2] = { RTVs[0].Get(), RTVs[1].Get() };
-    DeviceContext->OMSetRenderTargets(2, pRTVs, DepthStencilView.Get()); // 렌더 타겟 설정(백버퍼를 가르킴)
-    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+    DeviceContext->ClearRenderTargetView(RTVs[0], ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->ClearRenderTargetView(RTVs[1], ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
+    
+    ID3D11RenderTargetView* pRTVs[2] = { RTVs[0], RTVs[1] };
+    DeviceContext->OMSetRenderTargets(2, pRTVs, DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)}
 }
 
 void FGraphicsDevice::Prepare(D3D11_VIEWPORT* viewport)
 {
-    DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
+    DeviceContext->ClearRenderTargetView(RTVs[0], ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
 
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
 
     DeviceContext->RSSetViewports(1, viewport); // GPU가 화면을 렌더링할 영역 설정
-    DeviceContext->RSSetState(CurrentRasterizer.Get()); //레스터 라이저 상태 설정
-
-    DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
-
-    DeviceContext->OMSetRenderTargets(1, FrameBufferRTV.GetAddressOf(), DepthStencilView.Get()); // 렌더 타겟 설정(백버퍼를 가르킴)
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    
+    DeviceContext->OMSetRenderTargets(1, &RTVs[0], DepthStencilView); // 렌더 타겟 설정(백버퍼를 가르킴)
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
 
-void FGraphicsDevice::OnResize(HWND hWindow)
+void FGraphicsDevice::OnResize(const HWND hWindow)
 {
-    ID3D11RenderTargetView* pRTVs[2] = { RTVs[0].Get(), RTVs[1].Get() };
-    DeviceContext->OMSetRenderTargets(0, pRTVs, nullptr);
+    // 1) 파이프라인에서 모든 리소스 언바인드
+    //    - RenderTarget / DepthStencil
+    ID3D11RenderTargetView* nullRTV[1] = { nullptr };
+    DeviceContext->OMSetRenderTargets(1, nullRTV, nullptr);
+
+    //    - 셰이더 언바인드
+    DeviceContext->VSSetShader(nullptr, nullptr, 0);
+    DeviceContext->PSSetShader(nullptr, nullptr, 0);
+    DeviceContext->GSSetShader(nullptr, nullptr, 0);
+    DeviceContext->HSSetShader(nullptr, nullptr, 0);
+    DeviceContext->DSSetShader(nullptr, nullptr, 0);
+    DeviceContext->CSSetShader(nullptr, nullptr, 0);
+
+    //    - SRV 언바인드 (모든 스테이지)
+    constexpr UINT SRV_SLOTS = D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT;
+    ID3D11ShaderResourceView* nullSRV[SRV_SLOTS] = { nullptr };
+    DeviceContext->VSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    DeviceContext->PSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    DeviceContext->GSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    DeviceContext->HSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    DeviceContext->DSSetShaderResources(0, SRV_SLOTS, nullSRV);
+    DeviceContext->CSSetShaderResources(0, SRV_SLOTS, nullSRV);
+
+    //    - UAV 언바인드 (컴퓨트 스테이지)
+    constexpr UINT UAV_SLOTS = D3D11_PS_CS_UAV_REGISTER_COUNT;
+    ID3D11UnorderedAccessView* nullUAV[UAV_SLOTS] = { nullptr };
+    UINT nullCounts[UAV_SLOTS] = { 0 };
+    DeviceContext->CSSetUnorderedAccessViews(0, UAV_SLOTS, nullUAV, nullCounts);
+
+    //    - Sampler 언바인드 (모든 스테이지)
+    constexpr UINT SMP_SLOTS = D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+    ID3D11SamplerState* nullSMP[SMP_SLOTS] = { nullptr };
+    DeviceContext->VSSetSamplers(0, SMP_SLOTS, nullSMP);
+    DeviceContext->PSSetSamplers(0, SMP_SLOTS, nullSMP);
+    DeviceContext->GSSetSamplers(0, SMP_SLOTS, nullSMP);
+    DeviceContext->HSSetSamplers(0, SMP_SLOTS, nullSMP);
+    DeviceContext->DSSetSamplers(0, SMP_SLOTS, nullSMP);
+    DeviceContext->CSSetSamplers(0, SMP_SLOTS, nullSMP);
+
+    // 2) 상태 초기화 & GPU 큐 비우기
+    DeviceContext->ClearState();
+    DeviceContext->Flush();
+
+    // 3) 프레임버퍼·깊이 버퍼 등 해제
+    ReleaseFrameBuffer();       
+    ReleaseDepthStencilBuffer();
+
+    // 5) 클라이언트 영역 크기 얻기
+    RECT rc;
+    GetClientRect(hWindow, &rc);
+    UINT newW = rc.right  - rc.left;
+    UINT newH = rc.bottom - rc.top;
+    if (newW == 0 || newH == 0) {
+        MessageBox(hWindow,
+                   L"Invalid width or height for ResizeBuffers!",
+                   L"Error",
+                   MB_ICONERROR | MB_OK);
+        return;
+    }
     
-    FrameBufferRTV->Release();
-    FrameBufferRTV = nullptr;
+    // 6) SwapChain 크기 조정
+    HRESULT hr = SwapChain->ResizeBuffers(
+        0,                // bufferCount 유지
+        newW, newH,       // 새 폭·높이
+        DXGI_FORMAT_UNKNOWN, // 기존 포맷 유지
+        0                 // 기존 플래그 유지
+    );
 
-    UUIDFrameBufferRTV->Release();
-    UUIDFrameBufferRTV = nullptr;
+    // 7) 내부 변수 갱신
+    SwapChain->GetDesc(&SwapchainDesc);
+    screenWidth  = SwapchainDesc.BufferDesc.Width;
+    screenHeight = SwapchainDesc.BufferDesc.Height;
 
-    if (DepthStencilView) {
+    // 8) 프레임버퍼·깊이 버퍼 재생성
+    CreateFrameBuffer();
+    CreateDepthStencilBuffer(hWindow);
+    GEngineLoop.renderer.ReBindSamplers();
+}
+
+void FGraphicsDevice::BindSampler(const EShaderStage stage, const uint32 StartSlot, const uint32 NumSamplers, ID3D11SamplerState* const* ppSamplers) const
+{
+    if (EShaderStage::VS == stage)
+        DeviceContext->VSSetSamplers(StartSlot, NumSamplers, ppSamplers);
+
+    if (EShaderStage::HS == stage)
+        DeviceContext->HSSetSamplers(StartSlot, NumSamplers, ppSamplers);
+
+    if (EShaderStage::DS == stage)
+        DeviceContext->DSSetSamplers(StartSlot, NumSamplers, ppSamplers);
+
+    if (EShaderStage::GS == stage)
+        DeviceContext->GSSetSamplers(StartSlot, NumSamplers, ppSamplers);
+
+    if (EShaderStage::PS == stage)
+        DeviceContext->PSSetSamplers(StartSlot, NumSamplers, ppSamplers);
+}
+
+void FGraphicsDevice::BindSamplers(const uint32 StartSlot, const uint32 NumSamplers, ID3D11SamplerState* const* ppSamplers) const
+{
+    BindSampler(EShaderStage::VS, StartSlot, NumSamplers, ppSamplers);
+    //BindSampler(EShaderStage::HS, StartSlot, NumSamplers, ppSamplers);
+    //BindSampler(EShaderStage::DS, StartSlot, NumSamplers, ppSamplers);
+    //BindSampler(EShaderStage::GS, StartSlot, NumSamplers, ppSamplers);
+    BindSampler(EShaderStage::PS, StartSlot, NumSamplers, ppSamplers);
+}
+
+void FGraphicsDevice::Release()
+{
+    DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
+    ReleaseFrameBuffer();
+    ReleaseDepthStencilBuffer();
+    ReleaseDeviceAndSwapChain();
+}
+
+void FGraphicsDevice::ReleaseDeviceAndSwapChain()
+{
+    if (DeviceContext)
+    {
+        DeviceContext->Flush(); // 남아있는 GPU 명령 실행
+    }
+
+    if (SwapChain)
+    {
+        SwapChain->Release();
+        SwapChain = nullptr;
+    }
+
+    if (Device)
+    {
+        Device->Release();
+        Device = nullptr;
+    }
+
+    if (DeviceContext)
+    {
+        DeviceContext->Release();
+        DeviceContext = nullptr;
+    }
+}
+
+void FGraphicsDevice::ReleaseFrameBuffer()
+{
+    if (FrameBuffer)
+    {
+        FrameBuffer->Release();
+        FrameBuffer = nullptr;
+    }
+
+    if (UUIDFrameBuffer)
+    {
+        UUIDFrameBuffer->Release();
+        UUIDFrameBuffer = nullptr;
+    }
+
+    
+    if (RTVs[0]) { RTVs[0]->Release(); RTVs[0] = nullptr; }
+    if (RTVs[1]) { RTVs[1]->Release(); RTVs[1] = nullptr; }
+}
+
+void FGraphicsDevice::ReleaseDepthStencilBuffer()
+{
+    if (DepthStencilView)
+    {
         DepthStencilView->Release();
         DepthStencilView = nullptr;
     }
 
-    if (screenWidth == 0 || screenHeight == 0) {
-        MessageBox(hWindow, L"Invalid width or height for ResizeBuffers!", L"Error", MB_ICONERROR | MB_OK);
-        return;
+    // 깊이/스텐실 버퍼 해제
+    if (DepthStencilBuffer)
+    {
+        DepthStencilBuffer->Release();
+        DepthStencilBuffer = nullptr;
     }
-
-    // SwapChain 크기 조정
-    HRESULT hr;
-    hr = SwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_B8G8R8A8_UNORM, 0);  // DXGI_FORMAT_B8G8R8A8_UNORM으로 시도
-    if (FAILED(hr)) {
-        MessageBox(hWindow, L"failed", L"ResizeBuffers failed ", MB_ICONERROR | MB_OK);
-        return;
-    }
-    
-    SwapChain->GetDesc(&SwapchainDesc);
-    screenWidth = SwapchainDesc.BufferDesc.Width;
-    screenHeight = SwapchainDesc.BufferDesc.Height;
-
-    CreateFrameBuffer();
-    CreateDepthStencilBuffer(hWindow);
 }
 
-
-void FGraphicsDevice::ChangeRasterizer(EViewModeIndex evi)
+bool FGraphicsDevice::CreateBlendState(const D3D11_BLEND_DESC* pBlendState, ID3D11BlendState** ppBlendState) const
 {
-    switch (evi)
-    {
-    case EViewModeIndex::VMI_Wireframe:
-        CurrentRasterizer = RasterizerStateWIREFRAME;
-        break;
-    case EViewModeIndex::VMI_Lit:
-    case EViewModeIndex::VMI_Unlit:
-        CurrentRasterizer = RasterizerStateSOLID;
-        break;
-    }
-    DeviceContext->RSSetState(CurrentRasterizer.Get()); //레스터 라이저 상태 설정
+    if (FAILED(Device->CreateBlendState(pBlendState, ppBlendState)))
+        return false;
+
+    return true;
 }
 
 //uint32 FGraphicsDevice::GetPixelUUID(POINT pt)

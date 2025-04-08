@@ -143,8 +143,8 @@ void UTextBillboardComponent::SetText(FWString _text)
         indices.Add(baseIndex + 5);
     }
 
-    const Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer(vertexTextureArr);
-    const Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer = FEngineLoop::renderer.CreateIndexBuffer(indices);
+    ID3D11Buffer* vertexBuffer = FEngineLoop::renderer.CreateImmutableVertexBuffer(vertexTextureArr);
+    ID3D11Buffer* indexBuffer = FEngineLoop::renderer.CreateIndexBuffer(indices);
     
     FEngineLoop::renderer.AddOrSetVertexBuffer(Texture->Name, vertexBuffer, sizeof(FVertexTexture));
     FEngineLoop::renderer.AddOrSetIndexBuffer(Texture->Name, indexBuffer, sizeof(uint32));

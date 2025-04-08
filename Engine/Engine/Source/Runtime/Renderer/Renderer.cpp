@@ -3,30 +3,21 @@
 
 #include "Level.h"
 #include "Actors/Player.h"
-#include "BaseGizmos/GizmoBaseComponent.h"
-#include "BaseGizmos/TransformGizmo.h"
-#include "Components/LightComponent.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/BillboardComponent.h"
-#include "Components/ParticleSubUVComp.h"
-#include "Components/TextBillboardComponent.h"
 #include "D3D11RHI/GraphicDevice.h"
 #include "Launch/EngineLoop.h"
-#include "Math/JungleMath.h"
 #include "UnrealEd/EditorViewportClient.h"
-#include "UnrealEd/PrimitiveBatch.h"
-#include "UObject/Casts.h"
-#include "UObject/Object.h"
-#include "PropertyEditor/ShowFlags.h"
 #include "UObject/UObjectIterator.h"
-#include "Components/SkySphereComponent.h"
-#include "Components/TextRenderComponent.h"
 #include "D3D11RHI/FShaderProgram.h"
 #include "D3D11RHI/GPUBuffer/FVIBuffers.h"
 #include "D3D11RHI/GPUBuffer/TestConstantDefine.h"
 #include "ImGUI/imgui_internal.h"
+#include "RenderPass/BaseRenderPass.h"
+#include "RenderPass/BillboardRenderPass.h"
+#include "RenderPass/FontRenderPass.h"
+#include "RenderPass/LineBatchRenderPass.h"
+#include "RenderPass/StaticMeshRenderPass.h"
 
-void FRenderer::AddOrSetVertexShader(const FString& InName, Microsoft::WRL::ComPtr<ID3D11VertexShader> InShader)
+void FRenderer::AddOrSetVertexShader(const FString& InName, ID3D11VertexShader* InShader)
 {
     if (ShaderPrograms.Contains(InName) == false)
     {
@@ -35,7 +26,7 @@ void FRenderer::AddOrSetVertexShader(const FString& InName, Microsoft::WRL::ComP
     ShaderPrograms[InName]->SetVertexShader(InShader);
 }
 
-void FRenderer::AddOrSetPixelShader(const FString& InName, Microsoft::WRL::ComPtr<ID3D11PixelShader> InShader)
+void FRenderer::AddOrSetPixelShader(const FString& InName, ID3D11PixelShader* InShader)
 {
     if (ShaderPrograms.Contains(InName) == false)
     {
@@ -44,7 +35,7 @@ void FRenderer::AddOrSetPixelShader(const FString& InName, Microsoft::WRL::ComPt
     ShaderPrograms[InName]->SetPixelShader(InShader);
 }
 
-void FRenderer::AddOrSetInputLayout(const FString& InName, Microsoft::WRL::ComPtr<ID3D11InputLayout> InLayout)
+void FRenderer::AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* InLayout)
 {
     if (ShaderPrograms.Contains(InName) == false)
     {
@@ -53,16 +44,16 @@ void FRenderer::AddOrSetInputLayout(const FString& InName, Microsoft::WRL::ComPt
     ShaderPrograms[InName]->SetInputLayout(InLayout);
 }
 
-void FRenderer::AddOrSetVertexBuffer(const FString& InName, Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer, const uint32 InStride)
+void FRenderer::AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 InStride, const D3D11_PRIMITIVE_TOPOLOGY InTopology)
 {
     if (VIBuffers.Contains(InName) == false)
     {
         VIBuffers[InName] = std::make_shared<FVIBuffers>();
     }
-    VIBuffers[InName]->SetVertexBuffer(InBuffer, InStride);    
+    VIBuffers[InName]->SetVertexBuffer(InBuffer, InStride, InTopology);    
 }
 
-void FRenderer::AddOrSetIndexBuffer(const FString& InName, Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer, const uint32 numIndices)
+void FRenderer::AddOrSetIndexBuffer(const FString& InName, ID3D11Buffer* InBuffer, const uint32 numIndices)
 {
     if (VIBuffers.Contains(InName) == false)
     {
@@ -71,20 +62,20 @@ void FRenderer::AddOrSetIndexBuffer(const FString& InName, Microsoft::WRL::ComPt
     VIBuffers[InName]->SetIndexBuffer(InBuffer, numIndices);
 }
 
-void FRenderer::AddOrSetStructuredBuffer(const FString& InName, Microsoft::WRL::ComPtr<ID3D11Buffer> InBuffer)
+void FRenderer::AddOrSetStructuredBuffer(const FString& InName, ID3D11Buffer* InBuffer)
 {
     if (StructuredBuffers.Contains(InName) == false)
     {
-        StructuredBuffers[InName] = TPair<Microsoft::WRL::ComPtr<ID3D11Buffer>, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>();
+        StructuredBuffers[InName] = TPair<ID3D11Buffer*, ID3D11ShaderResourceView*>();
     }
     StructuredBuffers[InName].Key = InBuffer;
 }
 
-void FRenderer::AddOrSetStructuredBufferShaderResourceView(const FString& InName, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> InShaderResourceView)
+void FRenderer::AddOrSetStructuredBufferShaderResourceView(const FString& InName, ID3D11ShaderResourceView* InShaderResourceView)
 {
     if (StructuredBuffers.Contains(InName) == false)
     {
-        StructuredBuffers[InName] = TPair<Microsoft::WRL::ComPtr<ID3D11Buffer>, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>();
+        StructuredBuffers[InName] = TPair<ID3D11Buffer*, ID3D11ShaderResourceView*>();
     }
     StructuredBuffers[InName].Value = InShaderResourceView;
 }
@@ -92,24 +83,24 @@ void FRenderer::AddOrSetStructuredBufferShaderResourceView(const FString& InName
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
-    CreateShader();
+    CreateStaticMeshShader();
     CreateTextureShader();
     CreateFontShader();
     CreateLineShader();
+    LoadStates();
 }
 
-
-void FRenderer::CreateShader()
+void FRenderer::CreateStaticMeshShader()
 {
-    Microsoft::WRL::ComPtr<ID3DBlob> VertexShaderCSO;
-    Microsoft::WRL::ComPtr<ID3DBlob> PixelShaderCSO;
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
+    ID3D11VertexShader* VertexShader;
+    ID3D11PixelShader* PixelShader;
+    ID3D11InputLayout* InputLayout;
     
-    Graphics->CreateVertexShader(TEXT("StaticMeshVertexShader.hlsl"), VertexShaderCSO.GetAddressOf(), VertexShader.GetAddressOf());
-    Graphics->CreatePixelShader(TEXT("StaticMeshPixelShader.hlsl"), PixelShaderCSO.GetAddressOf(), PixelShader.GetAddressOf());
+    Graphics->CreateVertexShader(TEXT("StaticMeshVertexShader.hlsl"), &VertexShaderCSO, &VertexShader);
+    Graphics->CreatePixelShader(TEXT("StaticMeshPixelShader.hlsl"), &PixelShaderCSO, &PixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -120,11 +111,11 @@ void FRenderer::CreateShader()
     };
     
     Graphics->Device->CreateInputLayout(
-        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf()
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
     );
     
-    const TArray<FConstantBufferInfo> VertexStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO.Get());
-    const TArray<FConstantBufferInfo> PixelStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO.Get());
+    const TArray<FConstantBufferInfo> VertexStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelStaticMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
@@ -142,19 +133,22 @@ void FRenderer::CreateShader()
 
     ShaderPrograms.Add(TEXT("StaticMesh"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FVertexSimple)));
     ShaderConstantNames.Add(TEXT("StaticMesh"), ShaderStageToCB);
+
+    const std::shared_ptr<StaticMeshRenderPass> staticMeshRenderPass = std::make_shared<StaticMeshRenderPass>(TEXT("StaticMesh"));
+    RenderPasses.Add(staticMeshRenderPass);
 }
 
 void FRenderer::CreateTextureShader()
 {
-    Microsoft::WRL::ComPtr<ID3DBlob> VertexShaderCSO;
-    Microsoft::WRL::ComPtr<ID3DBlob> PixelShaderCSO;
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
+    ID3D11VertexShader* VertexShader;
+    ID3D11PixelShader* PixelShader;
+    ID3D11InputLayout* InputLayout;
     
-    Graphics->CreateVertexShader(TEXT("TextureVertexShader.hlsl"), VertexShaderCSO.GetAddressOf(), VertexShader.GetAddressOf());
-    Graphics->CreatePixelShader(TEXT("TexturePixelShader.hlsl"), PixelShaderCSO.GetAddressOf(), PixelShader.GetAddressOf());
+    Graphics->CreateVertexShader(TEXT("TextureVertexShader.hlsl"), &VertexShaderCSO, &VertexShader);
+    Graphics->CreatePixelShader(TEXT("TexturePixelShader.hlsl"), &PixelShaderCSO, &PixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -162,11 +156,11 @@ void FRenderer::CreateTextureShader()
     };
     
     Graphics->Device->CreateInputLayout(
-        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf()
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
     );
     
-    const TArray<FConstantBufferInfo> VertexTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO.Get());
-    const TArray<FConstantBufferInfo> PixelTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO.Get());
+    const TArray<FConstantBufferInfo> VertexTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelTextureMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
@@ -184,21 +178,24 @@ void FRenderer::CreateTextureShader()
 
     ShaderPrograms.Add(TEXT("Texture"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FVertexTexture)));
     ShaderConstantNames.Add(TEXT("Texture"), ShaderStageToCB);
+
+    const std::shared_ptr<BillboardRenderPass> billboardRenderPass = std::make_shared<BillboardRenderPass>(TEXT("Texture"));
+    RenderPasses.Add(billboardRenderPass);
 }
 
 void FRenderer::CreateFontShader()
 {
-    Microsoft::WRL::ComPtr<ID3DBlob> VertexShaderCSO;
-    Microsoft::WRL::ComPtr<ID3DBlob> PixelShaderCSO;
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
+    ID3D11VertexShader* VertexShader;
+    ID3D11PixelShader* PixelShader;
+    ID3D11InputLayout* InputLayout;
     
     
-    Graphics->CreateVertexShader(TEXT("FontVertexShader.hlsl"), VertexShaderCSO.GetAddressOf(), VertexShader.GetAddressOf());
+    Graphics->CreateVertexShader(TEXT("FontVertexShader.hlsl"), &VertexShaderCSO, &VertexShader);
 
-    Graphics->CreatePixelShader(TEXT("FontPixelShader.hlsl"), PixelShaderCSO.GetAddressOf(), PixelShader.GetAddressOf());
+    Graphics->CreatePixelShader(TEXT("FontPixelShader.hlsl"), &PixelShaderCSO, &PixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -206,11 +203,11 @@ void FRenderer::CreateFontShader()
     };
     
     Graphics->Device->CreateInputLayout(
-        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf()
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
     );
     
-    const TArray<FConstantBufferInfo> VertexFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO.Get());
-    const TArray<FConstantBufferInfo> PixelFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO.Get());
+    const TArray<FConstantBufferInfo> VertexFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelFontMeshConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
@@ -228,22 +225,22 @@ void FRenderer::CreateFontShader()
 
     ShaderPrograms.Add(TEXT("Font"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FVertexTexture)));
     ShaderConstantNames.Add(TEXT("Font"), ShaderStageToCB);
-    
-    VertexShaderCSO->Release();
-    PixelShaderCSO->Release();
+
+    const std::shared_ptr<FontRenderPass> fontRenderPass = std::make_shared<FontRenderPass>(TEXT("Font"));
+    RenderPasses.Add(fontRenderPass);
 }
 
 void FRenderer::CreateLineShader()
 {
-    Microsoft::WRL::ComPtr<ID3DBlob> VertexShaderCSO;
-    Microsoft::WRL::ComPtr<ID3DBlob> PixelShaderCSO;
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
+    ID3D11VertexShader* VertexShader;
+    ID3D11PixelShader* PixelShader;
+    ID3D11InputLayout* InputLayout;
     
-    Graphics->CreateVertexShader(TEXT("ShaderLineVertexShader.hlsl"),VertexShaderCSO.GetAddressOf(), VertexShader.GetAddressOf());
-    Graphics->CreatePixelShader(TEXT("ShaderLinePixelShader.hlsl"), PixelShaderCSO.GetAddressOf(), PixelShader.GetAddressOf());
+    Graphics->CreateVertexShader(TEXT("ShaderLineVertexShader.hlsl"),&VertexShaderCSO, &VertexShader);
+    Graphics->CreatePixelShader(TEXT("ShaderLinePixelShader.hlsl"), &PixelShaderCSO, &PixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
     {
@@ -255,11 +252,11 @@ void FRenderer::CreateLineShader()
     };
     
     Graphics->Device->CreateInputLayout(
-    layoutDesc, ARRAYSIZE(layoutDesc), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf()
+    layoutDesc, ARRAYSIZE(layoutDesc), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &InputLayout
     );
     
-    const TArray<FConstantBufferInfo> VertexLineConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO.Get());
-    const TArray<FConstantBufferInfo> PixelLineConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO.Get());
+    const TArray<FConstantBufferInfo> VertexLineConstant = FGraphicsDevice::ExtractConstantBufferNames(VertexShaderCSO);
+    const TArray<FConstantBufferInfo> PixelLineConstant = FGraphicsDevice::ExtractConstantBufferNames(PixelShaderCSO);
 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
@@ -277,11 +274,148 @@ void FRenderer::CreateLineShader()
     
     ShaderPrograms.Add(TEXT("Line"), std::make_shared<FShaderProgram>(VertexShader, PixelShader, InputLayout, sizeof(FSimpleVertex)));
     ShaderConstantNames.Add(TEXT("Line"), ShaderStageToCB);
+
+    const std::shared_ptr<LineBatchRenderPass> lineBatchRenderPass = std::make_shared<LineBatchRenderPass>(TEXT("Line"));
+    RenderPasses.Add(lineBatchRenderPass);
+}
+
+void FRenderer::LoadStates()
+{
+#pragma region sampler state
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Graphics->Device->CreateSamplerState(&samplerDesc,
+		                            &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+
+	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    Graphics->Device->CreateSamplerState(&samplerDesc,
+                                    &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+
+	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    Graphics->Device->CreateSamplerState(&samplerDesc,
+                                    &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+
+	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    Graphics->Device->CreateSamplerState(&samplerDesc,
+                                    &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Point), 1,
+		                      &SamplerStates[static_cast<uint32>(ESamplerType::Point)]);
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Linear), 1,
+		                      &SamplerStates[static_cast<uint32>(ESamplerType::Linear)]);
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Anisotropic), 1,
+		                      &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+	Graphics->BindSamplers(static_cast<uint32>(ESamplerType::PostProcess), 1,
+		                      &SamplerStates[static_cast<uint32>(ESamplerType::PostProcess)]);
+#pragma endregion
+#pragma region rasterize state
+    D3D11_RASTERIZER_DESC rsDesc = {};
+    rsDesc.AntialiasedLineEnable = false;
+    rsDesc.CullMode = D3D11_CULL_BACK;
+    rsDesc.DepthBias = 0;
+    rsDesc.DepthBiasClamp = 0.0f;
+    rsDesc.DepthClipEnable = true;
+    rsDesc.FillMode = D3D11_FILL_SOLID;
+    rsDesc.FrontCounterClockwise = false;
+    rsDesc.MultisampleEnable = false;
+    rsDesc.ScissorEnable = false;
+    rsDesc.SlopeScaledDepthBias = 0.0f;
+    Graphics->CreateRasterizerState(
+        &rsDesc, &RasterizerStates[static_cast<uint32>(ERasterizerState::SolidBack)]);
+
+    rsDesc.FillMode = D3D11_FILL_SOLID;
+    rsDesc.CullMode = D3D11_CULL_FRONT;
+    Graphics->CreateRasterizerState(
+        &rsDesc, &RasterizerStates[static_cast<uint32>(ERasterizerState::SolidFront)]);
+
+    rsDesc.FillMode = D3D11_FILL_SOLID;
+    rsDesc.CullMode = D3D11_CULL_NONE;
+    Graphics->CreateRasterizerState(
+        &rsDesc, &RasterizerStates[static_cast<uint32>(ERasterizerState::SolidNone)]);
+
+    rsDesc.FillMode = D3D11_FILL_WIREFRAME;
+    rsDesc.CullMode = D3D11_CULL_NONE;
+    Graphics->CreateRasterizerState(
+        &rsDesc, &RasterizerStates[static_cast<uint32>(ERasterizerState::WireFrame)]);
+#pragma endregion
+#pragma region blend state
+    D3D11_BLEND_DESC bsDesc = {};
+    bsDesc.AlphaToCoverageEnable = false;
+    bsDesc.IndependentBlendEnable = false;
+    bsDesc.RenderTarget[0].BlendEnable = true;
+    bsDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    bsDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    bsDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+    bsDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+    bsDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+    bsDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    bsDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    Graphics->CreateBlendState(&bsDesc, &BlendStates[static_cast<uint32>(EBlendState::AlphaBlend)]);
+
+    bsDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+    bsDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+    Graphics->CreateBlendState(&bsDesc, &BlendStates[static_cast<uint32>(EBlendState::OneOne)]);
+#pragma endregion
+#pragma region depthstencil state
+    D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+    dsDesc.DepthEnable = true;
+    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    dsDesc.StencilEnable = false;
+    Graphics->CreateDepthStencilState(
+        &dsDesc, &DepthStencilStates[static_cast<uint32>(EDepthStencilState::LessEqual)]);
+
+    dsDesc.DepthEnable = false;
+    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    dsDesc.StencilEnable = false;
+    Graphics->CreateDepthStencilState(
+        &dsDesc, &DepthStencilStates[static_cast<uint32>(EDepthStencilState::DepthNone)]);
+#pragma endregion
+}
+
+void FRenderer::ReBindSamplers() const
+{
+    Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Point), 1,
+                              &SamplerStates[static_cast<uint32>(ESamplerType::Point)]);
+    Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Linear), 1,
+                              &SamplerStates[static_cast<uint32>(ESamplerType::Linear)]);
+    Graphics->BindSamplers(static_cast<uint32>(ESamplerType::Anisotropic), 1,
+                              &SamplerStates[static_cast<uint32>(ESamplerType::Anisotropic)]);
+    Graphics->BindSamplers(static_cast<uint32>(ESamplerType::PostProcess), 1,
+                              &SamplerStates[static_cast<uint32>(ESamplerType::PostProcess)]);
 }
 
 void FRenderer::PrepareShader(const FString& InShaderName) const
 {
-    ShaderPrograms[InShaderName]->Bind(Graphics->DeviceContext.Get());
+    ShaderPrograms[InShaderName]->Bind(Graphics->DeviceContext);
 
     BindConstantBuffers(InShaderName);
 }
@@ -313,6 +447,7 @@ void FRenderer::ChangeViewMode(const EViewModeIndex evi)
         UpdateConstant<FFlagConstants>(ConstantBuffers[TEXT("FFlagConstants")], &flag);
         break;
     case EViewModeIndex::VMI_Wireframe:
+        SetCurrentRasterizerState(ERasterizerState::WireFrame);
     case EViewModeIndex::VMI_Unlit:
         flag.IsLit = false;
         UpdateConstant<FFlagConstants>(ConstantBuffers[TEXT("FFlagConstants")], &flag);
@@ -320,7 +455,7 @@ void FRenderer::ChangeViewMode(const EViewModeIndex evi)
     }
 }
 
-Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateIndexBuffer(const uint32* indices, const uint32 indicesSize) const
+ID3D11Buffer* FRenderer::CreateIndexBuffer(const uint32* indices, const uint32 indicesSize) const
 {
     TArray<uint32> indicesToCopy;
     indicesToCopy.AppendArray(indices, indicesSize);
@@ -328,7 +463,7 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateIndexBuffer(const uint32* 
     return CreateIndexBuffer(indicesToCopy);
 }
 
-Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateIndexBuffer(const TArray<uint32>& indices) const
+ID3D11Buffer* FRenderer::CreateIndexBuffer(const TArray<uint32>& indices) const
 {
     D3D11_BUFFER_DESC indexbufferdesc = {};              
     indexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;       
@@ -338,7 +473,7 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateIndexBuffer(const TArray<u
     D3D11_SUBRESOURCE_DATA indexbufferSRD;
     indexbufferSRD.pSysMem = indices.GetData();
 
-   Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+   ID3D11Buffer* indexBuffer;
 
     HRESULT hr = Graphics->Device->CreateBuffer(&indexbufferdesc, &indexbufferSRD, &indexBuffer);
     if (FAILED(hr))
@@ -348,7 +483,7 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateIndexBuffer(const TArray<u
     return indexBuffer;
 }
 
-Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateConstantBuffer(const uint32 InSize, const void* InData) const
+ID3D11Buffer* FRenderer::CreateConstantBuffer(const uint32 InSize, const void* InData) const
 {
     D3D11_BUFFER_DESC constantBufferDesc = {};   
     constantBufferDesc.ByteWidth = InSize;
@@ -359,13 +494,13 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateConstantBuffer(const uint3
     D3D11_SUBRESOURCE_DATA sub = {};
     sub.pSysMem = InData;
     
-    Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
+    ID3D11Buffer* constantBuffer;
 
     HRESULT hr;
     if (InData == nullptr)
-        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, nullptr, constantBuffer.GetAddressOf());
+        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
     else
-        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, &sub, constantBuffer.GetAddressOf());
+        hr = Graphics->Device->CreateBuffer(&constantBufferDesc, &sub, &constantBuffer);
 
     if (FAILED(hr))
         assert(NULL/*"Create constant buffer failed!"*/);
@@ -373,55 +508,7 @@ Microsoft::WRL::ComPtr<ID3D11Buffer> FRenderer::CreateConstantBuffer(const uint3
     return constantBuffer;
 }
 
-// void FRenderer::RenderTexturePrimitive(
-//     ID3D11Buffer* pVertexBuffer, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* _TextureSRV,
-//     ID3D11SamplerState* _SamplerState
-// ) const
-// {
-//     if (!_TextureSRV || !_SamplerState)
-//     {
-//         Console::GetInstance().AddLog(LogLevel::Warning, "SRV, Sampler Error");
-//     }
-//     if (numIndices <= 0)
-//     {
-//         Console::GetInstance().AddLog(LogLevel::Warning, "numIndices Error");
-//     }
-//     UINT offset = 0;
-//     Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &TextureStride, &offset);
-//     Graphics->DeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-//
-//     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-//     Graphics->DeviceContext->PSSetShaderResources(0, 1, &_TextureSRV);
-//     Graphics->DeviceContext->PSSetSamplers(0, 1, &_SamplerState);
-//
-//     Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
-// }
-
-// //��Ʈ ��ġ������
-// void FRenderer:: mRenderTextPrimitive(
-//     ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11ShaderResourceView* _TextureSRV, ID3D11SamplerState* _SamplerState
-// ) const
-// {
-//     if (!_TextureSRV || !_SamplerState)
-//     {
-//         Console::GetInstance().AddLog(LogLevel::Warning, "SRV, Sampler Error");
-//     }
-//     UINT offset = 0;
-//     Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &TextureStride, &offset);
-//
-//     // �Է� ���̾ƿ� �� �⺻ ����
-//     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-//     Graphics->DeviceContext->PSSetShaderResources(0, 1, &_TextureSRV);
-//     Graphics->DeviceContext->PSSetSamplers(0, 1, &_SamplerState);
-//     
-//     ID3D11DepthStencilState* DepthStateDisable = Graphics->DepthStateDisable;
-//     Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
-//
-//     // ��ο� ȣ�� (6���� �ε��� ���)
-//     Graphics->DeviceContext->Draw(numVertices, 0);
-// }
-
-Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> FRenderer::CreateBufferSRV(const Microsoft::WRL::ComPtr<ID3D11Buffer>& pBuffer, const UINT numElements) const
+ID3D11ShaderResourceView* FRenderer::CreateBufferSRV(ID3D11Buffer* pBuffer, const uint32 numElements) const
 {
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_UNKNOWN; // 구조화된 버퍼의 경우 형식은 UNKNOWN으로 지정
@@ -429,8 +516,8 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> FRenderer::CreateBufferSRV(cons
     srvDesc.Buffer.ElementOffset = 0;
     srvDesc.Buffer.NumElements = numElements;
 
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pSRV = nullptr;
-    const HRESULT hr = Graphics->Device->CreateShaderResourceView(pBuffer.Get(), &srvDesc, pSRV.GetAddressOf());
+    ID3D11ShaderResourceView* pSRV = nullptr;
+    const HRESULT hr = Graphics->Device->CreateShaderResourceView(pBuffer, &srvDesc, &pSRV);
     if (FAILED(hr))
     {
         // 오류 처리 (필요에 따라 로그 출력 등)
@@ -440,339 +527,32 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> FRenderer::CreateBufferSRV(cons
     return pSRV;
 }
 
-void FRenderer::UpdateGridConstantBuffer(const FGridParametersData& gridParams) const
+void FRenderer::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
-    D3D11_MAPPED_SUBRESOURCE mappedResource;
-    HRESULT hr = Graphics->DeviceContext->Map(ConstantBuffers[TEXT("FGridParametersData")].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    if (SUCCEEDED(hr))
+    for (const auto renderPass : RenderPasses)
     {
-        memcpy(mappedResource.pData, &gridParams, sizeof(FGridParametersData));
-        Graphics->DeviceContext->Unmap(ConstantBuffers[TEXT("FGridParametersData")].Get(), 0);
-    }
-    else
-    {
-        UE_LOG(LogLevel::Warning, "gridParams ���� ����");
+        renderPass->AddRenderObjectsToRenderPass(InLevel);
     }
 }
 
-void FRenderer::UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones) const
-{
-    D3D11_MAPPED_SUBRESOURCE mappedResource;
-    HRESULT hr = Graphics->DeviceContext->Map(ConstantBuffers[TEXT("FPrimitiveCounts")].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    auto pData = static_cast<FPrimitiveCounts*>(mappedResource.pData);
-    pData->BoundingBoxCount = numBoundingBoxes;
-    pData->ConeCount = numCones;
-    Graphics->DeviceContext->Unmap(ConstantBuffers[TEXT("FPrimitiveCounts")].Get(), 0);
-}
-
-// void FRenderer::RenderBatch(
-//     const FGridParametersData& gridParam, ID3D11Buffer* pVertexBuffer, int boundingBoxCount, int coneCount, int coneSegmentCount, int obbCount
-// ) const
-// {
-//     UINT stride = sizeof(FSimpleVertex);
-//     UINT offset = 0;
-//     Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
-//     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-//
-//     UINT vertexCountPerInstance = 2;
-//     UINT instanceCount = gridParam.GridCount + 3 + (boundingBoxCount * 12) + (coneCount * (2 * coneSegmentCount)) + (12 * obbCount);
-//     Graphics->DeviceContext->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
-//     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-// }
-
-void FRenderer::PrepareRender(const ULevel* Level)
-{
-    TArray<USceneComponent*> Ss;
-    for (const auto& A : Level->GetActors())
-    {
-        Ss.Add(A->GetRootComponent());
-        TArray<USceneComponent*> temp;
-        A->GetRootComponent()->GetChildrenComponents(temp);
-        Ss + temp;
-    }
-
-    for (const USceneComponent* iter : TObjectRange<USceneComponent>())
-    {
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        {
-            GizmoObjs.Add(pGizmoComp);
-        }
-        if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(iter))
-        {
-            TextObjs.Add(TextRenderComp);
-        }
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
-    }
-    
-    for (const auto iter : Ss)
-    {
-        if (UStaticMeshComponent* pStaticMeshComp = Cast<UStaticMeshComponent>(iter))
-        {
-            if (!Cast<UGizmoBaseComponent>(iter))
-                StaticMeshObjs.Add(pStaticMeshComp);
-        }
-
-        if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
-        {
-            if (UTextBillboardComponent* TextBillboardComp = Cast<UTextBillboardComponent>(iter))
-            {
-                TextObjs.Add(TextBillboardComp);
-            }
-            else
-            {
-                BillboardObjs.Add(pBillboardComp);
-            }
-        }
-
-    }
-}
-
-void FRenderer::ClearRenderArr()
-{
-    StaticMeshObjs.Empty();
-    GizmoObjs.Empty();
-    TextObjs.Empty();
-    LightObjs.Empty();
-}
 
 void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    Graphics->DeviceContext->RSSetViewports(1, ActiveViewport->GetD3DViewport());
-    Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
     ChangeViewMode(ActiveViewport->GetViewMode());
-    //UpdateLightBuffer();
-    UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
+    for (const auto renderPass : RenderPasses)
     {
-        RenderStaticMeshes(Level, ActiveViewport);
+        renderPass->Prepare(ActiveViewport);
+        renderPass->Execute(ActiveViewport);
     }
-    RenderGizmos(Level, ActiveViewport);
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
-    {
-        RenderBillboards(Level, ActiveViewport);
-        RenderTexts(Level, ActiveViewport);
-    }
-    RenderLight(Level, ActiveViewport);
-    
-    ClearRenderArr();
+    //RenderLight(Level, ActiveViewport);
 }
 
-void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
-{
-    PrepareShader(TEXT("StaticMesh"));
-    for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
-    {
-        FMatrix Model = JungleMath::CreateModelMatrix(
-            StaticMeshComp->GetWorldLocation(),
-            StaticMeshComp->GetWorldRotation(),
-            StaticMeshComp->GetWorldScale()
-        );
-        // 최종 MVP 행렬
-        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-        // 노말 회전시 필요 행렬
-        FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
-        if (Level->GetSelectedActor() == StaticMeshComp->GetOwner())
-        {
-            //UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-        }
-        else
-            //UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
-
-        if (USkySphereComponent* skysphere = Cast<USkySphereComponent>(StaticMeshComp))
-        {
-            //UpdateTextureConstant(skysphere->UOffset, skysphere->VOffset);
-        }
-        else
-        {
-            //UpdateTextureConstant(0, 0);
-        }
-
-        if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
-        {
-            UPrimitiveBatch::GetInstance().RenderAABB(
-                StaticMeshComp->GetBoundingBox(),
-                StaticMeshComp->GetWorldLocation(),
-                Model
-            );
-        }
-                
-    
-        if (!StaticMeshComp->GetStaticMesh()) continue;
-
-        OBJ::FStaticMeshRenderData* renderData = StaticMeshComp->GetStaticMesh()->GetRenderData();
-        if (renderData == nullptr) continue;
-
-        //RenderPrimitive(renderData, StaticMeshComp->GetStaticMesh()->GetMaterials(), StaticMeshComp->GetOverrideMaterials(), StaticMeshComp->GetselectedSubMeshIndex());
-    }
-}
-
-void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
-{
-    if (!Level->GetSelectedActor())
-    {
-        return;
-    }
-
-    #pragma region GizmoDepth
-        const Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DepthStateDisable = Graphics->DepthStateDisable;
-        Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable.Get(), 0);
-    #pragma endregion GizmoDepth
-
-    //  fill solid,  Wirframe 에서도 제대로 렌더링되기 위함
-    Graphics->DeviceContext->RSSetState(FEngineLoop::graphicDevice.RasterizerStateSOLID.Get());
-    
-    for (auto GizmoComp : GizmoObjs)
-    {
-        
-        if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowX ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowY ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ArrowZ)
-            && Level->GetEditorPlayer()->GetControlMode() != CM_TRANSLATION)
-            continue;
-        else if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleX ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleY ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::ScaleZ)
-            && Level->GetEditorPlayer()->GetControlMode() != CM_SCALE)
-            continue;
-        else if ((GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleX ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleY ||
-            GizmoComp->GetGizmoType()==UGizmoBaseComponent::CircleZ)
-            && Level->GetEditorPlayer()->GetControlMode() != CM_ROTATION)
-            continue;
-        FMatrix Model = JungleMath::CreateModelMatrix(GizmoComp->GetWorldLocation(),
-            GizmoComp->GetWorldRotation(),
-            GizmoComp->GetWorldScale()
-        );
-        FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        FVector4 UUIDColor = GizmoComp->EncodeUUID() / 255.0f;
-
-        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-
-        //if (GizmoComp == Level->GetPickingGizmo())
-            //UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-        //else
-            //UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
-
-        if (!GizmoComp->GetStaticMesh()) continue;
-
-        OBJ::FStaticMeshRenderData* renderData = GizmoComp->GetStaticMesh()->GetRenderData();
-        if (renderData == nullptr) continue;
-
-        //RenderPrimitive(renderData, GizmoComp->GetStaticMesh()->GetMaterials(), GizmoComp->GetOverrideMaterials());
-    }
-
-    Graphics->DeviceContext->RSSetState(Graphics->GetCurrentRasterizer().Get());
-
-#pragma region GizmoDepth
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilState>  originalDepthState = Graphics->DepthStencilState;
-    Graphics->DeviceContext->OMSetDepthStencilState(originalDepthState.Get(), 0);
-#pragma endregion GizmoDepth
-}
-
-void FRenderer::RenderBillboards(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
-{
-    PrepareShader(TEXT("Texture"));
-    //PrepareSubUVConstant();
-    
-    for (auto BillboardComp : BillboardObjs)
-    {
-        //UpdateSubUVConstant(BillboardComp->finalIndexU, BillboardComp->finalIndexV);
-
-        FMatrix Model = BillboardComp->CreateBillboardMatrix();
-
-        // 최종 MVP 행렬
-        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-        FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        FVector4 UUIDColor = BillboardComp->EncodeUUID() / 255.0f;
-        // if (BillboardComp == Level->GetPickingGizmo())
-        //     UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-        // else
-        //     UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
-
-        if (UParticleSubUVComp* SubUVParticle = Cast<UParticleSubUVComp>(BillboardComp))
-        {
-            // RenderTexturePrimitive(
-            //     SubUVParticle->vertexSubUVBuffer, SubUVParticle->indexTextureBuffer,
-            //     SubUVParticle->numIndices, SubUVParticle->Texture->TextureSRV, SubUVParticle->Texture->SamplerState
-            // );
-        }
-        else
-        {
-            // RenderTexturePrimitive(
-            //     BillboardComp->vertexTextureBuffer, BillboardComp->indexTextureBuffer,
-            //     BillboardComp->numIndices, BillboardComp->Texture->TextureSRV, BillboardComp->Texture->SamplerState
-            // );
-        }
-    }
-    PrepareShader(TEXT("StaticMesh"));
-}
-
-void FRenderer::RenderTexts(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
-{
-    PrepareShader(TEXT("Font"));
-    //PrepareSubUVConstant();
-    
-    for (auto TextComps : TextObjs)
-    {
-        if (UTextBillboardComponent* Text = Cast<UTextBillboardComponent>(TextComps))
-        {
-            //UpdateSubUVConstant(Text->finalIndexU, Text->finalIndexV);
-
-            FMatrix Model = Text->CreateBillboardMatrix();
-
-            // 최종 MVP 행렬
-            FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-            FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-            FVector4 UUIDColor = TextComps->EncodeUUID() / 255.0f;
-            //if (TextComps == Level->GetPickingGizmo())
-                //UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-            //else
-                //UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
-            
-            // FEngineLoop::renderer.RenderTextPrimitive(
-            //     Text->vertexTextBuffer, Text->numTextVertices,
-            //     Text->Texture->TextureSRV, Text->Texture->SamplerState
-            // );
-        }
-        else if (UTextRenderComponent* Text = Cast<UTextRenderComponent>(TextComps))
-        {
-            //UpdateSubUVConstant(Text->finalIndexU, Text->finalIndexV);
-
-            FMatrix Model = JungleMath::CreateModelMatrix(
-                Text->GetWorldLocation(),
-                Text->GetWorldRotation(),
-                Text->GetWorldScale()
-            );
-
-            // 최종 MVP 행렬
-            FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-            FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-            FVector4 UUIDColor = TextComps->EncodeUUID() / 255.0f;
-            // if (TextComps == Level->GetPickingGizmo())
-            //     UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
-            // else
-            //     UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
-            
-            // FEngineLoop::renderer.RenderTextPrimitive(
-            //     Text->vertexTextBuffer, Text->numTextVertices,
-            //     Text->Texture->TextureSRV, Text->Texture->SamplerState
-            // );
-        }
-    }
-    PrepareShader(TEXT("StaticMesh"));
-}
-
-void FRenderer::RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
-{
-    for (auto Light : LightObjs)
-    {
-        FMatrix Model = JungleMath::CreateModelMatrix(Light->GetWorldLocation(), Light->GetWorldRotation(), {1, 1, 1});
-        UPrimitiveBatch::GetInstance().AddCone(Light->GetWorldLocation(), Light->GetRadius(), 15, 140, Light->GetColor(), Model);
-        UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
-    }
-}
+// void FRenderer::RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+// {
+//     for (auto Light : LightObjs)
+//     {
+//         FMatrix Model = JungleMath::CreateModelMatrix(Light->GetWorldLocation(), Light->GetWorldRotation(), {1, 1, 1});
+//         UPrimitiveBatch::GetInstance().AddCone(Light->GetWorldLocation(), Light->GetRadius(), 15, 140, Light->GetColor(), Model);
+//         UPrimitiveBatch::GetInstance().AddOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
+//     }
+// }

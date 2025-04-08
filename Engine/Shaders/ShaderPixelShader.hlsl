@@ -1,15 +1,7 @@
-Texture2D Texture : register(t0);
-SamplerState Sampler : register(s0);
+#include "ShaderHeaders/ConstantBuffers.hlsli"
+#include "ShaderHeaders/Samplers.hlsli"
 
-// MatrixBuffer: 변환 행렬 관리
-cbuffer FMatrixBuffer : register(b0)
-{
-    row_major float4x4 MVP;
-    row_major float4x4 MInverseTranspose;
-    float4 UUID;
-    bool isSelected;
-    float3 MatrixPad0;
-};
+Texture2D Texture : register(t0);
 
 // LightingBuffer: 조명 관련 파라미터 관리
 cbuffer FLightingBuffer : register(b1)
@@ -87,7 +79,7 @@ PS_OUTPUT mainPS(PS_INPUT input) : SV_Target
     
     // 기존의 색상과 텍스처 색상을 조합
     //input.texcoord
-    float4 texColor = Texture.Sample(Sampler, input.texcoord);
+    float4 texColor = Texture.Sample(linearSampler, input.texcoord);
     //texColor = float4(1, 1, 1, 1);
     float3 color;
     if (input.texcoord.g == 0) // 텍스처가 없으면 기본 색상 유지

@@ -1,11 +1,13 @@
+#include "ShaderHeaders/ConstantBuffers.hlsli"
+#include "ShaderHeaders/Samplers.hlsli"
+
 Texture2D Textures : register(t0);
-SamplerState Sampler : register(s0);
 
 cbuffer FMatrixConstants : register(b0)
 {
     row_major float4x4 MVP;
     row_major float4x4 MInverseTranspose;
-    float4 UUID;
+    float4 ObjectUUID;
     bool isSelected;
     float3 MatrixPad0;
 };
@@ -101,7 +103,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     output.UUID = UUID;
     
-    float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);
+    float3 texColor = Textures.Sample(linearSampler, input.texcoord + UVOffset);
     float3 color;
     if (texColor.g == 0) // TODO: boolean으로 변경
         color = saturate(DiffuseColor);

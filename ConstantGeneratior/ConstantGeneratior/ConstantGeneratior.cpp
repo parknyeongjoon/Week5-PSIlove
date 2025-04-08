@@ -372,69 +372,6 @@ static HRESULT CompileShaderFile(const std::wstring& filePath, const EShaderType
     );
 }
 
-//-----------------------------------------------------------------------------
-// 리플렉션 정보를 통해 상수 버퍼 정보를 출력하는 함수
-//-----------------------------------------------------------------------------
-static void ReflectShader(ID3DBlob* shaderBlob)
-{
-    // ID3D11ShaderReflection 인터페이스 생성 (DirectX 11용)
-    ID3D11ShaderReflection* pReflector = nullptr;
-    HRESULT hr = D3DReflect(
-        shaderBlob->GetBufferPointer(),
-        shaderBlob->GetBufferSize(),
-        IID_ID3D11ShaderReflection,
-        reinterpret_cast<void**>(&pReflector)
-    );
-    if (FAILED(hr) || !pReflector)
-    {
-        std::cerr << "D3DReflect failed." << std::endl;
-        return;
-    }
-
-    // 쉐이더 설명 가져오기 (DirectX 11용)
-    D3D11_SHADER_DESC shaderDesc = {};
-    hr = pReflector->GetDesc(&shaderDesc);
-    if (FAILED(hr))
-    {
-        std::cerr << "GetDesc failed." << std::endl;
-        pReflector->Release();
-        return;
-    }
-
-    std::cout << "Shader has " << shaderDesc.ConstantBuffers << " constant buffers." << std::endl;
-    for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i)
-    {
-        ID3D11ShaderReflectionConstantBuffer* pCB = pReflector->GetConstantBufferByIndex(i);
-        if (pCB)
-        {
-            D3D11_SHADER_BUFFER_DESC cbDesc = {};
-            hr = pCB->GetDesc(&cbDesc);
-            if (SUCCEEDED(hr))
-            {
-                std::cout << "Constant Buffer " << i << ": " << cbDesc.Name
-                          << ", Size = " << cbDesc.Size << " bytes." << std::endl;
-            }
-        }
-    }
-
-    // 바인딩된 리소스 정보 출력 (예: 상수 버퍼, 텍스처, 샘플러 등)
-    std::cout << "Shader has " << shaderDesc.BoundResources << " bound resources." << std::endl;
-    for (UINT i = 0; i < shaderDesc.BoundResources; ++i)
-    {
-        D3D11_SHADER_INPUT_BIND_DESC bindDesc = {};
-        hr = pReflector->GetResourceBindingDesc(i, &bindDesc);
-        if (SUCCEEDED(hr))
-        {
-            std::cout << "Resource " << i << ": " << bindDesc.Name 
-                      << ", Type = " << bindDesc.Type 
-                      << ", BindPoint = " << bindDesc.BindPoint << std::endl;
-        }
-    }
-
-    pReflector->Release();
-}
-
-
 // EXE 파일이 위치한 디렉터리를 반환하는 함수
 static std::wstring GetExeDirectory()
 {
@@ -519,7 +456,7 @@ int main()
     std::wcout << L"Shader Folder: " << shaderFolder << std::endl;
 
     // 폴더 내의 .hlsl 파일들을 열거
-    const std::vector<std::wstring> shaderFiles = EnumerateShaderFiles(shaderFolder);
+    std::vector<std::wstring> shaderFiles = EnumerateShaderFiles(shaderFolder);
 
     // 쉐이더 파일들을 컴파일하고 리플렉션 정보를 출력
     CompileAndReflectShaders(shaderFiles);

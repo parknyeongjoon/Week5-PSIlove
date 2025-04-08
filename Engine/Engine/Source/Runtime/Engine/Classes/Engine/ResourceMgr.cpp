@@ -66,7 +66,24 @@ TSet<FString> FResourceMgr::GetAllTextureKeys() const
     return Keys;
 }
 
-HRESULT FResourceMgr::LoadTextureFromFile(Microsoft::WRL::ComPtr<ID3D11Device> device, const wchar_t* filename)
+void FResourceMgr::ReleaseSRVs()
+{
+    for (auto item : textureMap)
+    {
+        item.Value->ReleaseSRV();
+    }
+}
+
+void FResourceMgr::CreateSRVs()
+{
+    for (auto item : textureMap)
+    {
+        
+    }
+    
+}
+
+HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, const wchar_t* filename)
 {
 	IWICImagingFactory* wicFactory = nullptr;
 	IWICBitmapDecoder* decoder = nullptr;
@@ -122,8 +139,8 @@ HRESULT FResourceMgr::LoadTextureFromFile(Microsoft::WRL::ComPtr<ID3D11Device> d
 	D3D11_SUBRESOURCE_DATA initData = {};
 	initData.pSysMem = imageData;
 	initData.SysMemPitch = width * 4;
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> Texture2D;
-	hr = device->CreateTexture2D(&textureDesc, &initData, Texture2D.GetAddressOf());
+	ID3D11Texture2D* Texture2D;
+	hr = device->CreateTexture2D(&textureDesc, &initData, &Texture2D);
 	delete[] imageData;
 	if (FAILED(hr)) return hr;
 
@@ -133,27 +150,15 @@ HRESULT FResourceMgr::LoadTextureFromFile(Microsoft::WRL::ComPtr<ID3D11Device> d
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.MipLevels = 1;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> TextureSRV;
-	hr = device->CreateShaderResourceView(Texture2D.Get(), &srvDesc, TextureSRV.GetAddressOf());
+	ID3D11ShaderResourceView* TextureSRV;
+	hr = device->CreateShaderResourceView(Texture2D, &srvDesc, &TextureSRV);
 
 	// 리소스 해제
 	wicFactory->Release();
 	decoder->Release();
 	frame->Release();
 	converter->Release();
-
-	// //샘플러 스테이트 생성
-	// ID3D11SamplerState* SamplerState;
-	// D3D11_SAMPLER_DESC samplerDesc = {};
-	// samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	// samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	// samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	// samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	// samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	// samplerDesc.MinLOD = 0;
-	// samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	//
-	// device->CreateSamplerState(&samplerDesc, &SamplerState);
+    
 	FWString name = FWString(filename);
 
 	textureMap[name] = std::make_shared<FTexture>(name, TextureSRV, Texture2D, width, height);
@@ -162,24 +167,24 @@ HRESULT FResourceMgr::LoadTextureFromFile(Microsoft::WRL::ComPtr<ID3D11Device> d
 	return hr;
 }
 
-HRESULT FResourceMgr::LoadTextureFromDDS(const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context, const wchar_t* filename)
+HRESULT FResourceMgr::LoadTextureFromDDS(ID3D11Device* device, ID3D11DeviceContext* context, const wchar_t* filename)
 {
 
-	Microsoft::WRL::ComPtr<ID3D11Resource> texture = nullptr;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView = nullptr;
+	ID3D11Resource* texture = nullptr;
+	ID3D11ShaderResourceView* textureView = nullptr;
 
 	HRESULT hr = DirectX::CreateDDSTextureFromFile(
-		device.Get(), context.Get(),
+		device, context,
 		filename,
-		texture.GetAddressOf(),
-		textureView.GetAddressOf()
+		&texture,
+		&textureView
 	);
 	if (FAILED(hr) || texture == nullptr) abort();
 
 #pragma region WidthHeight
 
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2D = nullptr;
-	hr = texture->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(texture2D.GetAddressOf()));
+	ID3D11Texture2D* texture2D = nullptr;
+	hr = texture->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&texture2D));
 	if (FAILED(hr) || texture2D == nullptr)
 	{
 		std::wcerr << L"Failed to query ID3D11Texture2D interface!" << std::endl;
