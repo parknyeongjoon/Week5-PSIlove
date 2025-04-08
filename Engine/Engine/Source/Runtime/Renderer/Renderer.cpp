@@ -1114,13 +1114,7 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         RenderStaticMeshes(Level, ActiveViewport);
-    }
-
-    if (ActiveViewport->ViewMode == VMI_Lit)
-    {
-        RenderLighting(Level, ActiveViewport);
-    }
-    
+    }    
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
     RenderGizmos(Level, ActiveViewport);
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
@@ -1128,9 +1122,13 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
         RenderBillboards(Level, ActiveViewport);
         RenderTexts(Level, ActiveViewport);
     }
+    if (ActiveViewport->ViewMode == VMI_Lit)
+    {
+        RenderLighting(Level, ActiveViewport);
+    }
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
     {
-        RenderFog(Level, ActiveViewport);
+        //RenderFog(Level, ActiveViewport);
     }
     RenderFinal(Level, ActiveViewport);
     ClearRenderArr();
@@ -1333,8 +1331,8 @@ void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportCli
     // 화면 크기 사각형 렌더링
     Graphics->DeviceContext->Draw(6, 0); // 4개의 정점으로 화면 전체 사각형 그리기
     
-    Graphics->DeviceContext->OMSetRenderTargets(5, Graphics->RTVs, Graphics->DepthStencilView);
-    Graphics->DeviceContext->PSSetShaderResources(0,0,nullptr);
+    //Graphics->DeviceContext->OMSetRenderTargets(5, Graphics->RTVs, Graphics->DepthStencilView);
+    //Graphics->DeviceContext->PSSetShaderResources(0,0,nullptr);
 }
 
 void FRenderer::CreateDefaultPostProcessShader()
