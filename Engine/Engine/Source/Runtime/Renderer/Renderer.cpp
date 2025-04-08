@@ -1114,17 +1114,17 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         RenderStaticMeshes(Level, ActiveViewport);
-    }    
+    } 
+    if (ActiveViewport->ViewMode == VMI_Lit)
+    {
+        RenderLighting(Level, ActiveViewport);
+    }
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
     RenderGizmos(Level, ActiveViewport);
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
     {
         RenderBillboards(Level, ActiveViewport);
         RenderTexts(Level, ActiveViewport);
-    }
-    if (ActiveViewport->ViewMode == VMI_Lit)
-    {
-        RenderLighting(Level, ActiveViewport);
     }
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
     {
@@ -1627,7 +1627,7 @@ void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient
     UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV() };
+    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV() };
     Graphics->DeviceContext->PSSetShaderResources(0, 2, SRVs);
     Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->SamplerState);
 

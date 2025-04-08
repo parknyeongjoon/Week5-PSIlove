@@ -432,7 +432,7 @@ void FGraphicsDevice::Prepare()
 
 void FGraphicsDevice::PrepareLighting()
 {
-    SwapRTV();
+    //SwapRTV();
     auto* RenderTarget = GetWriteRTV();
     auto* RenderDepthTarget = GetWriteDSV();
     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
