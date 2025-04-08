@@ -261,7 +261,6 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
             { .label= "Cube",      .obj= OBJ_CUBE },
             { .label= "Sphere",    .obj= OBJ_SPHERE },
             { .label= "FireBall",    .obj= OBJ_FireBall },
-            { .label= "SpotLight", .obj= OBJ_SpotLight },
             { .label= "Particle",  .obj= OBJ_PARTICLE },
             { .label= "Billboard", .obj= OBJ_BILLBOARD },
             { .label= "Text",      .obj= OBJ_Text }

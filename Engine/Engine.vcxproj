@@ -194,6 +194,9 @@
     <ClCompile Include="Engine\Source\Editor\UnrealEd\EditorViewportClient.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\World.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\FogRenderer.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Slate\Widgets\Layout\SSplitter.cpp" />
@@ -245,6 +248,8 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Object\FireBall.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\ViewportClient.h" />
     <ClInclude Include="Engine\Source\Editor\LevelEditor\SLevelEditor.h" />

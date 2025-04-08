@@ -3,6 +3,8 @@
 #include "Level.h"
 #include "Actors/Player.h"
 #include "Components/LightComponent.h"
+#include "Components/ProjectileMovementComponent.h"
+#include "Components/RotationMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextBillboardComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -53,6 +55,10 @@ void PropertyEditorPanel::Render()
                 PickedActor->AddComponent<UStaticMeshComponent>();
             if (ImGui::Selectable("LightComponent", false))
                 PickedActor->AddComponent<ULightComponent>();
+            if (ImGui::Selectable("ProjectileMovementComponent", false))
+                PickedActor->AddComponent<UProjectileMovementComponent>();
+            if (ImGui::Selectable("RotationMovementComponent", false))
+                PickedActor->AddComponent<URotationMovementComponent>();
 
             ImGui::EndCombo();
         }
@@ -186,7 +192,15 @@ void PropertyEditorPanel::Render()
             {
                 RenderForStaticMesh(StaticMeshComponent);
                 RenderForMaterial(StaticMeshComponent);
-            }       
+            }
+            else if (URotationMovementComponent* RotationMovementComponent = Cast<URotationMovementComponent>(actorComponent))
+            {
+                RenderForRotation(RotationMovementComponent);
+            }
+            else if (UProjectileMovementComponent* ProjectileMovementComponent = Cast<UProjectileMovementComponent>(actorComponent))
+            {
+                RenderForProjectile(ProjectileMovementComponent);
+            }
         }
         ImGui::PopStyleColor();
     }
@@ -659,6 +673,50 @@ void PropertyEditorPanel::RenderForBillboard(UBillboardComponent* BillboardComp)
             ImGui::EndCombo();
         }
         
+        ImGui::TreePop();
+    }
+    ImGui::PopStyleColor();
+}
+
+void PropertyEditorPanel::RenderForRotation(URotationMovementComponent* RotationMovementComponent)
+{
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::TreeNodeEx("RotationMovement", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
+    {
+        RotationRate = RotationMovementComponent->GetRotationRate();
+                
+        FImGuiWidget::DrawVec3Control("RotationRate", RotationRate, 0, 85);
+        ImGui::Spacing();
+
+        RotationMovementComponent->SetRotationRate(RotationRate);
+
+        ImGui::TreePop();
+    }
+    ImGui::PopStyleColor();
+}
+
+void PropertyEditorPanel::RenderForProjectile(UProjectileMovementComponent* ProjectileMovementComponent)
+{
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::TreeNodeEx("ProjectileMovement", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
+    {
+        FVector Velocity = FVector(0,0,0) = ProjectileMovementComponent->GetVelocity();
+        FVector MaxSpeed = FVector(0,0,0) = ProjectileMovementComponent->GetMaxSpeed();
+        FVector Acceleration = FVector(0,0,0) = ProjectileMovementComponent->GetAcceleration();
+                
+        FImGuiWidget::DrawVec3Control("Velocity", Velocity, 0, 85);
+        ImGui::Spacing();
+
+        FImGuiWidget::DrawVec3Control("MaxSpeed", MaxSpeed, 0, 85);
+        ImGui::Spacing();
+
+        FImGuiWidget::DrawVec3Control("Acceleration", Acceleration, 0, 85);
+        ImGui::Spacing();
+
+        ProjectileMovementComponent->SetVelocity(Velocity);
+        ProjectileMovementComponent->SetMaxSpeed(MaxSpeed);
+        ProjectileMovementComponent->SetAcceleration(Acceleration);
+
         ImGui::TreePop();
     }
     ImGui::PopStyleColor();
