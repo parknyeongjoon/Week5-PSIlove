@@ -14,7 +14,6 @@ AFireBall::AFireBall()
 void AFireBall::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    SetActorLocation(GetActorLocation() + FVector(0.01,0.01,0) * DeltaTime);
 }
 
 UObject* AFireBall::Duplicate()
