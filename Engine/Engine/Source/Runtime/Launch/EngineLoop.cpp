@@ -147,11 +147,11 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     car->AddComponent<UProjectileMovementComponent>();
     
     leftLight = car->AddComponent<ULightComponent>();
-    leftLight->SetLocation(FVector(300,-20,10));
+    leftLight->SetLocation(FVector(400,-20,10));
     leftLight->SetAttenuationRadius(300);
     leftLight->SetIntensity(80);
     rightLight = car->AddComponent<ULightComponent>();
-    rightLight->SetLocation(FVector(300,20,10));
+    rightLight->SetLocation(FVector(400,20,10));
     rightLight->SetAttenuationRadius(300);
     rightLight->SetIntensity(80);
     // test 여기까지

@@ -69,7 +69,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     float3 ambientColor = float3(0.0f, 0.0f, 0.0f);
     
     // 각 광원에 대한 라이팅 계산
-    for (uint i = 0; i < LightCount; i++)
+    for (int i = 0; i < LightCount; i++)
     {
         // 주변광(Ambient) 계산
         //ambientColor += diffuse.rgb * Lights[i].LightColor * Lights[i].AmbientFactor;
@@ -95,7 +95,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         
         // 디퓨즈(Diffuse) 계산 - Lambert 모델
         float NdotL = max(dot(N, L), 0.0f);
-        float3 diffuseTerm = diffuse.rgb * Lights[i].LightColor * NdotL * Lights[i].Intensity * attenuation;
+        float3 diffuseTerm = diffuse.rgb * Lights[i].LightColor.rgb * NdotL * Lights[i].Intensity * attenuation;
         
         // 스페큘러(Specular) 계산 - Blinn-Phong 모델
         float3 H = normalize(V + L);

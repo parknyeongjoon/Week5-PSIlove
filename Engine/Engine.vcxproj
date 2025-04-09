@@ -418,6 +418,9 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainPS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mainPS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mainPS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainPS</EntryPointName>
     </FxCompile>
     <FxCompile Include="Shaders\QuadVertexShader.hlsl">
       <ObjectFileOutput>C:\Users\Jungle\Desktop\Repos\Week5-PSIlove\Binaries\x64\Debug\%(Filename).cso</ObjectFileOutput>
