@@ -28,7 +28,7 @@ public:
 
     T& operator[](SizeType Index);
     const T& operator[](SizeType Index) const;
-	void operator+(const TArray& OtherArray);
+    TArray<T, Allocator> operator+(const TArray& OtherArray) const;
 
 public:
     TArray();
@@ -130,9 +130,11 @@ const T& TArray<T, Allocator>::operator[](SizeType Index) const
 }
 
 template <typename T, typename Allocator>
-void TArray<T, Allocator>::operator+(const TArray& OtherArray)
+TArray<T,Allocator> TArray<T, Allocator>::operator+(const TArray& OtherArray) const
 {
-	ContainerPrivate.insert(end(), OtherArray.begin(), OtherArray.end());
+    TArray<T, Allocator> Result = *this; // 현재 배열의 복사본 생성
+    Result.ContainerPrivate.insert(Result.end(), OtherArray.begin(), OtherArray.end());
+    return Result;
 }
 
 template <typename T, typename Allocator>

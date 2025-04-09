@@ -6,8 +6,10 @@
 #include "LevelEditor/SLevelEditor.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
+#include "Classes/Components/ProjectileMovementComponent.h"
 #include "Components/SkySphereComponent.h"
 #include "Actors/Fog.h"
+#include "Engine/StaticMeshActor.h"
 
 
 void ULevel::Initialize(EWorldType worldType)
@@ -17,8 +19,8 @@ void ULevel::Initialize(EWorldType worldType)
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
     FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
-    //FManagerOBJ::CreateStaticMesh("Assets/RoadCube.obj");
-    //FManagerOBJ::CreateStaticMesh("Assets/Demo.obj");
+    FManagerOBJ::CreateStaticMesh("Assets/RoadCube.obj");
+    FManagerOBJ::CreateStaticMesh("Assets/Demo.obj");
     
     Fog = SpawnActor<AFog>();
 }

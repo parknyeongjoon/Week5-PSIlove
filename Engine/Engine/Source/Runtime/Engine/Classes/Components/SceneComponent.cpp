@@ -155,11 +155,12 @@ const TArray<USceneComponent*>& USceneComponent::GetAttachChildren() const
 void USceneComponent::GetChildrenComponents(TArray<USceneComponent*>& Children) const
 {
     Children.Empty();
-    for (auto& child : Children)
+    Children = Children + AttachChildren;
+    for (auto& child : AttachChildren)
     {
         TArray<USceneComponent*> childComponents;
         child->GetChildrenComponents(childComponents);
-        Children + childComponents;
+        Children = Children + childComponents;
     }
 }
 
