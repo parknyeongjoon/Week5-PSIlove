@@ -9,7 +9,6 @@ class ULightComponent : public USceneComponent
 public:
     ULightComponent();
 
-    virtual void DuplicateSubObjects() override;
     virtual UObject* Duplicate() override;
 
     virtual void TickComponent(float DeltaTime) override;

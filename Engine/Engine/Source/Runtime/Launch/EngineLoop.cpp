@@ -8,8 +8,13 @@
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "World.h"
+#include "Actors/Object/FireBall.h"
 #include "Components/ProjectileMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/FLoaderOBJ.h"
+#include "Engine/StaticMeshActor.h"
 #include "GameFramework/Actor.h"
+#include "Components/LightComponent.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -132,6 +137,28 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GWorld->Level =GLevel;
     GLevel->Initialize(EWorldType::Editor);
 
+    //TODO: 맵 세이브 생기면 삭제
+    AStaticMeshActor* map = GetLevel()->SpawnActor<AStaticMeshActor>();
+    map->GetStaticMeshComponent()->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Demo.obj"));
+    map->SetActorLocation(FVector(0,0,1000));
+    map->SetActorRotation(FVector(90,0,90));
+    map->SetActorScale(FVector(5,5,5));
+
+    AStaticMeshActor* car = GetLevel()->SpawnActor<AStaticMeshActor>();
+    car->GetStaticMeshComponent()->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
+    car->SetActorLocation(FVector(0,-15000,960));
+    car->AddComponent<UProjectileMovementComponent>();
+
+    leftLight = car->AddComponent<ULightComponent>();
+    leftLight->SetLocation(FVector(300,-20,10));
+    leftLight->SetAttenuationRadius(300);
+    leftLight->SetIntensity(80);
+    rightLight = car->AddComponent<ULightComponent>();
+    rightLight->SetLocation(FVector(300,20,10));
+    rightLight->SetAttenuationRadius(300);
+    rightLight->SetIntensity(80);
+    // test 여기까지
+
     WorldContexts.Add({});
 
     return 0;
@@ -148,12 +175,6 @@ void FEngineLoop::Render()
         {
             graphicDevice.Prepare();
             LevelEditor->SetViewportClient(i);
-            // graphicDevice.DeviceContext->RSSetViewports(1, &LevelEditor->GetViewports()[i]->GetD3DViewport());
-            // graphicDevice.ChangeRasterizer(LevelEditor->GetActiveViewportClient()->GetViewMode());
-            // renderer.ChangeViewMode(LevelEditor->GetActiveViewportClient()->GetViewMode());
-            // renderer.PrepareShader();
-            // renderer.UpdateLightBuffer();
-            // RenderWorld();
             renderer.PrepareRender(GLevel);
             renderer.Render(GetLevel(), LevelEditor->GetActiveViewportClient());
         }
@@ -163,12 +184,6 @@ void FEngineLoop::Render()
     {
         graphicDevice.ClearRenderTarget();
         graphicDevice.Prepare();
-        // graphicDevice.DeviceContext->RSSetViewports(1, &LevelEditor->GetActiveViewportClient()->GetD3DViewport());
-        // graphicDevice.ChangeRasterizer(LevelEditor->GetActiveViewportClient()->GetViewMode());
-        // renderer.ChangeViewMode(LevelEditor->GetActiveViewportClient()->GetViewMode());
-        // renderer.PrepareShader();
-        // renderer.UpdateLightBuffer();
-        // RenderWorld();
         renderer.PrepareRender(GLevel);
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
@@ -258,11 +273,13 @@ void FEngineLoop::PIETick(double elapsedTime)
     PIEInput();
     GLevel->PIETick(elapsedTime);
     SpawnMeteor();
-    if (movementActor != nullptr)
+    if (movementComponent != nullptr)
     {
-        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetLocation(FVector(-100,0,100) + movementActor->GetOwner()->GetActorLocation());
-        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetRotation(FVector(0,30,0));
+        //카메라 세팅
+        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetLocation(FVector(-8,-14,30) + movementComponent->GetOwner()->GetActorLocation());
+        movementComponent->GetOwner()->SetActorRotation(FVector(0,0,LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.GetRotation().z));
     }
+    
     LevelEditor->Tick(elapsedTime);
     Render();
 
@@ -293,7 +310,7 @@ void FEngineLoop::TogglePIE()
             {
                 if (auto* movementComp = Cast<UProjectileMovementComponent>(comp))
                 {
-                    movementActor = movementComp;
+                    movementComponent = movementComp;
                     break;
                 }
             }
@@ -338,24 +355,40 @@ void FEngineLoop::EditorInput()
 
 void FEngineLoop::PIEInput() const
 {
-    if (movementActor != nullptr)
+    if (movementComponent != nullptr)
     {
         if (GetAsyncKeyState('W') & 0x8000)
         {
-            movementActor->AddVelocity(FVector(1,0,0) * movementActor->GetAcceleration());
+            FVector forward = LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.GetForwardVector();
+            forward.z = 0;
+            forward = forward.Normalize();
+            forward = forward * movementComponent->GetAcceleration();
+            movementComponent->AddVelocity(forward);
         }
         if (GetAsyncKeyState('S') & 0x8000)
         {
-            movementActor->AddVelocity(FVector(-1,0,0) * movementActor->GetAcceleration());
+            FVector back = LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.GetForwardVector();
+            back.z = 0;
+            back = back.Normalize();
+            back = back * -movementComponent->GetAcceleration();
+            movementComponent->AddVelocity(back);
         }
-        if (GetAsyncKeyState('D') & 0x8000)
-        {
-            movementActor->AddVelocity(FVector(0,1,0) * movementActor->GetAcceleration());
-        }
-        if (GetAsyncKeyState('A') & 0x8000)
-        {
-            movementActor->AddVelocity(FVector(0,-1,0) * movementActor->GetAcceleration());
-        }
+        // if (GetAsyncKeyState('D') & 0x8000)
+        // {
+        //     FVector right = LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.GetRightVector();
+        //     right.z = 0;
+        //     right = right.Normalize();
+        //     right = right * movementActor->GetAcceleration();
+        //     movementActor->AddVelocity(right);
+        // }
+        // if (GetAsyncKeyState('A') & 0x8000)
+        // {
+        //     FVector left = LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.GetRightVector();
+        //     left.z = 0;
+        //     left = left.Normalize();
+        //     left = left * -movementActor->GetAcceleration();
+        //     movementActor->AddVelocity(left);
+        // }
     }
 }
 

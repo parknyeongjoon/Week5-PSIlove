@@ -60,6 +60,7 @@ public:
     void GetParentComponents(TArray<USceneComponent*>& Parents) const; // ��ͷ� root���� ��ȯ
 
     void SetupAttachment(TArray<USceneComponent*>& Children); // �ڽ� ���� ���� ����
+    void ClearAttachment(){AttachChildren.Empty();}
 
     // �θ��ڽ� ���踦 ������ ���ϴ� �� �Լ� ����
     bool AttachToComponent(USceneComponent* Parent); // �θ� ���� ���������� false

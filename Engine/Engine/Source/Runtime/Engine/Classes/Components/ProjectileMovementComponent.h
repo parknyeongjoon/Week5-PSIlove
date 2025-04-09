@@ -17,6 +17,6 @@ private:
     void TickComponent(float DeltaTime) override;
     
     FVector Velocity;
-    float MaxSpeed = 0.3f;
-    float Acceleration = 0.01f;
+    float MaxSpeed = 3.0f;
+    float Acceleration = 0.1f;
 };

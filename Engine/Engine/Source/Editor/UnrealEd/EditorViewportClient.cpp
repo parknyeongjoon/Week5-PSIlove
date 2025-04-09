@@ -88,19 +88,19 @@ void FEditorViewportClient::Input()
 
             SetCursorPos(lastMousePos.x, lastMousePos.y);
         }
-        if (GetAsyncKeyState('A') & 0x8000)
+        if (GetAsyncKeyState('A') & 0x8000 && GEngineLoop.GetWorldType() == EWorldType::Editor)
         {
             CameraMoveRight(-1.f);
         }
-        if (GetAsyncKeyState('D') & 0x8000)
+        if (GetAsyncKeyState('D') & 0x8000 && GEngineLoop.GetWorldType() == EWorldType::Editor)
         {
             CameraMoveRight(1.f);
         }
-        if (GetAsyncKeyState('W') & 0x8000)
+        if (GetAsyncKeyState('W') & 0x8000 && GEngineLoop.GetWorldType() == EWorldType::Editor)
         {
             CameraMoveForward(1.f);
         }
-        if (GetAsyncKeyState('S') & 0x8000)
+        if (GetAsyncKeyState('S') & 0x8000 && GEngineLoop.GetWorldType() == EWorldType::Editor)
         {
             CameraMoveForward(-1.f);
         }

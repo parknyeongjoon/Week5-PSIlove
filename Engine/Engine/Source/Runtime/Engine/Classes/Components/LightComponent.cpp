@@ -5,10 +5,6 @@ ULightComponent::ULightComponent()
     InitializeLight();
 }
 
-void ULightComponent::DuplicateSubObjects()
-{
-    Super::DuplicateSubObjects();
-}
 UObject* ULightComponent::Duplicate()
 {
     UObject* NewObject = FObjectFactory::ConstructObject<ULightComponent>(this);
