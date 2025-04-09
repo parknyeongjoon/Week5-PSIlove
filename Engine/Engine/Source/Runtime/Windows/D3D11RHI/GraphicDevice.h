@@ -65,11 +65,14 @@ public:
 
     DXGI_SWAP_CHAIN_DESC SwapchainDesc;
     
+
+    
     UINT screenWidth = 0;
     UINT screenHeight = 0;
     // Depth-Stencil 관련 변수
     ID3D11Texture2D* DepthStencilBuffer = nullptr;  // 깊이/스텐실 텍스처
     ID3D11DepthStencilView* DepthStencilView = nullptr;  // 깊이/스텐실 뷰
+    ID3D11ShaderResourceView* DepthStencilSRV = nullptr;  // 깊이/스텐실 SRV
     ID3D11DepthStencilState* DepthStencilState = nullptr;
     FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 화면을 초기화(clear) 할 때 사용할 색상(RGBA)
     FLOAT PositionClearColor[4] = {0,0,0,0};
@@ -99,15 +102,20 @@ public:
     void PrepareFinalRender();
     void SwapBuffer() const;
     void Prepare();
-    void PrepareLighting();
+    void PrepareLighting() const;
+    void PrepareDepthScene() const;
     // void Prepare(D3D11_VIEWPORT* viewport) const;
     void OnResize(HWND hWindow);
     ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
     void ChangeRasterizer(EViewModeIndex evi);
-    void ChangeDepthStencilState(ID3D11DepthStencilState* newDetptStencil);
 
-    // uint32 GetPixelUUID(POINT pt);
-    // uint32 DecodeUUIDColor(FVector4 UUIDColor);
+    ID3D11Texture2D* WorldTexture = nullptr;
+    ID3D11RenderTargetView* WorldTextureRTV = nullptr;
+
+    void CreateWorldTexture();
+    ID3D11ShaderResourceView* WorldTextureSRV = nullptr;
+
+    ID3D11SamplerState* LinearSampler = nullptr;
 private:
     ID3D11RasterizerState* CurrentRasterizer = nullptr;
 };

@@ -4,6 +4,14 @@ struct PSInput
     float2 texCoord : TEXCOORD;
 };
 
+cbuffer UVBuffer : register(b0)
+{
+    float UOffset;
+    float VOffset;
+    float UTiles;
+    float VTiles;
+}
+
 PSInput mainVS(uint vertexID : SV_VertexID)
 {
     PSInput output;
@@ -26,7 +34,7 @@ PSInput mainVS(uint vertexID : SV_VertexID)
     };
     
     output.position = float4(positions[vertexID], 0, 1);
-    output.texCoord = uvs[vertexID];
+    output.texCoord = float2(UOffset + uvs[vertexID].x * UTiles, VOffset + uvs[vertexID].y * VTiles);
     
     return output;
 }

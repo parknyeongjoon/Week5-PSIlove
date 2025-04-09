@@ -61,6 +61,7 @@ void FRenderer::CreateShader()
     ID3DBlob* PSBlob_StaticMesh = nullptr;
     ID3DBlob* VSBlob_Quad = nullptr;
     ID3DBlob* PSBlob_Lighting = nullptr;
+    ID3DBlob* PSBlob_Depth = nullptr;
     UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 
     D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", compileFlags, 0, &VSBlob_StaticMesh, nullptr);
@@ -74,6 +75,9 @@ void FRenderer::CreateShader()
 
     D3DCompileFromFile(L"Shaders/LightingPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PSBlob_Lighting, nullptr);
     Graphics->Device->CreatePixelShader(PSBlob_Lighting->GetBufferPointer(), PSBlob_Lighting->GetBufferSize(), nullptr, &LightingPixelShader);
+
+    D3DCompileFromFile(L"Shaders/QuadDepthPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PSBlob_Depth, nullptr);
+    Graphics->Device->CreatePixelShader(PSBlob_Depth->GetBufferPointer(), PSBlob_Depth->GetBufferSize(), nullptr, &DepthPixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -106,6 +110,7 @@ void FRenderer::PrepareShader() const
 {
     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
+    Graphics->Prepare();
     Graphics->DeviceContext->IASetInputLayout(InputLayout);
 
     if (ConstantBuffer)
@@ -129,9 +134,24 @@ void FRenderer::PrepareLightingShader() const
     if (LightArrConstantBuffer)
     {
         Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &LightArrConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &TextureConstantBufer);
+        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &TextureConstantBufer);
     }
 
+    Graphics->DeviceContext->IASetInputLayout(nullptr); // 입력 레이아웃 불필요
+    Graphics->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+}
+
+void FRenderer::PrepareDepthShader() const
+{
+    Graphics->DeviceContext->VSSetShader(QuadShader, nullptr, 0);
+    Graphics->DeviceContext->PSSetShader(DepthPixelShader, nullptr, 0);
+    Graphics->PrepareDepthScene();
+    
+    if (TextureConstantBufer)
+    {
+        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &TextureConstantBufer);
+    }
+    
     Graphics->DeviceContext->IASetInputLayout(nullptr); // 입력 레이아웃 불필요
     Graphics->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
 }
@@ -180,6 +200,7 @@ void FRenderer::SetPixelShader(const FWString& filename, const FString& funcname
 
 void FRenderer::ChangeViewMode(EViewModeIndex evi) const
 {
+    ID3D11SamplerState* nullSampler[1] = { nullptr };
     switch (evi)
     {
     case EViewModeIndex::VMI_Lit:
@@ -188,6 +209,8 @@ void FRenderer::ChangeViewMode(EViewModeIndex evi) const
     case EViewModeIndex::VMI_Wireframe:
     case EViewModeIndex::VMI_Unlit:
         UpdateLitUnlitConstant(0);
+    case EViewModeIndex::VMI_SceneDepth:
+        //UpdateSceneDepthConstant();
         break;
     }
 }
@@ -1057,7 +1080,7 @@ void FRenderer::RenderBatch(
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void FRenderer::PrepareRender(ULevel* Level)
+void FRenderer::SetRenderObj(ULevel* Level)
 {
     TArray<USceneComponent*> Ss;
     for (const auto& A : Level->GetActors())
@@ -1115,7 +1138,6 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
     ChangeViewMode(ActiveViewport->GetViewMode());
-
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         RenderStaticMeshes(Level, ActiveViewport);
@@ -1125,7 +1147,12 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
         RenderBillboards(Level, ActiveViewport);
         RenderTexts(Level, ActiveViewport);
     }
-    if (ActiveViewport->ViewMode == VMI_Lit)
+    // --- SceneDepth 특별 처리 ---
+    if (ActiveViewport->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
+    {
+        RenderDepthScene(Level, ActiveViewport);
+    }
+    else if (ActiveViewport->ViewMode == VMI_Lit)
     {
         RenderLighting(Level, ActiveViewport);
     }
@@ -1138,6 +1165,7 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     RenderGizmos(Level, ActiveViewport);
     RenderFinal(Level, ActiveViewport);
     ClearRenderArr();
+
 }
 
 void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
@@ -1349,8 +1377,28 @@ void FRenderer::RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportCli
     // Sampler 해제
     ID3D11SamplerState* nullSamplers[1] = { nullptr };
     Graphics->DeviceContext->PSSetSamplers(0, 1, nullSamplers);
-    //Graphics->DeviceContext->OMSetRenderTargets(5, Graphics->RTVs, Graphics->DepthStencilView);
-    //Graphics->DeviceContext->PSSetShaderResources(0,0,nullptr);
+}
+
+void FRenderer::RenderDepthScene(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport)
+{
+    PrepareDepthShader();
+
+    float uoffset = ActiveViewport->Viewport->GetViewport().TopLeftX / Graphics->screenWidth;
+    float voffset = ActiveViewport->Viewport->GetViewport().TopLeftY / Graphics->screenHeight;
+    float uscale = ActiveViewport->Viewport->GetViewport().Width / Graphics->screenWidth;
+    float vscale = ActiveViewport->Viewport->GetViewport().Height / Graphics->screenHeight;
+    UpdateTextureConstant(uoffset, voffset, uscale, vscale);
+    
+    // 화면 크기 사각형 렌더링
+    Graphics->DeviceContext->Draw(6, 0); // 4개의 정점으로 화면 전체 사각형 그리기
+    
+    // SRV 해제 (다음 패스를 위한 정리)
+    ID3D11ShaderResourceView* nullSRV = nullptr;
+    Graphics->DeviceContext->PSSetShaderResources(0, 1, &nullSRV);
+
+    // Sampler 해제
+    ID3D11SamplerState* nullSamplers = nullptr;
+    Graphics->DeviceContext->PSSetSamplers(0, 1, &nullSamplers);
 }
 
 void FRenderer::CreateDefaultPostProcessShader()
@@ -1638,7 +1686,7 @@ void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient
     UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV()};
+    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->pingpongDepthSRV[0]};
     Graphics->DeviceContext->PSSetShaderResources(0, 2, SRVs);
     Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->SamplerState);
 

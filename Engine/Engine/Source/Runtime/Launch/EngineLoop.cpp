@@ -167,24 +167,23 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 
 void FEngineLoop::Render()
 {
+    graphicDevice.ClearRenderTarget();
     if (LevelEditor->IsMultiViewport())
     {
-        graphicDevice.ClearRenderTarget();
         std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
         for (int i = 0; i < 4; ++i)
         {
-            graphicDevice.Prepare();
             LevelEditor->SetViewportClient(i);
-            renderer.PrepareRender(GLevel);
+            renderer.SetRenderObj(GLevel);
             renderer.Render(GetLevel(), LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
     {
+        renderer.SetRenderObj(GLevel);
         graphicDevice.ClearRenderTarget();
         graphicDevice.Prepare();
-        renderer.PrepareRender(GLevel);
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
 }

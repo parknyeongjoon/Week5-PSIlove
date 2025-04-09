@@ -27,18 +27,28 @@ class FRenderer
 private:
     float litFlag = 0;
 public:
+    // GPU 기본 연결
     FGraphicsDevice* Graphics;
+
+    // 셰이더 관련
     ID3D11VertexShader* VertexShader = nullptr;
     ID3D11VertexShader* QuadShader = nullptr;
     ID3D11PixelShader* PixelShader = nullptr;
     ID3D11PixelShader* LightingPixelShader = nullptr;
+    ID3D11PixelShader* DepthPixelShader = nullptr;
     ID3D11InputLayout* InputLayout = nullptr;
+
+    // ConstantBuffer 그룹
     ID3D11Buffer* ConstantBuffer = nullptr;
     ID3D11Buffer* LightArrConstantBuffer = nullptr;
     ID3D11Buffer* FlagBuffer = nullptr;
     ID3D11Buffer* MaterialConstantBuffer = nullptr;
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
     ID3D11Buffer* TextureConstantBufer = nullptr;
+
+    // VertexBuffer 그룹 (FullScreenQaud)
+    ID3D11Buffer* FullScreenQuadVertexBuffer = nullptr;
+    ID3D11Buffer* FullScreenQuadIndexBuffer = nullptr;
 
     FLighting lightingData;
 
@@ -76,6 +86,8 @@ public:
     ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices, UINT byteWidth) const;
+
+    void PrepareDepthShader() const;
 
     // update
     void UpdateConstant(const FMatrix& Model, const FMatrix& ViewProjection, const FMatrix& NormalMatrix, bool IsSelected) const;
@@ -132,7 +144,7 @@ public: // line shader
     void CreateLineShader();
     void ReleaseLineShader() const;
     void RenderBatch(const FGridParameters& gridParam, ID3D11Buffer* pVertexBuffer, int boundingBoxCount, int coneCount, int coneSegmentCount, int obbCount) const;
-    void PrepareRender(ULevel* Level);
+    void SetRenderObj(ULevel* Level);
     void UpdateGridConstantBuffer(const FGridParameters& gridParams) const;
     void UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones) const;
     ID3D11Buffer* CreateStaticVerticesBuffer() const;
@@ -153,6 +165,7 @@ public: // line shader
     void RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport) const;
+    void RenderDepthScene(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void RenderBillboards(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderTexts(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     
@@ -172,7 +185,6 @@ public:
     ID3D11ShaderResourceView* pBBSRV = nullptr;
     ID3D11ShaderResourceView* pConeSRV = nullptr;
     ID3D11ShaderResourceView* pOBBSRV = nullptr;
-
     // default postprocess
 public:
     ID3D11VertexShader* PostProcessVertexShader = nullptr;
