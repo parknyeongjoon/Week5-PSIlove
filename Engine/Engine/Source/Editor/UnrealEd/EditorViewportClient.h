@@ -125,6 +125,7 @@ public:
     float AspectRatio;
     float nearPlane = 0.1f;
     float farPlane = 100000.0f;
+
     static FVector Pivot;
     static float orthoSize;
     ELevelViewportType ViewportType;

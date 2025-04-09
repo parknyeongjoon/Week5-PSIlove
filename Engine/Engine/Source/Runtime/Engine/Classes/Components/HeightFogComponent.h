@@ -22,5 +22,8 @@ public:
     float FogMaxOpacity = 0.7f;
 
     FLinearColor FogInscatteringColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f);
+
+    float GetFogCutoffDistance() const{ return FogCutoffDistance; }
+    void SetFogCutoffDistance(float distance){ FogCutoffDistance = distance; }
 };
 
