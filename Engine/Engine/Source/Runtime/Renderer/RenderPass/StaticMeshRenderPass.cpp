@@ -18,6 +18,13 @@ extern FEngineLoop GEngineLoop;
 void StaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     BaseRenderPass::Prepare(InViewportClient);
+
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+
+    Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(Renderer.GetCurrentRasterizerState()));
+    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
+    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 }
 
 void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
@@ -48,15 +55,6 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InView
         UpdateMatrixConstants(item, View, Proj);
 
         UpdateSkySphereTextureConstants(Cast<USkySphereComponent>(item));
-
-        if (curEditorViewportClient->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::Type::SF_AABB))
-        {
-            UPrimitiveBatch::GetInstance().AddAABB(
-                item->GetBoundingBox(),
-                item->GetWorldLocation(),
-                Model
-            );
-        }
 
         if (!item->GetStaticMesh()) continue;
         

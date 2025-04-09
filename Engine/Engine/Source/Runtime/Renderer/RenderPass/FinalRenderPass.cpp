@@ -17,7 +17,13 @@ void FinalRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewport)
 {
     BaseRenderPass::Prepare(InViewport);
     
+    FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+
+    Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack));
+    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
+    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
+    
     Graphics.SwapRTV();
     Graphics.DeviceContext->OMSetDepthStencilState(nullptr, 0);
     Graphics.DeviceContext->OMSetRenderTargets(1, &Graphics.FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)

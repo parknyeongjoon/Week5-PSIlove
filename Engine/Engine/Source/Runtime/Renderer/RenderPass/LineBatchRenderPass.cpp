@@ -7,6 +7,7 @@
 #include "D3D11RHI/GPUBuffer/FVIBuffers.h"
 #include "GameFramework/Actor.h"
 #include "Math/JungleMath.h"
+#include "PropertyEditor/ShowFlags.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/PrimitiveBatch.h"
 #include "UObject/UObjectIterator.h"
@@ -27,7 +28,9 @@ void LineBatchRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewp
     BaseRenderPass::Prepare(InViewportClient);
     
     FRenderer& Renderer = GEngineLoop.renderer;
-    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    const FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+
+    Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack));
 
     auto* RenderTarget = Graphics.GetWriteRTV();
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
@@ -47,6 +50,7 @@ void LineBatchRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewp
 {
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    UPrimitiveBatch& PrimitveBatch = UPrimitiveBatch::GetInstance();
     
     std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
 
@@ -62,53 +66,55 @@ void LineBatchRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewp
     
     Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMVPConstant")), &MVPConstant);
 
-    const FGridParametersData GridParameters = UPrimitiveBatch::GetInstance().GetGridParameters();
+    const FGridParametersData GridParameters = PrimitveBatch.GetGridParameters();
     Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FGridParametersData")), &GridParameters);
     
     UpdateBatchResources();
 
     FPrimitiveCounts PrimitiveCounts;
-    PrimitiveCounts.ConeCount = UPrimitiveBatch::GetInstance().GetCones().Num();
-    PrimitiveCounts.BoundingBoxCount = UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num();
+    //PrimitiveCounts.ConeCount = PrimitveBatch.GetCones().Num();
+    PrimitiveCounts.BoundingBoxCount = PrimitveBatch.GetBoundingBoxes().Num();
     Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FPrimitiveCounts")), &PrimitiveCounts);
 
     const std::shared_ptr<FVIBuffers> VIBuffer = Renderer.GetVIBuffer(TEXT("Line"));
     VIBuffer->Bind(Graphics.DeviceContext);
 
     const uint32 vertexCountPerInstance = 2;
-    const uint32 instanceCount = GridParameters.GridCount + 3 + (UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num() * 12) + (UPrimitiveBatch::GetInstance().GetCones().Num() * (2 * UPrimitiveBatch::GetInstance().GetConeSegmentCount()) + (12 * UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes().Num()));
+    const uint32 instanceCount = GridParameters.GridCount + 3 + (PrimitveBatch.GetBoundingBoxes().Num() * 12) + (PrimitveBatch.GetCones().Num() * (2 * PrimitveBatch.GetConeSegmentCount()) + (12 * PrimitveBatch.GetOrientedBoundingBoxes().Num()));
     Graphics.DeviceContext->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
 
-    UPrimitiveBatch::GetInstance().ClearBatchPrimitives();
+    PrimitveBatch.ClearBatchPrimitives();
 }
 
 void LineBatchRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
-    for (const USceneComponent* iter : TObjectRange<USceneComponent>())
-    {
-        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
-        {
-            FMatrix Model = JungleMath::CreateModelMatrix(pLightComp->GetWorldLocation(), pLightComp->GetWorldRotation(), {1, 1, 1});
-            //UPrimitiveBatch::GetInstance().AddCone(pLightComp->GetWorldLocation(), pLightComp->GetAttenuationRadius(), 15, 140, pLightComp->GetLightColor(), Model);
-            UPrimitiveBatch::GetInstance().AddOBB(pLightComp->GetBoundingBox(), pLightComp->GetWorldLocation(), Model);
-        }
-    }
+    // for (const USceneComponent* iter : TObjectRange<USceneComponent>())
+    // {
+    //     if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
+    //     {
+    //         FMatrix Model = JungleMath::CreateModelMatrix(pLightComp->GetWorldLocation(), pLightComp->GetWorldRotation(), {1, 1, 1});
+    //         //UPrimitiveBatch::GetInstance().AddCone(pLightComp->GetWorldLocation(), pLightComp->GetAttenuationRadius(), 15, 140, pLightComp->GetLightColor(), Model);
+    //         UPrimitiveBatch::GetInstance().AddOBB(pLightComp->GetBoundingBox(), pLightComp->GetWorldLocation(), Model);
+    //     }
+    // }
 }
 
 void LineBatchRenderPass::UpdateBatchResources() const
 {
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+
+    UPrimitiveBatch& PrimitveBatch = UPrimitiveBatch::GetInstance();
     
     {
-        if (UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num() > UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity())
+        if (PrimitveBatch.GetBoundingBoxes().Num() > PrimitveBatch.GetAllocatedBoundingBoxCapacity())
         {
-            UPrimitiveBatch::GetInstance().SetAllocatedBoundingBoxCapacity(UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num());
+            PrimitveBatch.SetAllocatedBoundingBoxCapacity(PrimitveBatch.GetBoundingBoxes().Num());
 
             ID3D11Buffer* SB = nullptr;
             ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity()));
-            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity()));
+            SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<uint32>(PrimitveBatch.GetAllocatedBoundingBoxCapacity()));
+            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<uint32>(PrimitveBatch.GetAllocatedBoundingBoxCapacity()));
 
             Renderer.AddOrSetStructuredBuffer(TEXT("BoundingBox"), SB);
             Renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("BoundingBox"), SBSRV);
@@ -118,41 +124,41 @@ void LineBatchRenderPass::UpdateBatchResources() const
         ID3D11ShaderResourceView* SBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("BoundingBox"));
         if (SB != nullptr && SBSRV != nullptr)
         {
-            Renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetBoundingBoxes());
+            Renderer.UpdateStructuredBuffer(SB, PrimitveBatch.GetBoundingBoxes());
         }
     }
     
-    {
-        if (UPrimitiveBatch::GetInstance().GetCones().Num() > UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity())
-        {
-            UPrimitiveBatch::GetInstance().SetAllocatedConeCapacity(UPrimitiveBatch::GetInstance().GetCones().Num());
+    //{
+    //    if (UPrimitiveBatch::GetInstance().GetCones().Num() > UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity())
+    //    {
+    //        UPrimitiveBatch::GetInstance().SetAllocatedConeCapacity(UPrimitiveBatch::GetInstance().GetCones().Num());
 
-            ID3D11Buffer* SB = nullptr;
-            ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
-            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
+    //        ID3D11Buffer* SB = nullptr;
+    //        ID3D11ShaderResourceView* SBSRV = nullptr;
+    //        SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
+    //        SBSRV = Renderer.CreateBufferSRV(SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
 
-            Renderer.AddOrSetStructuredBuffer(TEXT("Cone"), SB);
-            Renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("Cone"), SBSRV);
-        }
+    //        Renderer.AddOrSetStructuredBuffer(TEXT("Cone"), SB);
+    //        Renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("Cone"), SBSRV);
+    //    }
 
-        ID3D11Buffer* SB = Renderer.GetStructuredBuffer(TEXT("Cone"));
-        ID3D11ShaderResourceView* SBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("Cone"));
-        if (SB != nullptr && SBSRV != nullptr)
-        {
-            Renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetCones());
-        }
-    }
+    //    ID3D11Buffer* SB = Renderer.GetStructuredBuffer(TEXT("Cone"));
+    //    ID3D11ShaderResourceView* SBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("Cone"));
+    //    if (SB != nullptr && SBSRV != nullptr)
+    //    {
+    //        Renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetCones());
+    //    }
+    //}
     
     {
-        if (UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes().Num() > UPrimitiveBatch::GetInstance().GetAllocatedOBBCapacity())
+        if (PrimitveBatch.GetOrientedBoundingBoxes().Num() > PrimitveBatch.GetAllocatedOBBCapacity())
         {
-            UPrimitiveBatch::GetInstance().SetAllocatedOBBCapacity(UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes().Num());
+            PrimitveBatch.SetAllocatedOBBCapacity(PrimitveBatch.GetOrientedBoundingBoxes().Num());
 
             ID3D11Buffer* SB = nullptr;
             ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedOBBCapacity()));
-            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedOBBCapacity()));
+            SB = Renderer.CreateStructuredBuffer<FOBB>(static_cast<uint32>(PrimitveBatch.GetAllocatedOBBCapacity()));
+            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<uint32>(PrimitveBatch.GetAllocatedOBBCapacity()));
 
             Renderer.AddOrSetStructuredBuffer(TEXT("OBB"), SB);
             Renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("OBB"), SBSRV);
@@ -162,7 +168,7 @@ void LineBatchRenderPass::UpdateBatchResources() const
         ID3D11ShaderResourceView* SBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("OBB"));
         if (SB != nullptr && SBSRV != nullptr)
         {
-            Renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes());
+            Renderer.UpdateStructuredBuffer(SB, PrimitveBatch.GetOrientedBoundingBoxes());
         }
     }
 }

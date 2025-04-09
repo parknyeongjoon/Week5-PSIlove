@@ -646,13 +646,10 @@ void FRenderer::BindConstantBuffers(const FString& InShaderName) const
 
 void FRenderer::ChangeViewMode(const EViewModeIndex evi)
 {
-    FFlagConstants flag;
     switch (evi)
     {
     case EViewModeIndex::VMI_Lit:
         bIsLit = true;
-        flag.IsLit = true;
-        // UpdateConstnatBuffer<FFlagConstants>(ConstantBuffers[TEXT("FFlagConstants")], &flag);
         SetCurrentRasterizerState(ERasterizerState::SolidBack);
         break;
     case EViewModeIndex::VMI_Wireframe:
@@ -660,8 +657,6 @@ void FRenderer::ChangeViewMode(const EViewModeIndex evi)
         break;
     case EViewModeIndex::VMI_Unlit:
         bIsLit = false;
-        flag.IsLit = false;
-        // UpdateConstnatBuffer<FFlagConstants>(ConstantBuffers[TEXT("FFlagConstants")], &flag);
         SetCurrentRasterizerState(ERasterizerState::SolidBack);
         break;
     }
@@ -759,7 +754,7 @@ void FRenderer::AddRenderObjectsToRenderPass(const ULevel* InLevel) const
 void FRenderer::Render(ULevel* InLevel, std::shared_ptr<FEditorViewportClient> InActiveViewport)
 {
     Graphics->DeviceContext->RSSetViewports(1, InActiveViewport->GetD3DViewport());
-    ChangeViewMode(InActiveViewport->GetViewMode());
+    //ChangeViewMode(InActiveViewport->GetViewMode());
 
     // for (const auto renderPass : RenderPasses)
     // {
@@ -769,6 +764,12 @@ void FRenderer::Render(ULevel* InLevel, std::shared_ptr<FEditorViewportClient> I
     
     staticMeshRenderPass->Prepare(InActiveViewport);
     staticMeshRenderPass->Execute(InActiveViewport);
+    
+    if (InActiveViewport->ViewMode == VMI_Lit)
+    {
+        lightingRenderPass->Prepare(InActiveViewport);
+        lightingRenderPass->Execute(InActiveViewport);
+    }
 
     fontRenderPass->Prepare(InActiveViewport);
     fontRenderPass->Execute(InActiveViewport);
@@ -776,11 +777,6 @@ void FRenderer::Render(ULevel* InLevel, std::shared_ptr<FEditorViewportClient> I
     billboardRenderPass->Prepare(InActiveViewport);
     billboardRenderPass->Execute(InActiveViewport);
     
-    if (InActiveViewport->ViewMode == VMI_Lit)
-    {
-        lightingRenderPass->Prepare(InActiveViewport);
-        lightingRenderPass->Execute(InActiveViewport);
-    }
 
     if (InActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
     {

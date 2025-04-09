@@ -13,9 +13,6 @@
 UCubeComp::UCubeComp()
 {
     SetType(StaticClass()->GetName());
-    AABB.max = { 1,1,1 };
-    AABB.min = { -1,-1,-1 };
-
 }
 
 UCubeComp::~UCubeComp()
@@ -39,8 +36,8 @@ void UCubeComp::InitializeComponent()
 {
     Super::InitializeComponent();
 
-    FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
-    SetStaticMesh(FManagerOBJ::GetStaticMesh(L"helloBlender.obj"));
+    UStaticMesh* staticMesh = FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
+    SetStaticMesh(staticMesh);
 }
 
 void UCubeComp::TickComponent(float DeltaTime)

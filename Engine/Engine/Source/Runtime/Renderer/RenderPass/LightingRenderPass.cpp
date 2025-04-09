@@ -31,7 +31,13 @@ void LightingRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 void LightingRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClient)
 {
     BaseRenderPass::Prepare(InViewportClient);
+    
+    FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& GraphicDevice = GEngineLoop.graphicDevice;
+    GraphicDevice.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack)); //레스터 라이저 상태 설정
+    
+    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
+    GraphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 
     auto* RenderTarget = GraphicDevice.GetWriteRTV();
     GraphicDevice.DeviceContext->OMSetDepthStencilState(nullptr, 0);

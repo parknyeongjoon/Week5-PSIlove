@@ -13,8 +13,13 @@ extern FEngineLoop GEngineLoop;
 void FogRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewport)
 {
     BaseRenderPass::Prepare(InViewport);
-    
+
+    FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& GraphicDevice = GEngineLoop.graphicDevice;
+    
+    GraphicDevice.DeviceContext->RSSetState(Renderer.GetRasterizerState(Renderer.GetCurrentRasterizerState()));
+    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
+    GraphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
     
     GraphicDevice.SwapRTV();
     ID3D11RenderTargetView* RenderTarget = GraphicDevice.GetWriteRTV();

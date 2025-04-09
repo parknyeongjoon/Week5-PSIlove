@@ -17,8 +17,11 @@ void GizmoRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportC
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     
-    Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+    //Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
     Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack)); //레스터 라이저 상태 설정
+    
+    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear); 
+    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 }
 
 void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
@@ -28,6 +31,10 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportC
     
     FMatrix View = FMatrix::Identity;
     FMatrix Proj = FMatrix::Identity;
+
+    FFlagConstants flagConstants;
+    flagConstants.IsLit = true;
+    Renderer.UpdateConstnatBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
     
     // 쉐이더 내에서 한 번만 Update되어야하는 정보
     std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);

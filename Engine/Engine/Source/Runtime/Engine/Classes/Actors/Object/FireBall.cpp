@@ -6,8 +6,8 @@
 
 AFireBall::AFireBall()
 {
-    FManagerOBJ::CreateStaticMesh("Assets/Fireball.obj");
-    StaticMeshComponent->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Fireball.obj"));
+    UStaticMesh* staticMesh = FManagerOBJ::CreateStaticMesh("Assets/Fireball.obj");
+    StaticMeshComponent->SetStaticMesh(staticMesh);
     AddComponent<ULightComponent>();
 }
 

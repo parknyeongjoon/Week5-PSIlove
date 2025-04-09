@@ -7,12 +7,18 @@
 #include "GameFramework/Actor.h"
 #include "UnrealEd/EditorViewportClient.h"
 
-class UParticleSubUVComp;
 extern FEngineLoop GEngineLoop;
 
 void BillboardRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     BaseRenderPass::Prepare(InViewportClient);
+    
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+
+    Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(Renderer.GetCurrentRasterizerState()));
+    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
+    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 }
 
 void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
