@@ -8,8 +8,13 @@
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "World.h"
+#include "Actors/Object/FireBall.h"
 #include "Components/ProjectileMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/FLoaderOBJ.h"
+#include "Engine/StaticMeshActor.h"
 #include "GameFramework/Actor.h"
+#include "Components/LightComponent.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -131,6 +136,28 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GLevel = FObjectFactory::ConstructObject<ULevel>();
     GWorld->Level =GLevel;
     GLevel->Initialize(EWorldType::Editor);
+
+    //TODO: 맵 세이브 생기면 삭제
+    AStaticMeshActor* map = GetLevel()->SpawnActor<AStaticMeshActor>();
+    map->GetStaticMeshComponent()->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Demo.obj"));
+    map->SetActorLocation(FVector(0,0,1000));
+    map->SetActorRotation(FVector(90,0,90));
+    map->SetActorScale(FVector(5,5,5));
+
+    AStaticMeshActor* car = GetLevel()->SpawnActor<AStaticMeshActor>();
+    car->GetStaticMeshComponent()->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
+    car->SetActorLocation(FVector(0,-15000,1000));
+    car->AddComponent<UProjectileMovementComponent>();
+
+    leftLight = car->AddComponent<ULightComponent>();
+    leftLight->SetLocation(FVector(200,-20,10));
+    leftLight->SetAttenuationRadius(200);
+    leftLight->SetIntensity(50);
+    rightLight = car->AddComponent<ULightComponent>();
+    rightLight->SetLocation(FVector(200,20,10));
+    rightLight->SetAttenuationRadius(200);
+    rightLight->SetIntensity(50);
+    // test 여기까지
 
     WorldContexts.Add({});
 
@@ -260,8 +287,8 @@ void FEngineLoop::PIETick(double elapsedTime)
     SpawnMeteor();
     if (movementActor != nullptr)
     {
-        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetLocation(FVector(-100,0,100) + movementActor->GetOwner()->GetActorLocation());
-        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetRotation(FVector(0,30,0));
+        //카메라 세팅
+        LevelEditor->GetActiveViewportClient()->ViewTransformPerspective.SetLocation(FVector(-8,-14,30) + movementActor->GetOwner()->GetActorLocation());
     }
     LevelEditor->Tick(elapsedTime);
     Render();

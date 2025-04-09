@@ -6,8 +6,10 @@
 #include "LevelEditor/SLevelEditor.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
+#include "Classes/Components/ProjectileMovementComponent.h"
 #include "Components/SkySphereComponent.h"
 #include "Actors/Fog.h"
+#include "Engine/StaticMeshActor.h"
 
 
 void ULevel::Initialize(EWorldType worldType)
