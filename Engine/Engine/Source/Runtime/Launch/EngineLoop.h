@@ -59,7 +59,11 @@ private:
     double accumulatedTime = 0.0f;
     bool bTestInput = false;
     int curWorldContextIndex = 0;
-    UProjectileMovementComponent* movementActor = nullptr; 
+
+    // test용
+    UProjectileMovementComponent* movementComponent = nullptr;
+    ULightComponent* leftLight = nullptr;
+    ULightComponent* rightLight = nullptr;
 
 public:
     ULevel* GetLevel() const { return GLevel; }

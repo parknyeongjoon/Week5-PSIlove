@@ -16,6 +16,8 @@
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "PropertyEditor/ShowFlags.h"
+#include "Actors/Fog.h"
+#include "Components/HeightFogComponent.h"
 
 void ControlEditorPanel::Render()
 {
@@ -237,6 +239,22 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
         {
             GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetCameraSpeedScalar(CameraSpeed);
         }
+
+        ImGui::Spacing();
+
+        ImGui::Text("Fog Distance");
+
+        ULevel* Level = GEngineLoop.GetLevel();
+        if (Level)
+        {
+            FogDistance = Cast<UHeightFogComponent>(Level->GetFog()->GetRootComponent())->GetFogCutoffDistance();
+            ImGui::SetNextItemWidth(120.0f);
+            if (ImGui::DragFloat("##FogDistance", &FogDistance, 2.0f, 100.0f, 10000.0f, "%.1f"))
+            {
+                Cast<UHeightFogComponent>(Level->GetFog()->GetRootComponent())->SetFogCutoffDistance(FogDistance);
+            }
+        }
+
         
         ImGui::EndPopup();
     }

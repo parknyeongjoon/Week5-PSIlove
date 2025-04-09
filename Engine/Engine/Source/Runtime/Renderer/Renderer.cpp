@@ -450,7 +450,7 @@ void FRenderer::UpdateLightBuffer(TArray<ULightComponent*> lightComponents) cons
         for (int index = 0; index< lightComponents.Num();index++)
         {
             constants->Lights[index].Intensity = lightComponents[index]->GetIntensity();
-            constants->Lights[index].Position = lightComponents[index]->GetOwner()->GetActorLocation();
+            constants->Lights[index].Position = lightComponents[index]->GetWorldLocation();
             constants->Lights[index].AmbientFactor = 0.0f;
             constants->Lights[index].LightColor = lightComponents[index]->GetLightColor();
             constants->Lights[index].LightDirection = FVector(-1,-1,-1);
@@ -500,9 +500,24 @@ void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const
 
     if (MaterialInfo.bHasTexture == true)
     {
-        std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
-        Graphics->DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
-        Graphics->DeviceContext->PSSetSamplers(0, 1, &texture->SamplerState);
+        if (MaterialInfo.DiffuseTextureName != "")
+        {
+            std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
+            Graphics->DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
+            Graphics->DeviceContext->PSSetSamplers(0, 1, &texture->SamplerState);
+        }
+        if (MaterialInfo.SpecularTextureName != "")
+        {
+            std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.SpecularTexturePath);
+            Graphics->DeviceContext->PSSetShaderResources(1, 1, &texture->TextureSRV);
+            Graphics->DeviceContext->PSSetSamplers(0, 1, &texture->SamplerState);
+        }
+        if (MaterialInfo.BumpTextureName != "")
+        {
+            std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.BumpTexturePath);
+            Graphics->DeviceContext->PSSetShaderResources(2, 1, &texture->TextureSRV);
+            Graphics->DeviceContext->PSSetSamplers(0, 1, &texture->SamplerState);
+        }
     }
     else
     {
@@ -1077,27 +1092,12 @@ void FRenderer::SetRenderObj(ULevel* Level)
         {
             if (ULightComponent* pLightComp = Cast<ULightComponent>(comp))
                 LightObjs.Add(pLightComp);
-        }
-    }
-
-
-    for (const USceneComponent* iter : TObjectRange<USceneComponent>())
-    {
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        {
-            GizmoObjs.Add(pGizmoComp);
-        }
-        if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(iter))
-        {
-            TextObjs.Add(TextRenderComp);
-        }
-        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
-        if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(iter))
-        {
-            HeightFogObjs.Add(pHeightFogComp);
+            if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(comp))
+                HeightFogObjs.Add(pHeightFogComp);
+            if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(comp))
+                GizmoObjs.Add(pGizmoComp);
+            if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(comp))
+                TextObjs.Add(TextRenderComp);
         }
     }
     
