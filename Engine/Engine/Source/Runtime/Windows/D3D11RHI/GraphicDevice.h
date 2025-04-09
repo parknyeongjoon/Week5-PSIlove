@@ -2,6 +2,7 @@
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
+#pragma comment(lib, "dxguid")
 
 #define _TCHAR_DEFINED
 #define SAFE_RELEASE(p) if(p) { p->Release(); p = nullptr; }
