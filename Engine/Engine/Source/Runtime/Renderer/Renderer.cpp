@@ -163,7 +163,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateDepthSceneShader();
     CreateDefaultPostProcessShader();
 
-    bIsLit = true;
+    UpdateLitUnlitConstant(true);
     LoadStates();
 }
 
@@ -817,24 +817,35 @@ void FRenderer::ChangeViewMode(const EViewModeIndex evi)
     switch (evi)
     {
     case EViewModeIndex::VMI_Lit:
-        bIsLit = true;
+        UpdateLitUnlitConstant(true);
         SetCurrentRasterizerState(ERasterizerState::SolidBack);
         break;
     case EViewModeIndex::VMI_Wireframe:
         SetCurrentRasterizerState(ERasterizerState::WireFrame);
         break;
     case EViewModeIndex::VMI_Unlit:
-        bIsLit = false;
+        UpdateLitUnlitConstant(false);
         SetCurrentRasterizerState(ERasterizerState::SolidBack);
         break;
+    case EViewModeIndex::VMI_SceneDepth:
+        SetCurrentRasterizerState(ERasterizerState::SolidBack);
     default:
-        bIsLit = true;
+        UpdateLitUnlitConstant(true);
         SetCurrentRasterizerState(ERasterizerState::SolidBack);
         break;
     }
+    
 }
 
-ID3D11Buffer* FRenderer::CreateIndexBuffer(const uint32* indices, const uint32 indicesSize) const
+void FRenderer::UpdateLitUnlitConstant(const bool bIsLit)
+{
+    // 쉐이더 내에서 한 번만 Update되어야하는 정보
+    FFlagConstants flagConstants;
+    flagConstants.IsLit = bIsLit;
+    UpdateConstantBuffer(GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
+}
+
+   ID3D11Buffer* FRenderer::CreateIndexBuffer(const uint32* indices, const uint32 indicesSize) const
 {
     TArray<uint32> indicesToCopy;
     indicesToCopy.AppendArray(indices, indicesSize);

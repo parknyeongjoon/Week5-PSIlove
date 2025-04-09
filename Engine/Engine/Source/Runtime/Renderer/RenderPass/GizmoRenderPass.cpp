@@ -33,10 +33,6 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportC
     FMatrix View = FMatrix::Identity;
     FMatrix Proj = FMatrix::Identity;
 
-    FFlagConstants flagConstants;
-    flagConstants.IsLit = true;
-    Renderer.UpdateConstantBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
-    
     // 쉐이더 내에서 한 번만 Update되어야하는 정보
     std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (curEditorViewportClient != nullptr)

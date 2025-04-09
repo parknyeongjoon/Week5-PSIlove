@@ -120,6 +120,8 @@ public:
     void BindConstantBuffers(const FString& InShaderName) const;
     
     void ChangeViewMode(EViewModeIndex evi);
+
+    void UpdateLitUnlitConstant(bool bIsLit);
     
     template<typename T>
     ID3D11Buffer* CreateImmutableVertexBuffer(const TArray<T>& vertices) const;
@@ -169,14 +171,6 @@ private:
     std::shared_ptr<FogRenderPass> fogRenderPass;
     std::shared_ptr<FinalRenderPass> finalRenderPass;
     std::shared_ptr<DepthSceneRenderPass> depthRenderPass;
-
-
-public: // line shader
-public:
-    bool IsLit() const { return bIsLit; }
-    void SetLit(const bool InbIsLit) { bIsLit = InbIsLit; }
-private:
-    bool bIsLit = false;
 };
 
 template <typename T>

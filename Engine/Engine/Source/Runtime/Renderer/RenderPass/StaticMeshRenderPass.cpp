@@ -39,11 +39,6 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InView
 
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     FRenderer& Renderer = GEngineLoop.renderer;
-
-    // 쉐이더 내에서 한 번만 Update되어야하는 정보
-    // FFlagConstants flagConstants;
-    // flagConstants.IsLit = Renderer.IsLit();
-    // Renderer.UpdateConstnatBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
     
     std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (curEditorViewportClient != nullptr)
