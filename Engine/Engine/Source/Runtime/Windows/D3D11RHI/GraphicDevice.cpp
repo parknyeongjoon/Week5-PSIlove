@@ -444,6 +444,15 @@ void FGraphicsDevice::PrepareLighting() const
     DeviceContext->PSSetShaderResources(0, 4, GBufferSRVs);
     DeviceContext->PSSetSamplers(0, 1, &SamplerState);
 }
+void FGraphicsDevice::PreparePostProcessRender()
+{
+    SwapRTV();
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
+}
 
 void FGraphicsDevice::PrepareDepthScene() const
 {
@@ -456,22 +465,12 @@ void FGraphicsDevice::PrepareDepthScene() const
     DeviceContext->PSSetSamplers(0, 1, &SamplerState);
 }
 
-void FGraphicsDevice::PreparePostProcessRender()
-{
-    SwapRTV();
-    auto* RenderTarget = GetWriteRTV();
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
-    DeviceContext->OMSetDepthStencilState(nullptr, 0);
-    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
-}
-
 void FGraphicsDevice::PrepareGridRender()
 {
     auto* RenderTarget = GetWriteRTV();
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST); // 정정 연결 방식 설정
     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-    DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
+    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     DeviceContext->OMSetRenderTargets(1, &RenderTarget, DepthStencilView); // 렌더 타겟 설정
 }
 

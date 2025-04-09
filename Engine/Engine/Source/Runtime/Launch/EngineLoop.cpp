@@ -143,12 +143,12 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     map->SetActorLocation(FVector(0,0,1000));
     map->SetActorRotation(FVector(90,0,90));
     map->SetActorScale(FVector(5,5,5));
-
+    
     AStaticMeshActor* car = GetLevel()->SpawnActor<AStaticMeshActor>();
     car->GetStaticMeshComponent()->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
     car->SetActorLocation(FVector(0,-15000,960));
     car->AddComponent<UProjectileMovementComponent>();
-
+    
     leftLight = car->AddComponent<ULightComponent>();
     leftLight->SetLocation(FVector(300,-20,10));
     leftLight->SetAttenuationRadius(300);
