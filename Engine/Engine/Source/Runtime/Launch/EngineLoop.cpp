@@ -175,7 +175,6 @@ void FEngineLoop::Render()
         {
             LevelEditor->SetViewportClient(i);
             renderer.SetRenderObj(GLevel);
-            renderer.PrepareRender(GLevel);
             renderer.Render(GetLevel(), LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
@@ -185,7 +184,6 @@ void FEngineLoop::Render()
         renderer.SetRenderObj(GLevel);
         graphicDevice.ClearRenderTarget();
         graphicDevice.Prepare();
-        renderer.PrepareRender(GLevel);
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
 }
