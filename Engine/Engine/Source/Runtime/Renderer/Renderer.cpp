@@ -110,8 +110,8 @@ void FRenderer::PrepareShader() const
 {
     Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
-    Graphics->Prepare();
     Graphics->DeviceContext->IASetInputLayout(InputLayout);
+    Graphics->Prepare();
 
     if (ConstantBuffer)
     {
@@ -1658,7 +1658,7 @@ void FRenderer::RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> 
     UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV()};
+    ID3D11ShaderResourceView* SRVs[] = { Graphics->GetReadSRV(), Graphics->DepthStencilSRV };
     Graphics->DeviceContext->PSSetShaderResources(0, 2, SRVs);
     Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->SamplerState);
 
@@ -1686,7 +1686,7 @@ void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient
     UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->pingpongDepthSRV[0]};
+    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->DepthStencilSRV};
     Graphics->DeviceContext->PSSetShaderResources(0, 2, SRVs);
     Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->SamplerState);
 

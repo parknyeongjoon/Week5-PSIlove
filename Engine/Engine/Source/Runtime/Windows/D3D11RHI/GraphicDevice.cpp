@@ -256,11 +256,6 @@ void FGraphicsDevice::CreateFrameBuffer()
         Device->CreateTexture2D(&pingpongTextureDesc, nullptr, &pingpongTex[i]);
         Device->CreateRenderTargetView(pingpongTex[i], nullptr, &pingpongRTV[i]);
         Device->CreateShaderResourceView(pingpongTex[i], nullptr, &pingpongSRV[i]);
-
-        // SceneDepth
-        Device->CreateTexture2D(&depthDesc, nullptr, &pingpongDepthTex[i]);
-        Device->CreateDepthStencilView(pingpongDepthTex[i], &dsvDesc, &pingpongDSV[i]);
-        Device->CreateShaderResourceView(pingpongDepthTex[i], &srvDesc, &pingpongDepthSRV[i]);
     }
 
 //  RTVs[0] = FrameBufferRTV;
@@ -352,21 +347,6 @@ void FGraphicsDevice::ReleaseFrameBuffer()
             pingpongSRV[i]->Release();
             pingpongSRV[i] = nullptr;
         }
-        if (pingpongDepthTex[i])
-        {
-            pingpongDepthTex[i]->Release();
-            pingpongDepthTex[i] = nullptr;
-        }
-        if (pingpongDSV[i])
-        {
-            pingpongDSV[i]->Release();
-            pingpongDSV[i] = nullptr;
-        }
-        if (pingpongDepthSRV[i])
-        {
-            pingpongDepthSRV[i]->Release();
-            pingpongDepthSRV[i] = nullptr;
-        }
     }
 }
 
@@ -430,7 +410,7 @@ void FGraphicsDevice::ClearRenderTarget()
     DeviceContext->ClearRenderTargetView(NormalRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(DiffuseRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(MaterialRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearDepthStencilView(pingpongDSV[0], D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
+    DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
 }
 
 
@@ -440,7 +420,7 @@ void FGraphicsDevice::Prepare()
     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-    DeviceContext->OMSetRenderTargets(5, RTVs, pingpongDSV[0]); // 렌더 타겟 설정
+    DeviceContext->OMSetRenderTargets(5, RTVs, DepthStencilView); // 렌더 타겟 설정
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
@@ -462,7 +442,7 @@ void FGraphicsDevice::PrepareDepthScene() const
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
     DeviceContext->OMSetRenderTargets(1, &writeRTV, nullptr);
-    DeviceContext->PSSetShaderResources(0, 1, &pingpongDepthSRV[0]);
+    DeviceContext->PSSetShaderResources(0, 1, &DepthStencilSRV);
     DeviceContext->PSSetSamplers(0, 1, &SamplerState);
 }
 
@@ -482,7 +462,7 @@ void FGraphicsDevice::PrepareGridRender()
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
     DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-    DeviceContext->OMSetRenderTargets(1, &RenderTarget, pingpongDSV[0]); // 렌더 타겟 설정
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, DepthStencilView); // 렌더 타겟 설정
 }
 
 void FGraphicsDevice::PrepareFinalRender()

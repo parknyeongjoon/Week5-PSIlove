@@ -46,11 +46,6 @@ public:
     ID3D11RenderTargetView* pingpongRTV[2];
     ID3D11ShaderResourceView* pingpongSRV[2];
 
-    // depth & stencil
-    ID3D11Texture2D* pingpongDepthTex[2];
-    ID3D11DepthStencilView* pingpongDSV[2];
-    ID3D11ShaderResourceView* pingpongDepthSRV[2];
-
     // sampler
     ID3D11SamplerState* SamplerState = nullptr;
 
@@ -60,12 +55,7 @@ public:
     ID3D11RenderTargetView* GetWriteRTV() const { return pingpongRTV[CurrentIndex]; }
     ID3D11ShaderResourceView* GetReadSRV() const { return pingpongSRV[1 - CurrentIndex]; }
 
-    ID3D11DepthStencilView* GetWriteDSV() const { return pingpongDSV[CurrentIndex]; }
-    ID3D11ShaderResourceView* GetReadDepthSRV() const { return pingpongDepthSRV[1 - CurrentIndex]; }
-
     DXGI_SWAP_CHAIN_DESC SwapchainDesc;
-    
-
     
     UINT screenWidth = 0;
     UINT screenHeight = 0;
