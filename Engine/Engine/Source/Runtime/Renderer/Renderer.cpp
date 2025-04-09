@@ -1350,44 +1350,17 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
 
     if (ActiveViewport->GetViewMode() != EViewModeIndex::VMI_SceneDepth) // SceneDepth 아닐 때!
     {
-        // 샘플러는 여기서 설정하지 않고, 실제 그리기 함수에서 텍스처와 함께 설정하거나 null로 설정해야 함.
-        // 따라서 여기서는 null로 초기화 해주는 것이 안전.
-        ID3D11SamplerState* nullSampler[1] = { nullptr };
-        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 슬롯 0 샘플러 클리어
-
         switch (ActiveViewport->GetViewMode())
         {
-        case EViewModeIndex::VMI_Lit:
-            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0); // VS 설정 추가!
-            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);  // PS 설정 추가!
-            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID); // Rasterizer 설정 추가!
-            break;
-        case EViewModeIndex::VMI_Unlit: // Lit과 Unlit이 같은 기본 StaticMesh 셰이더 사용 가정
-            // 기본 StaticMesh 셰이더 설정
-            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0); // !!! 정확한 이름 사용 !!!
-            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);  // !!! 정확한 이름 사용 !!!
-            
-            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID);
-            break;
-
         case EViewModeIndex::VMI_Wireframe:
-            // Wireframe: StaticMesh VS + StaticMesh PS 사용 (Wireframe 전용 PS 없으므로)
-            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0); // !!! 정확한 이름 사용 !!!
-            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);  // !!! 정확한 이름 사용 !!!
-            
             Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateWIREFRAME);
             break;
-
-        default: // 기본값 (Lit/Unlit 가정)
-            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
-            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
-            
+        default:
             Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID);
             break;
         }
-
         // 기본 렌더 타겟 설정
-        Graphics->DeviceContext->OMSetRenderTargets(1, &Graphics->FrameBufferRTV, Graphics->DepthStencilView);
+        //Graphics->DeviceContext->OMSetRenderTargets(1, &Graphics->FrameBufferRTV, Graphics->DepthStencilView);
     }
     // 5. 기본 렌더링 (깊이 버퍼 필요)
     // *** 중요: 기본 렌더 타겟 (Color + Depth) 설정 ***
@@ -1423,15 +1396,6 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
         // 1.5. Sampler 언바인딩 (PrepareDepthShader에서 설정한 슬롯과 동일하게)
         ID3D11SamplerState* nullSampler[1] = { nullptr };
         Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 슬롯 0 가정
-
-        // 2. 기본 렌더 타겟 복구 (Color + Depth)
-        //    위에서 설정한 defaultRTV, defaultDSV 사용
-        Graphics->DeviceContext->OMSetRenderTargets(1, &Graphics->FrameBufferRTV, Graphics->DepthStencilView);
-
-        // 3. Quad 렌더링에 사용된 VS/PS/InputLayout을 기본 렌더링용으로 복구
-        Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
-        Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
-        Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID); // 기본 SOLID 상태 설정
     }
 
     ClearRenderArr();
