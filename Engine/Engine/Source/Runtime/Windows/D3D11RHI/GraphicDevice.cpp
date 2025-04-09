@@ -424,6 +424,16 @@ void FGraphicsDevice::Prepare()
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
+void FGraphicsDevice::PrepareGizmo()
+{
+    auto* RTV = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
+    DeviceContext->OMSetRenderTargets(1, &RTV, DepthStencilView); // 렌더 타겟 설정
+    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+}
+
 void FGraphicsDevice::PrepareLighting() const
 {
     auto* RenderTarget = GetWriteRTV();
@@ -451,7 +461,7 @@ void FGraphicsDevice::PreparePostProcessRender()
     SwapRTV();
     auto* RenderTarget = GetWriteRTV();
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
     DeviceContext->OMSetDepthStencilState(nullptr, 0);
     DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
 }
@@ -459,9 +469,9 @@ void FGraphicsDevice::PreparePostProcessRender()
 void FGraphicsDevice::PrepareGridRender()
 {
     auto* RenderTarget = GetWriteRTV();
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST); // 정정 연결 방식 설정
     DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+    DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
     DeviceContext->OMSetRenderTargets(1, &RenderTarget, DepthStencilView); // 렌더 타겟 설정
 }
 
@@ -469,7 +479,7 @@ void FGraphicsDevice::PrepareFinalRender()
 {
     SwapRTV();
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
     DeviceContext->OMSetDepthStencilState(nullptr, 0);
     DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
 }
@@ -514,7 +524,11 @@ void FGraphicsDevice::ChangeRasterizer(EViewModeIndex evi)
         CurrentRasterizer = RasterizerStateWIREFRAME;
         break;
     case EViewModeIndex::VMI_Lit:
+        CurrentRasterizer = RasterizerStateSOLID;
+        break;
     case EViewModeIndex::VMI_Unlit:
+        CurrentRasterizer = RasterizerStateSOLID;
+        break;
     case EViewModeIndex::VMI_SceneDepth:
         CurrentRasterizer = RasterizerStateSOLID;
         break;

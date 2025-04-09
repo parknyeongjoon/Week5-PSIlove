@@ -92,6 +92,7 @@ public:
     void PrepareFinalRender();
     void SwapBuffer() const;
     void Prepare();
+    void PrepareGizmo();
     void PrepareLighting() const;
     void PrepareDepthScene() const;
     // void Prepare(D3D11_VIEWPORT* viewport) const;

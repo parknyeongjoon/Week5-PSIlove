@@ -125,6 +125,25 @@ void FRenderer::PrepareShader() const
     }
 }
 
+void FRenderer::PrepareGizmoShader() const
+{
+    Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
+    Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
+    Graphics->DeviceContext->IASetInputLayout(InputLayout);
+    Graphics->PrepareGizmo();
+
+    if (ConstantBuffer)
+    {
+        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &MaterialConstantBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightArrConstantBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
+        Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBufer);
+    }
+}
+
 void FRenderer::PrepareLightingShader() const
 {
     Graphics->DeviceContext->VSSetShader(QuadShader, nullptr, 0);
@@ -1160,9 +1179,11 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     {
         RenderFog(Level, ActiveViewport);
     }
+    
+    RenderGizmos(Level, ActiveViewport);
     Graphics->PrepareGridRender();
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-    RenderGizmos(Level, ActiveViewport);
+
     RenderFinal(Level, ActiveViewport);
     ClearRenderArr();
 
@@ -1196,13 +1217,15 @@ void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewpor
 
         if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
         {
-            UPrimitiveBatch::GetInstance().RenderAABB(
-                StaticMeshComp->GetBoundingBox(),
-                StaticMeshComp->GetWorldLocation(),
-                Model
-            );
+            if (Level->GetSelectedActor() == StaticMeshComp->GetOwner())
+            {
+                UPrimitiveBatch::GetInstance().RenderAABB(
+                    StaticMeshComp->GetBoundingBox(),
+                    StaticMeshComp->GetWorldLocation(),
+                    Model
+                );
+            }
         }
-                
     
         if (!StaticMeshComp->GetStaticMesh()) continue;
 
@@ -1219,14 +1242,7 @@ void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorV
     {
         return;
     }
-
-    #pragma region GizmoDepth
-        ID3D11DepthStencilState* DepthStateDisable = Graphics->DepthStateDisable;
-        Graphics->DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
-    #pragma endregion GizmoDepth
-
-    //  fill solid,  Wireframe 에서도 제대로 렌더링되기 위함
-    Graphics->DeviceContext->RSSetState(FEngineLoop::graphicDevice.RasterizerStateSOLID);
+    PrepareGizmoShader();
     
     for (auto GizmoComp : GizmoObjs)
     {
@@ -1264,12 +1280,12 @@ void FRenderer::RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorV
         RenderPrimitive(renderData, GizmoComp->GetStaticMesh()->GetMaterials(), GizmoComp->GetOverrideMaterials());
     }
 
-    Graphics->DeviceContext->RSSetState(Graphics->GetCurrentRasterizer());
-
-#pragma region GizmoDepth
-    ID3D11DepthStencilState* originalDepthState = Graphics->DepthStencilState;
-    Graphics->DeviceContext->OMSetDepthStencilState(originalDepthState, 0);
-#pragma endregion GizmoDepth
+//     Graphics->DeviceContext->RSSetState(Graphics->GetCurrentRasterizer());
+//
+// #pragma region GizmoDepth
+//     ID3D11DepthStencilState* originalDepthState = Graphics->DepthStencilState;
+//     Graphics->DeviceContext->OMSetDepthStencilState(originalDepthState, 0);
+// #pragma endregion GizmoDepth
 }
 
 void FRenderer::RenderBillboards(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)

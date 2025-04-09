@@ -59,6 +59,7 @@ public:
     void Initialize(FGraphicsDevice* graphics);
    
     void PrepareShader() const;
+    void PrepareGizmoShader() const;
     void PrepareLightingShader() const;
 
     //Render
