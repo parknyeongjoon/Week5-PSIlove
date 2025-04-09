@@ -19,8 +19,8 @@ void ULevel::Initialize(EWorldType worldType)
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
     FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
-    //FManagerOBJ::CreateStaticMesh("Assets/RoadCube.obj");
-    //FManagerOBJ::CreateStaticMesh("Assets/Demo.obj");
+    FManagerOBJ::CreateStaticMesh("Assets/RoadCube.obj");
+    FManagerOBJ::CreateStaticMesh("Assets/Demo.obj");
     
     Fog = SpawnActor<AFog>();
 }
