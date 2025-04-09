@@ -10,19 +10,22 @@
 #include "UObject/ObjectTypes.h"
 #include "UObject/UObjectIterator.h"
 
-void GizmoRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
+void GizmoRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
-    BaseRenderPass::Prepare(viewport);
+    BaseRenderPass::Prepare(InViewportClient);
     GEngineLoop.graphicDevice.DeviceContext->RSSetState(GEngineLoop.renderer.GetRasterizerState(ERasterizerState::SolidBack)); //레스터 라이저 상태 설정
 }
 
-void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
+void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    
     FMatrix View = FMatrix::Identity;
     FMatrix Proj = FMatrix::Identity;
     
     // 쉐이더 내에서 한 번만 Update되어야하는 정보
-    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(viewport);
+    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (curEditorViewportClient != nullptr)
     {
         View = curEditorViewportClient->GetViewMatrix();
@@ -49,8 +52,8 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
 
         UpdateMatrixConstants(item, View, Proj);
 
-        const std::shared_ptr<FVIBuffers> currentVIBuffer =  GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
-        currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
+        const std::shared_ptr<FVIBuffers> currentVIBuffer =  Renderer.GetVIBuffer(item->VIBufferName);
+        currentVIBuffer->Bind(Graphics.DeviceContext);
 
         const OBJ::FStaticMeshRenderData* renderData = item->GetStaticMesh()->GetRenderData();
         if (renderData == nullptr) continue;
@@ -58,7 +61,7 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
         // If There's No Material Subset
         if (renderData->MaterialSubsets.Num() == 0)
         {
-            GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
+            Graphics.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
         }
         
         // SubSet마다 Material Update 및 Draw
@@ -78,14 +81,14 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
                 // index draw
                 const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
                 const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
-                GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
+                Graphics.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
             }
         }
     }
     
 }
 
-void GizmoRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
+void GizmoRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
     GizmoComponents.Empty();
     for (const USceneComponent* iter : TObjectRange<USceneComponent>())
@@ -99,17 +102,17 @@ void GizmoRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
 
 void GizmoRenderPass::UpdateMatrixConstants(UGizmoBaseComponent* InGizmoComponent, const FMatrix& InView, const FMatrix& InProjection)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
+    
     // MVP Update
     const FMatrix Model = JungleMath::CreateModelMatrix(InGizmoComponent->GetWorldLocation(), InGizmoComponent->GetWorldRotation(),
                                                         InGizmoComponent->GetWorldScale());
-    const FMatrix MVP = Model * InView * InProjection;
     const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-    const FVector4 UUIDColor = InGizmoComponent->EncodeUUID() / 255.0f;
         
     FMatrixConstants MatrixConstants;
-    MatrixConstants.MVP = MVP;
+    MatrixConstants.M = Model;
+    MatrixConstants.VP = InView * InProjection;
     MatrixConstants.MInverseTranspose = NormalMatrix;
-    MatrixConstants.ObjectUUID = UUIDColor;
     if (InGizmoComponent->GetLevel()->GetPickingGizmo() == InGizmoComponent)
     {
         MatrixConstants.isSelected = true;
@@ -118,18 +121,22 @@ void GizmoRenderPass::UpdateMatrixConstants(UGizmoBaseComponent* InGizmoComponen
     {
         MatrixConstants.isSelected = false;
     }
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
 }
 
 void GizmoRenderPass::UpdateSubMeshConstants(bool bIsSelectedSubMesh)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
+    
     FSubMeshConstants SubMeshConstants;
     SubMeshConstants.IsSelectedSubMesh = bIsSelectedSubMesh;
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
 }
 
 void GizmoRenderPass::UpdateMaterialConstants(const UMaterial* CurrentMaterial)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
+
     FMaterialConstants MaterialConstants;
     if (CurrentMaterial != nullptr)
     {
@@ -141,5 +148,5 @@ void GizmoRenderPass::UpdateMaterialConstants(const UMaterial* CurrentMaterial)
         MaterialConstants.SpecularScalar = CurrentMaterial->GetSpecularScalar();
         MaterialConstants.EmissiveColor = CurrentMaterial->GetEmissive();
     }
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
 }

@@ -39,18 +39,13 @@ public:
     ID3D11ShaderResourceView* NormalSRV = nullptr;
     ID3D11ShaderResourceView* DiffuseSRV = nullptr;
     ID3D11ShaderResourceView* MaterialSRV = nullptr;
-
-    ID3D11SamplerState* DefaultSampler = nullptr;
-    
+        
     ID3D11RenderTargetView* RTVs[5] = { };
     ID3D11RenderTargetView* FrameBufferRTV = nullptr;
     ID3D11RenderTargetView* PositionRTV = nullptr;
     ID3D11RenderTargetView* NormalRTV = nullptr;
     ID3D11RenderTargetView* DiffuseRTV = nullptr;
     ID3D11RenderTargetView* MaterialRTV = nullptr;
-    
-    ID3D11RasterizerState* RasterizerStateSOLID = nullptr;
-    ID3D11RasterizerState* RasterizerStateWIREFRAME = nullptr;
 
     // post-processing
     ID3D11Texture2D* pingpongTex[2];
@@ -61,9 +56,6 @@ public:
     ID3D11Texture2D* pingpongDepthTex[2];
     ID3D11DepthStencilView* pingpongDSV[2];
     ID3D11ShaderResourceView* pingpongDepthSRV[2];
-
-    // sampler
-    ID3D11SamplerState* SamplerState = nullptr;
 
     int CurrentIndex = 0;
     void SwapRTV() { CurrentIndex = 1 - CurrentIndex; }
@@ -81,11 +73,9 @@ public:
     // Depth-Stencil 관련 변수
     ID3D11Texture2D* DepthStencilBuffer = nullptr;  // 깊이/스텐실 텍스처
     ID3D11DepthStencilView* DepthStencilView = nullptr;  // 깊이/스텐실 뷰
-    ID3D11DepthStencilState* DepthStencilState = nullptr;
+
     FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 화면을 초기화(clear) 할 때 사용할 색상(RGBA)
     FLOAT PositionClearColor[4] = {0,0,0,0};
-
-
 
     void Initialize(HWND hWindow);
     void CreateDeviceAndSwapChain(HWND hWindow);
@@ -99,50 +89,24 @@ public:
     void ReleaseFrameBuffer();
     void ReleaseGBuffer();
     void ReleaseGBufferSRVs();
-    void ReleaseRasterizerState();
     void ReleaseDepthStencilResources();
     void Release();
     
     void ClearRenderTarget();
-    void PreparePostProcessRender();
-    void PrepareGridRender();
-    void PrepareFinalRender();
     void SwapBuffer() const;
     void Prepare();
-    void PrepareLighting();
     // void Prepare(D3D11_VIEWPORT* viewport) const;
-    void SwapBuffer() const;
-    void Prepare() const;
-    void Prepare(D3D11_VIEWPORT* viewport);
+    //void Prepare() const;
+    //void Prepare(D3D11_VIEWPORT* viewport);
     void OnResize(HWND hWindow);
     void BindSampler(EShaderStage stage, uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* const* ppSamplers) const;
     void BindSamplers(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* const* ppSamplers) const;
-
-    void Release();
+    
     void ReleaseDeviceAndSwapChain();
-    void ReleaseFrameBuffer();
-    void ReleaseDepthStencilBuffer();
-
-    ID3D11RasterizerState* GetCurrentRasterizer() { return CurrentRasterizer; }
-    inline void ChangeDepthStencilState(ID3D11DepthStencilState* newDetptStencil) const
-    {
-        DeviceContext->OMSetDepthStencilState(newDetptStencil, 0);
-    }
-
-    //uint32 GetPixelUUID(POINT pt);
-    //uint32 DecodeUUIDColor(FVector4 UUIDColor);
-    ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
-    void ChangeRasterizer(EViewModeIndex evi);
-    void ChangeDepthStencilState(ID3D11DepthStencilState* newDetptStencil);
 
 public:
     bool CreateVertexShader(const FString& fileName, ID3DBlob** ppCode, ID3D11VertexShader** ppVertexShader) const;
     bool CreatePixelShader(const FString& fileName, ID3DBlob** ppCode, ID3D11PixelShader** ppPixelShader) const;
     static TArray<FConstantBufferInfo> ExtractConstantBufferNames(ID3DBlob* shaderBlob);
-
-    // uint32 GetPixelUUID(POINT pt);
-    // uint32 DecodeUUIDColor(FVector4 UUIDColor);
-private:
-    ID3D11RasterizerState* CurrentRasterizer = nullptr;
 };
 

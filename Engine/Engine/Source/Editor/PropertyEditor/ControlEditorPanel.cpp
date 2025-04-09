@@ -370,10 +370,10 @@ void ControlEditorPanel::CreateFlagButton() const
     {
         for (int i = 0; i < IM_ARRAYSIZE(ViewTypeNames); i++)
         {
-            bool bIsSelected = ((int)ActiveViewport->GetViewportType() == i);
+            const bool bIsSelected = (static_cast<int>(ActiveViewport->GetViewportType()) == i);
             if (ImGui::Selectable(ViewTypeNames[i], bIsSelected))
             {
-                ActiveViewport->SetViewportType((ELevelViewportType)i);
+                ActiveViewport->SetViewportType(static_cast<ELevelViewportType>(i));
             }
 
             if (bIsSelected)
@@ -387,8 +387,8 @@ void ControlEditorPanel::CreateFlagButton() const
     ImGui::SameLine();
     
     const char* ViewModeNames[] = { "Lit", "Unlit", "Wireframe" };
-    FString SelectLightControl = ViewModeNames[(int)ActiveViewport->GetViewMode()];
-    ImVec2 LightTextSize = ImGui::CalcTextSize(GetData(SelectLightControl));
+    FString SelectLightControl = ViewModeNames[static_cast<int>(ActiveViewport->GetViewMode())];
+    const ImVec2 LightTextSize = ImGui::CalcTextSize(GetData(SelectLightControl));
     
     if (ImGui::Button(GetData(SelectLightControl), ImVec2(30 + LightTextSize.x, 32)))
     {
@@ -399,10 +399,10 @@ void ControlEditorPanel::CreateFlagButton() const
     {
         for (int i = 0; i < IM_ARRAYSIZE(ViewModeNames); i++)
         {
-            bool bIsSelected = ((int)ActiveViewport->GetViewMode() == i);
+            const bool bIsSelected = (static_cast<int>(ActiveViewport->GetViewMode()) == i);
             if (ImGui::Selectable(ViewModeNames[i], bIsSelected))
             {
-                ActiveViewport->SetViewMode((EViewModeIndex)i);
+                ActiveViewport->SetViewMode(static_cast<EViewModeIndex>(i));
                 FEngineLoop::renderer.ChangeViewMode(ActiveViewport->GetViewMode());
             }
 

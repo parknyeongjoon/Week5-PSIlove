@@ -4,8 +4,8 @@
 class FShaderProgram
 {
 public:
-    FShaderProgram(ID3D11VertexShader* InVertexShader, ID3D11PixelShader* InPixelShader, ID3D11InputLayout* InInputLayout, const uint32 InStride)
-        : VertexShader(InVertexShader), PixelShader(InPixelShader), InputLayout(InInputLayout), Stride(InStride)
+    FShaderProgram(ID3D11VertexShader* InVertexShader, ID3D11PixelShader* InPixelShader, ID3D11InputLayout* InInputLayout)
+        : VertexShader(InVertexShader), PixelShader(InPixelShader), InputLayout(InInputLayout)
     {}
     // 생성자 (필요한 경우 초기화)
     FShaderProgram() = default;
@@ -13,7 +13,10 @@ public:
     // 셰이더 및 입력 레이아웃 바인딩 함수
     void Bind(ID3D11DeviceContext* context) const
     {
-        context->IASetInputLayout(InputLayout);
+        if (InputLayout)
+        {
+            context->IASetInputLayout(InputLayout);
+        }
         context->VSSetShader(VertexShader, nullptr, 0);
         context->PSSetShader(PixelShader, nullptr, 0);
     }
@@ -51,5 +54,4 @@ private:
     ID3D11VertexShader* VertexShader;
     ID3D11PixelShader*  PixelShader;
     ID3D11InputLayout*  InputLayout;
-    uint32 Stride;
 };

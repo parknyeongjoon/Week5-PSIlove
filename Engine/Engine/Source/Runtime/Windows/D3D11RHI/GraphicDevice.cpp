@@ -51,8 +51,6 @@ void FGraphicsDevice::CreateDeviceAndSwapChain(const HWND hWindow)
     screenHeight = SwapchainDesc.BufferDesc.Height;
 }
 
-
-
 void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
 {
     RECT clientRect;
@@ -116,9 +114,6 @@ bool FGraphicsDevice::CreateRasterizerState(const D3D11_RASTERIZER_DESC* pRaster
         return false;
 
     return true;
-    SAFE_RELEASE(SwapChain)
-    SAFE_RELEASE(Device)
-    SAFE_RELEASE(DeviceContext)
 }
 
 void FGraphicsDevice::CreateFrameBuffer()
@@ -178,8 +173,6 @@ void FGraphicsDevice::CreateFrameBuffer()
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
     samplerDesc.MinLOD = 0;
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-    Device->CreateSamplerState(&samplerDesc, &SamplerState);
     
     for (int i = 0;i < 2; i++)
     {
@@ -322,23 +315,14 @@ void FGraphicsDevice::ReleaseGBufferSRVs()
     SAFE_RELEASE(MaterialSRV)
 }
 
-void FGraphicsDevice::ReleaseRasterizerState()
-{
-    SAFE_RELEASE(RasterizerStateSOLID)
-    SAFE_RELEASE(RasterizerStateWIREFRAME)
-}
-
 void FGraphicsDevice::ReleaseDepthStencilResources()
 {
     SAFE_RELEASE(DepthStencilBuffer)
     SAFE_RELEASE(DepthStencilView)
-    SAFE_RELEASE(DepthStencilState)
-    SAFE_RELEASE(DepthStateDisable)
 }
 
 void FGraphicsDevice::Release() 
 {
-    ReleaseRasterizerState();
     DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
     ReleaseFrameBuffer();
@@ -370,45 +354,14 @@ void FGraphicsDevice::Prepare()
     auto* RenderDepthTarget = GetWriteDSV();
     DeviceContext->ClearDepthStencilView(RenderDepthTarget, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
     DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
-    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+    //DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    //DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     DeviceContext->OMSetRenderTargets(5, RTVs, RenderDepthTarget); // 렌더 타겟 설정
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
-void FGraphicsDevice::PrepareLighting()
+void FGraphicsDevice::OnResize(HWND hWindow)
 {
-    auto* RenderTarget = GetWriteRTV();
-    DeviceContext->OMSetDepthStencilState(nullptr, 0);
-    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr);
-    DeviceContext->PSSetShaderResources(0, 4, GBufferSRVs);
-    DeviceContext->PSSetSamplers(0, 1, &SamplerState);
-}
-
-void FGraphicsDevice::PreparePostProcessRender()
-{
-    SwapRTV();
-    auto* RenderTarget = GetWriteRTV();
-    DeviceContext->OMSetDepthStencilState(nullptr, 0);
-    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
-}
-
-void FGraphicsDevice::PrepareGridRender()
-{
-    auto* RenderTarget = GetWriteRTV();
-    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-    DeviceContext->OMSetRenderTargets(1, &RenderTarget, pingpongDSV[0]); // 렌더 타겟 설정
-}
-
-void FGraphicsDevice::PrepareFinalRender()
-{
-    SwapRTV();
-    DeviceContext->OMSetDepthStencilState(nullptr, 0);
-    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
-}
-
-
-void FGraphicsDevice::OnResize(HWND hWindow) {
     DeviceContext->OMSetRenderTargets(0, RTVs, 0);
     
     ReleaseFrameBuffer();
@@ -465,44 +418,16 @@ void FGraphicsDevice::BindSamplers(const uint32 StartSlot, const uint32 NumSampl
     BindSampler(EShaderStage::PS, StartSlot, NumSamplers, ppSamplers);
 }
 
-void FGraphicsDevice::Release()
-{
-    DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-
-    ReleaseFrameBuffer();
-    ReleaseDepthStencilBuffer();
-    ReleaseDeviceAndSwapChain();
-}
-
 void FGraphicsDevice::ReleaseDeviceAndSwapChain()
 {
     if (DeviceContext)
     {
         DeviceContext->Flush(); // 남아있는 GPU 명령 실행
     }
-
-    if (SwapChain)
-    {
-        SwapChain->Release();
-        SwapChain = nullptr;
-    }
-
-    if (Device)
-    {
-        Device->Release();
-        Device = nullptr;
-    }
-
-    if (DeviceContext)
-    {
-        DeviceContext->Release();
-        DeviceContext = nullptr;
-    }
-}
-
-void FGraphicsDevice::ChangeDepthStencilState(ID3D11DepthStencilState* newDetptStencil)
-{
-    DeviceContext->OMSetDepthStencilState(newDetptStencil, 0);
+    
+    SAFE_RELEASE(SwapChain)
+    SAFE_RELEASE(DeviceContext)
+    SAFE_RELEASE(Device)
 }
 
 bool FGraphicsDevice::CreateBlendState(const D3D11_BLEND_DESC* pBlendState, ID3D11BlendState** ppBlendState) const

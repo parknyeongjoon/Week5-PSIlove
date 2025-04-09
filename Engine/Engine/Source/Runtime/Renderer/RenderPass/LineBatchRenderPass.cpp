@@ -22,64 +22,70 @@ LineBatchRenderPass::LineBatchRenderPass(const FString& InShaderName)
     FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("Line"), pVertexBuffer, sizeof(FSimpleVertex), 2, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 }
 
-void LineBatchRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
+void LineBatchRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
-    BaseRenderPass::Prepare(viewport);
+    BaseRenderPass::Prepare(InViewportClient);
 
-    ID3D11ShaderResourceView* BoundingBoxSRV = GEngineLoop.renderer.GetStructuredBufferShaderResourceView(TEXT("BoundingBox"));
-    GEngineLoop.graphicDevice.DeviceContext->VSSetShaderResources(2, 1, &BoundingBoxSRV);
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
 
-    ID3D11ShaderResourceView* ConeSRV = GEngineLoop.renderer.GetStructuredBufferShaderResourceView(TEXT("Cone"));
-    GEngineLoop.graphicDevice.DeviceContext->VSSetShaderResources(3, 1, &ConeSRV);
+    ID3D11ShaderResourceView* BoundingBoxSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("BoundingBox"));
+    Graphics.DeviceContext->VSSetShaderResources(2, 1, &BoundingBoxSRV);
 
-    ID3D11ShaderResourceView* OBBSRV = GEngineLoop.renderer.GetStructuredBufferShaderResourceView(TEXT("OBB"));
-    GEngineLoop.graphicDevice.DeviceContext->VSSetShaderResources(4, 1, &OBBSRV);
+    ID3D11ShaderResourceView* ConeSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("Cone"));
+    Graphics.DeviceContext->VSSetShaderResources(3, 1, &ConeSRV);
+
+    ID3D11ShaderResourceView* OBBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("OBB"));
+    Graphics.DeviceContext->VSSetShaderResources(4, 1, &OBBSRV);
 }
 
-void LineBatchRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
+void LineBatchRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
 {
-    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(viewport);
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    
+    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
 
     // 쉐이더 내에서 한 번만 Update되어야하는 CB
     const FMatrix Model = FMatrix::Identity;
-    FMatrix MVP;
-    if (curEditorViewportClient != nullptr)
-        MVP = Model * curEditorViewportClient->GetViewMatrix() * curEditorViewportClient->GetProjectionMatrix();
-    const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
 
     FMVPConstant MVPConstant;
-    MVPConstant.MVP = MVP;
+    MVPConstant.M = Model;
+    if (curEditorViewportClient != nullptr)
+    {
+        MVPConstant.VP = curEditorViewportClient->GetViewMatrix() * curEditorViewportClient->GetProjectionMatrix();
+    }
     
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMVPConstant")), &MVPConstant);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMVPConstant")), &MVPConstant);
 
     const FGridParametersData GridParameters = UPrimitiveBatch::GetInstance().GetGridParameters();
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FGridParametersData")), &GridParameters);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FGridParametersData")), &GridParameters);
     
     UpdateBatchResources();
 
     FPrimitiveCounts PrimitiveCounts;
     PrimitiveCounts.ConeCount = UPrimitiveBatch::GetInstance().GetCones().Num();
     PrimitiveCounts.BoundingBoxCount = UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num();
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FPrimitiveCounts")), &PrimitiveCounts);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FPrimitiveCounts")), &PrimitiveCounts);
 
-    const std::shared_ptr<FVIBuffers> VIBuffer = GEngineLoop.renderer.GetVIBuffer(TEXT("Line"));
-    VIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
+    const std::shared_ptr<FVIBuffers> VIBuffer = Renderer.GetVIBuffer(TEXT("Line"));
+    VIBuffer->Bind(Graphics.DeviceContext);
 
-    UINT vertexCountPerInstance = 2;
-    UINT instanceCount = GridParameters.GridCount + 3 + (UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num() * 12) + (UPrimitiveBatch::GetInstance().GetCones().Num() * (2 * UPrimitiveBatch::GetInstance().GetConeSegmentCount()) + (12 * UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes().Num()));
-    GEngineLoop.graphicDevice.DeviceContext->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
+    const uint32 vertexCountPerInstance = 2;
+    const uint32 instanceCount = GridParameters.GridCount + 3 + (UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num() * 12) + (UPrimitiveBatch::GetInstance().GetCones().Num() * (2 * UPrimitiveBatch::GetInstance().GetConeSegmentCount()) + (12 * UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes().Num()));
+    Graphics.DeviceContext->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
 
     UPrimitiveBatch::GetInstance().ClearBatchPrimitives();
 }
 
-void LineBatchRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
+void LineBatchRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
     for (const USceneComponent* iter : TObjectRange<USceneComponent>())
     {
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
+        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
         {
             FMatrix Model = JungleMath::CreateModelMatrix(pLightComp->GetWorldLocation(), pLightComp->GetWorldRotation(), {1, 1, 1});
-            UPrimitiveBatch::GetInstance().AddCone(pLightComp->GetWorldLocation(), pLightComp->GetRadius(), 15, 140, pLightComp->GetColor(), Model);
+            //UPrimitiveBatch::GetInstance().AddCone(pLightComp->GetWorldLocation(), pLightComp->GetAttenuationRadius(), 15, 140, pLightComp->GetLightColor(), Model);
             UPrimitiveBatch::GetInstance().AddOBB(pLightComp->GetBoundingBox(), pLightComp->GetWorldLocation(), Model);
         }
     }
@@ -87,6 +93,9 @@ void LineBatchRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
 
 void LineBatchRenderPass::UpdateBatchResources() const
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    
     {
         if (UPrimitiveBatch::GetInstance().GetBoundingBoxes().Num() > UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity())
         {
@@ -94,18 +103,18 @@ void LineBatchRenderPass::UpdateBatchResources() const
 
             ID3D11Buffer* SB = nullptr;
             ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = FEngineLoop::renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity()));
-            SBSRV = FEngineLoop::renderer.CreateBufferSRV(SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity()));
+            SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity()));
+            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedBoundingBoxCapacity()));
 
-            FEngineLoop::renderer.AddOrSetStructuredBuffer(TEXT("BoundingBox"), SB);
-            FEngineLoop::renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("BoundingBox"), SBSRV);
+            Renderer.AddOrSetStructuredBuffer(TEXT("BoundingBox"), SB);
+            Renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("BoundingBox"), SBSRV);
         }
 
-        ID3D11Buffer* SB = FEngineLoop::renderer.GetStructuredBuffer(TEXT("BoundingBox"));
-        ID3D11ShaderResourceView* SBSRV = FEngineLoop::renderer.GetStructuredBufferShaderResourceView(TEXT("BoundingBox"));
+        ID3D11Buffer* SB = Renderer.GetStructuredBuffer(TEXT("BoundingBox"));
+        ID3D11ShaderResourceView* SBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("BoundingBox"));
         if (SB != nullptr && SBSRV != nullptr)
         {
-            FEngineLoop::renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetBoundingBoxes());
+            Renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetBoundingBoxes());
         }
     }
     
@@ -116,18 +125,18 @@ void LineBatchRenderPass::UpdateBatchResources() const
 
             ID3D11Buffer* SB = nullptr;
             ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = FEngineLoop::renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
-            SBSRV = FEngineLoop::renderer.CreateBufferSRV(SB, static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
+            SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
+            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
 
-            FEngineLoop::renderer.AddOrSetStructuredBuffer(TEXT("Cone"), SB);
-            FEngineLoop::renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("Cone"), SBSRV);
+            Renderer.AddOrSetStructuredBuffer(TEXT("Cone"), SB);
+            Renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("Cone"), SBSRV);
         }
 
-        ID3D11Buffer* SB = FEngineLoop::renderer.GetStructuredBuffer(TEXT("Cone"));
-        ID3D11ShaderResourceView* SBSRV = FEngineLoop::renderer.GetStructuredBufferShaderResourceView(TEXT("Cone"));
+        ID3D11Buffer* SB = Renderer.GetStructuredBuffer(TEXT("Cone"));
+        ID3D11ShaderResourceView* SBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("Cone"));
         if (SB != nullptr && SBSRV != nullptr)
         {
-            FEngineLoop::renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetCones());
+            Renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetCones());
         }
     }
     
@@ -138,18 +147,18 @@ void LineBatchRenderPass::UpdateBatchResources() const
 
             ID3D11Buffer* SB = nullptr;
             ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = FEngineLoop::renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedOBBCapacity()));
-            SBSRV = FEngineLoop::renderer.CreateBufferSRV(SB, static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedOBBCapacity()));
+            SB = Renderer.CreateStructuredBuffer<FBoundingBox>(static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedOBBCapacity()));
+            SBSRV = Renderer.CreateBufferSRV(SB, static_cast<UINT>(UPrimitiveBatch::GetInstance().GetAllocatedOBBCapacity()));
 
-            FEngineLoop::renderer.AddOrSetStructuredBuffer(TEXT("OBB"), SB);
-            FEngineLoop::renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("OBB"), SBSRV);
+            Renderer.AddOrSetStructuredBuffer(TEXT("OBB"), SB);
+            Renderer.AddOrSetStructuredBufferShaderResourceView(TEXT("OBB"), SBSRV);
         }
 
-        ID3D11Buffer* SB = FEngineLoop::renderer.GetStructuredBuffer(TEXT("OBB"));
-        ID3D11ShaderResourceView* SBSRV = FEngineLoop::renderer.GetStructuredBufferShaderResourceView(TEXT("OBB"));
+        ID3D11Buffer* SB = Renderer.GetStructuredBuffer(TEXT("OBB"));
+        ID3D11ShaderResourceView* SBSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("OBB"));
         if (SB != nullptr && SBSRV != nullptr)
         {
-            FEngineLoop::renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes());
+            Renderer.UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetOrientedBoundingBoxes());
         }
     }
 }

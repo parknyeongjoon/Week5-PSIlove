@@ -1,8 +1,9 @@
+#include "ShaderHeaders/Samplers.hlsli"
+
 Texture2D PositionBuffer : register(t0);
 Texture2D NormalBuffer : register(t1);
 Texture2D DiffuseBuffer : register(t2);
 Texture2D MaterialBuffer : register(t3);
-SamplerState SamLinear : register(s0);
 
 // 먼저 FLighting 구조체를 정의해야 합니다
 struct FLighting
@@ -48,10 +49,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     // G-Buffer에서 데이터 샘플링
     float2 texCoord = float2(UOffset + input.texCoord.x * UTiles, VOffset + input.texCoord.y * VTiles);
-    float4 position = PositionBuffer.Sample(SamLinear, texCoord);
-    float4 normal = NormalBuffer.Sample(SamLinear, texCoord);
-    float4 diffuse = DiffuseBuffer.Sample(SamLinear, texCoord);
-    float4 material = MaterialBuffer.Sample(SamLinear, texCoord);
+    float4 position = PositionBuffer.Sample(linearSampler, texCoord);
+    float4 normal = NormalBuffer.Sample(linearSampler, texCoord);
+    float4 diffuse = DiffuseBuffer.Sample(linearSampler, texCoord);
+    float4 material = MaterialBuffer.Sample(linearSampler, texCoord);
 
      // 유효한 픽셀인지 확인 (깊이 값이 0이면 스킵)
     if (position.w == 0.0f)

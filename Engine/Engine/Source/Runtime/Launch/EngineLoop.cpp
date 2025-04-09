@@ -147,7 +147,7 @@ void FEngineLoop::Render()
         {
             graphicDevice.Prepare();
             LevelEditor->SetViewportClient(i);
-            renderer.PrepareRender(GLevel);
+            renderer.AddRenderObjectsToRenderPass(GLevel);
             renderer.Render(GetLevel(), LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);

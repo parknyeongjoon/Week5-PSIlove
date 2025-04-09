@@ -14,10 +14,10 @@ public:
     StaticMeshRenderPass(const FString& InShaderName)
         : BaseRenderPass(InShaderName) {}
     
-    virtual void Prepare(std::shared_ptr<FViewportClient> viewport) override;
-    virtual void Execute(std::shared_ptr<FViewportClient> viewport) override;
+    virtual void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
+    virtual void Execute(std::shared_ptr<FViewportClient> InViewportClient) override;
 
-    void AddRenderObjectsToRenderPass(const ULevel* Level) override;
+    void AddRenderObjectsToRenderPass(const ULevel* InLevel) override;
     void AddStaticMesh(UStaticMeshComponent* InStaticMesh) { StaticMesheComponents.Add(InStaticMesh); }
 private:
     static void UpdateMatrixConstants(UStaticMeshComponent* InStaticMeshComponent, const FMatrix& InView, const FMatrix& InProjection);

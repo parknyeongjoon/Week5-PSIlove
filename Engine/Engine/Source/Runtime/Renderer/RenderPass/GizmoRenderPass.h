@@ -15,10 +15,10 @@ public:
     {
     }
 
-    void Prepare(std::shared_ptr<FViewportClient> viewport) override;
-    void Execute(std::shared_ptr<FViewportClient> viewport) override;
+    void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
+    void Execute(std::shared_ptr<FViewportClient> InViewportClient) override;
 
-    void AddRenderObjectsToRenderPass(const ULevel* Level) override;
+    void AddRenderObjectsToRenderPass(const ULevel* InLevel) override;
     void AddGizmoComponent(UGizmoBaseComponent* gizmo) { GizmoComponents.Add(gizmo); }
 private:
     TArray<UGizmoBaseComponent*> GizmoComponents;

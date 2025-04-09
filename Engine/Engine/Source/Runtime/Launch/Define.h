@@ -283,6 +283,13 @@ struct FVertexTexture
 	float u, v; // Texture
 };
 
+struct FScreenVertex
+{
+    FVector4 Position;
+    float TexcoordU;
+    float TexcoordV;
+};
+
 struct FSimpleVertex
 {
     float dummy; // 내용은 사용되지 않음
@@ -328,72 +335,8 @@ struct FCone
     float pad[3];
 
 };
-struct FPrimitiveCounts 
-{
-	int BoundingBoxCount;
-	int pad;
-	int ConeCount; 
-	int pad1;
-};
-struct FLighting
-{
-	float lightDirX, lightDirY, lightDirZ; // 조명 방향
-	float pad1;                      // 16바이트 정렬용 패딩
-	float lightColorX, lightColorY, lightColorZ;    // 조명 색상
-	float pad2;                      // 16바이트 정렬용 패딩
-	float AmbientFactor;             // ambient 계수
-	float pad3; // 16바이트 정렬 맞춤 추가 패딩
-	float pad4; // 16바이트 정렬 맞춤 추가 패딩
-	float pad5; // 16바이트 정렬 맞춤 추가 패딩
-};
-
-struct FMaterialConstants {
-    FVector DiffuseColor;
-    float TransparencyScalar;
-    FVector AmbientColor;
-    float DensityScalar;
-    FVector SpecularColor;
-    float SpecularScalar;
-    FVector EmmisiveColor;
-    float MaterialPad0;
-};
 
 struct FOBB
 {
     FVector corners[8];
-};
-
-struct FSubMeshConstants {
-    float isSelectedSubMesh;
-    FVector pad;
-};
-
-struct FTextureConstants {
-    float UOffset;
-    float VOffset;
-    float UTiles;
-    float VTiles;
-};
-
-struct FScreenVertex {
-    FVector4 Position;
-    float U, V;
-    float pad0, pad1;
-};
-
-struct FFogConstants
-{
-    float FogDensity;             // 4 bytes
-    float FogHeightFalloff;      // 4 bytes
-    float StartDistance;         // 4 bytes
-    float FogCutoffDistance;     // 4 bytes
-    float FogMaxOpacity;         // 4 bytes
-    float Padding1[3];           // 12 bytes → 16 bytes 정렬 맞춤
-
-    FLinearColor FogInscatteringColor; // 16 bytes (4 floats)
-
-    FVector CameraPosition;
-    float padding;
-    FMatrix InvProjectionMatrix; // 64 bytes (4x4 floats)
-    FMatrix InvViewMatrix;       // 64 bytes
 };

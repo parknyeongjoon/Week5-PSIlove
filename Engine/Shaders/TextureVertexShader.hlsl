@@ -1,5 +1,3 @@
-#include "ShaderHeaders/ConstantBuffers.hlsli"
-#include "ShaderHeaders/Samplers.hlsli"
 
 struct VSInput
 {

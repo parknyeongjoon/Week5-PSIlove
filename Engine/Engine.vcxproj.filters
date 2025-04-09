@@ -405,6 +405,22 @@
     <ClInclude Include="Engine\Source\Runtime\Renderer\FogRenderer.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Object\FireBall.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\BillboardRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\FontRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\BaseRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\StaticMeshRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\FShaderProgram.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FConstantBuffer.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVIBuffers.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\TestConstantDefine.h" />
+    <ClInclude Include="Shaders\ShaderHeaders\ConstantBuffers.hlsli" />
+    <ClInclude Include="Shaders\ShaderHeaders\Samplers.hlsli" />
+    <ClInclude Include="Shaders\ShaderHeaders\Textures.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -471,12 +487,6 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\ShaderLine.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\ShaderW0.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\StaticMeshVertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -490,9 +500,11 @@
     <FxCompile Include="Shaders\LightingPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="QuadVertexShader.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
+    <FxCompile Include="Shaders\QuadVertexShader.hlsl" />
+    <FxCompile Include="Shaders\ShaderLinePixelShader.hlsl" />
+    <FxCompile Include="Shaders\ShaderPixelShader.hlsl" />
+    <FxCompile Include="Shaders\ShaderLineVertexShader.hlsl" />
+    <FxCompile Include="Shaders\ShaderVertexShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Engine.natvis" />
@@ -506,5 +518,22 @@
     <ClCompile Include="Engine\Source\Runtime\Renderer\FogRenderer.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Object\FireBall.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\Texture.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\ViewportClient.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\BillboardRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\FontRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\BaseRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\StaticMeshRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\FShaderProgram.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FConstantBuffer.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\GPUBuffer\FVIBuffers.cpp" />
+    <ClCompile Include="Shaders\FogPixelShader.hlsl" />
+    <ClCompile Include="Shaders\PostProcessPixelShader.hlsl" />
+    <ClCompile Include="Shaders\PostProcessVertexShader.hlsl" />
   </ItemGroup>
 </Project>

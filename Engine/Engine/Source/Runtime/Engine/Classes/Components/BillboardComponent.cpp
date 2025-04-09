@@ -36,7 +36,7 @@ UObject* UBillboardComponent::Duplicate()
 void UBillboardComponent::InitializeComponent()
 {
     Super::InitializeComponent();
-    CreateQuadTextureVertexBuffer();
+    CreateQuadTextureBuffer();
 }
 
 void UBillboardComponent::TickComponent(float DeltaTime)
@@ -91,7 +91,7 @@ FMatrix UBillboardComponent::CreateBillboardMatrix()
 	return M;
 }
 
-void UBillboardComponent::CreateQuadTextureVertexBuffer()
+void UBillboardComponent::CreateQuadTextureBuffer()
 {
 	numVertices = sizeof(quadTextureVertices) / sizeof(FVertexTexture);
 	numIndices = sizeof(quadTextureInices) / sizeof(uint32);

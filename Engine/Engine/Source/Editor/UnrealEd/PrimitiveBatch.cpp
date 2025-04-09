@@ -10,13 +10,6 @@ UPrimitiveBatch::UPrimitiveBatch()
 
 UPrimitiveBatch::~UPrimitiveBatch()
 {
-    if (pVertexBuffer) {
-        pVertexBuffer->Release();
-        pVertexBuffer = nullptr;
-    }
-    ReleaseOBBResources();
-    ReleaseBoundingBoxResources();
-    ReleaseConeResources();
 }
 
 void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
@@ -86,19 +79,3 @@ void UPrimitiveBatch::AddOBB(const FBoundingBox& localAABB, const FVector& cente
     OrientedBoundingBoxes.Add(faceBB);
 
 }
-
-void UPrimitiveBatch::AddCone(const FVector& center, const float radius, const float height, const int segments, const FVector4& color, const FMatrix& modelMatrix)
-{
-    ConeSegmentCount = segments;
-    const FVector localApex = FVector(0, 0, 0);
-    FCone cone;
-    cone.ConeApex = center + FMatrix::TransformVector(localApex, modelMatrix);
-    const FVector localBaseCenter = FVector(height, 0, 0);
-    cone.ConeBaseCenter = center + FMatrix::TransformVector(localBaseCenter, modelMatrix);
-    cone.ConeRadius = radius;
-    cone.ConeHeight = height;
-    cone.Color = color;
-    cone.ConeSegmentCount = ConeSegmentCount;
-    Cones.Add(cone);
-}
-

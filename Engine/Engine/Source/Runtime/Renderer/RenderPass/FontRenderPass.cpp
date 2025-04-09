@@ -11,18 +11,21 @@
 
 extern FEngineLoop GEngineLoop;
 
-void FontRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
+void FontRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
-    BaseRenderPass::Prepare(viewport);
+    BaseRenderPass::Prepare(InViewportClient);
     GEngineLoop.graphicDevice.DeviceContext->OMSetDepthStencilState(GEngineLoop.renderer .GetDepthStencilState(EDepthStencilState::DepthNone), 0);
 }
 
-void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
+void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    
     FMatrix View = FMatrix::Identity;
     FMatrix Proj = FMatrix::Identity;
     
-    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(viewport);
+    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (curEditorViewportClient != nullptr)
     {
         View = curEditorViewportClient->GetViewMatrix();
@@ -34,7 +37,7 @@ void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
         FSubUVConstant SubUVConstant;
         SubUVConstant.indexU = item->finalIndexU;
         SubUVConstant.indexV = item->finalIndexV;
-        GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
+        Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
 
         FMatrix Model;
         if (UTextBillboardComponent* TextBillboardComponent = Cast<UTextBillboardComponent>(item))
@@ -50,22 +53,22 @@ void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
             
         FConstants Constant;
         Constant.MVP = Model * VP;
-        GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
+        Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
 
-        const std::shared_ptr<FVIBuffers> currentVIBuffer =  GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
-        currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
+        const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(item->VIBufferName);
+        currentVIBuffer->Bind(Graphics.DeviceContext);
 
-        GEngineLoop.graphicDevice.DeviceContext->OMSetDepthStencilState(GEngineLoop.renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
-        GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0,1, &item->Texture->TextureSRV);
-        GEngineLoop.graphicDevice.DeviceContext->Draw(currentVIBuffer->GetNumVertices(), 0);
+        Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+        Graphics.DeviceContext->PSSetShaderResources(0,1, &item->Texture->TextureSRV);
+        Graphics.DeviceContext->Draw(currentVIBuffer->GetNumVertices(), 0);
     }
 }
 
-void FontRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
+void FontRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
     TextComponents.Empty();
     TArray<USceneComponent*> Ss;
-    for (const auto& A : Level->GetActors())
+    for (const auto& A : InLevel->GetActors())
     {
         Ss.Add(A->GetRootComponent());
         TArray<USceneComponent*> temp;

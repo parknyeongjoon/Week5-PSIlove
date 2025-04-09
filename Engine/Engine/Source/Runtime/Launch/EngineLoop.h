@@ -24,7 +24,7 @@ public:
     void EditorTick(double elapsedTime);
     void PIETick(double elapsedTime);
     void Exit();
-    float GetAspectRatio(const Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain) const;
+    float GetAspectRatio(IDXGISwapChain* swapChain) const;
     void Input();
     EWorldType GetWorldType() const {return WorldContexts[curWorldContextIndex].worldType;}
 

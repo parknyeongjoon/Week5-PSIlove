@@ -21,7 +21,7 @@ public:
         }
     }
 
-    void Render(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, UINT width, UINT height) {
+    void Render(ID3D11DeviceContext* context, UINT width, UINT height) {
 
         if (!showRender)
             return;

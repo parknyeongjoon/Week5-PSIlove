@@ -1,8 +1,6 @@
-#include "ShaderHeaders/ConstantBuffers.hlsli"
 #include "ShaderHeaders/Samplers.hlsli"
 
 Texture2D Textures : register(t0);
-SamplerState Sampler : register(s0);
 
 cbuffer FMatrixConstants : register(b0)
 {
@@ -25,7 +23,7 @@ cbuffer FMaterialConstants : register(b1)
     float MaterialPad0;
 };
 
-cbuffer FlagConstants : register(b3)
+cbuffer FFlagConstants : register(b3)
 {
     bool IsLit; // TODO: Lit Shader, Unlit Shader 분리
     float3 flagPad0;
@@ -98,7 +96,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     output.position = input.vertexWorldPosition;
     output.normal = float4(input.normal,0);
     
-    float3 texColor = Textures.Sample(Sampler, input.texcoord + UVOffset);
+    float3 texColor = Textures.Sample(linearSampler, input.texcoord + UVOffset);
     float3 color;// = Material.AmbientColor;
     if (texColor.g == 0) // TODO: boolean으로 변경
         color = saturate(DiffuseColor);
@@ -117,15 +115,15 @@ PS_OUTPUT mainPS(PS_INPUT input)
     // 발광 색상 추가
     if (IsLit == true) // 조명이 적용되는 경우
     {
-        color += Material.EmissiveColor;
-        output.material = float4(Material.SpecularScalar, length(Material.SpecularColor), Material.DensityScalar, 0.0f);
+        color += EmissiveColor;
+        output.material = float4(SpecularScalar, length(SpecularColor), DensityScalar, 0.0f);
     }
     else // unlit 상태
     {
         output.material = float4(-1,-1,-1, 0);
     }
     
-    output.diffuse = float4(color, Material.TransparencyScalar);
-    output.color = float4(color,Material.TransparencyScalar);
+    output.diffuse = float4(color, TransparencyScalar);
+    output.color = float4(color,TransparencyScalar);
     return output;
 }

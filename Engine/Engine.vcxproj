@@ -200,9 +200,12 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\ViewportClient.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\World.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\BillboardRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\FinalRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\FogRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\FontRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\BaseRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\LightingRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\StaticMeshRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\FogRenderer.cpp" />
@@ -251,6 +254,15 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Level.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\QuadTexture.cpp" />
     <ClCompile Include="Engine\Source\ThirdParty\tinyfiledialogs\tinyfiledialogs.cpp" />
+    <ClCompile Include="Shaders\FogPixelShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Shaders\PostProcessPixelShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Shaders\PostProcessVertexShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Runtime\Core\Delegates\Delegate.h" />
@@ -304,9 +316,12 @@
     <ClInclude Include="Engine\Source\Runtime\Launch\EngineLoop.h" />
     <ClInclude Include="Engine\Source\Runtime\Launch\ImGuiManager.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\BillboardRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\FinalRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\FogRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\FontRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\BaseRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\LightingRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\StaticMeshRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\FogRenderer.h" />
@@ -375,9 +390,15 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\TextBillboardComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\TextRenderComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Level.h" />
-    <ClInclude Include="Shaders\ShaderHeaders\ConstantBuffers.hlsli" />
-    <ClInclude Include="Shaders\ShaderHeaders\Samplers.hlsli" />
-    <ClInclude Include="Shaders\ShaderHeaders\Textures.hlsli" />
+    <ClInclude Include="Shaders\ShaderHeaders\ConstantBuffers.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Shaders\ShaderHeaders\Samplers.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Shaders\ShaderHeaders\Textures.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\LightingPixelShader.hlsl">
@@ -412,17 +433,6 @@
       <EnableDebuggingInformation>true</EnableDebuggingInformation>
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderPixelShader.hlsl">
-      <ObjectFileOutput>C:\Users\Jungle\Desktop\Github\Week5-PSIlove\Binaries\x64\Debug\%(Filename).cso</ObjectFileOutput>
-      <TrackerLogDirectory>C:\Users\Jungle\Desktop\Github\Week5-PSIlove\Intermediate\Build\x64\Debug\Engine.tlog\</TrackerLogDirectory>
-      <EntryPointName>main</EntryPointName>
-      <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ShaderModel>4.0_level_9_3</ShaderModel>
-      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
-      <DisableOptimizations>true</DisableOptimizations>
-      <EnableDebuggingInformation>true</EnableDebuggingInformation>
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Shaders\StaticMeshPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -431,6 +441,7 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainPS</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainPS</EntryPointName>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\FontPixelShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -444,12 +455,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderVertexShader.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Shaders\StaticMeshVertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
@@ -458,6 +463,7 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainVS</EntryPointName>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainVS</EntryPointName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\FontVertexShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

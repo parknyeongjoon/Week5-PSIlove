@@ -15,18 +15,25 @@
 
 extern FEngineLoop GEngineLoop;
 
-void StaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
+void StaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
-    BaseRenderPass::Prepare(viewport);
+    BaseRenderPass::Prepare(InViewportClient);
 }
 
-void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
+void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     FMatrix View = FMatrix::Identity;
     FMatrix Proj = FMatrix::Identity;
-    
+
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    FRenderer& Renderer = GEngineLoop.renderer;
+
     // 쉐이더 내에서 한 번만 Update되어야하는 정보
-    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(viewport);
+    FFlagConstants flagConstants;
+    flagConstants.IsLit = Renderer.IsLit();
+    Renderer.UpdateConstnatBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
+    
+    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (curEditorViewportClient != nullptr)
     {
         View = curEditorViewportClient->GetViewMatrix();
@@ -54,8 +61,8 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpo
         if (!item->GetStaticMesh()) continue;
         
         // VIBuffer Bind
-        const std::shared_ptr<FVIBuffers> currentVIBuffer =  GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
-        currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
+        const std::shared_ptr<FVIBuffers> currentVIBuffer =  Renderer.GetVIBuffer(item->VIBufferName);
+        currentVIBuffer->Bind(Graphics.DeviceContext);
         
         const OBJ::FStaticMeshRenderData* renderData = item->GetStaticMesh()->GetRenderData();
         if (renderData == nullptr) continue;
@@ -63,7 +70,7 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpo
         // If There's No Material Subset
         if (renderData->MaterialSubsets.Num() == 0)
         {
-            GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
+            Graphics.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
         }
         const int selectedSubMeshIndex = item->GetselectedSubMeshIndex();
 
@@ -90,17 +97,17 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpo
                 // index draw
                 const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
                 const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
-                GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
+                Graphics.DeviceContext->DrawIndexed(indexCount, startIndex, 0);
             }
         }
     }
 }
 
-void StaticMeshRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
+void StaticMeshRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
     StaticMesheComponents.Empty();
     TArray<USceneComponent*> Ss;
-    for (const auto& A : Level->GetActors())
+    for (const auto& A : InLevel->GetActors())
     {
         Ss.Add(A->GetRootComponent());
         TArray<USceneComponent*> temp;
@@ -123,17 +130,16 @@ void StaticMeshRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
 
 void StaticMeshRenderPass::UpdateMatrixConstants(UStaticMeshComponent* InStaticMeshComponent, const FMatrix& InView, const FMatrix& InProjection)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
     // MVP Update
     const FMatrix Model = JungleMath::CreateModelMatrix(InStaticMeshComponent->GetWorldLocation(), InStaticMeshComponent->GetWorldRotation(),
                                                         InStaticMeshComponent->GetWorldScale());
-    const FMatrix MVP = Model * InView * InProjection;
     const FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-    const FVector4 UUIDColor = InStaticMeshComponent->EncodeUUID() / 255.0f;
         
     FMatrixConstants MatrixConstants;
-    MatrixConstants.MVP = MVP;
+    MatrixConstants.M = Model;
+    MatrixConstants.VP = InView * InProjection;
     MatrixConstants.MInverseTranspose = NormalMatrix;
-    MatrixConstants.ObjectUUID = UUIDColor;
     if (InStaticMeshComponent->GetLevel()->GetSelectedActor() == InStaticMeshComponent->GetOwner())
     {
         MatrixConstants.isSelected = true;
@@ -142,11 +148,12 @@ void StaticMeshRenderPass::UpdateMatrixConstants(UStaticMeshComponent* InStaticM
     {
         MatrixConstants.isSelected = false;
     }
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
 }
 
 void StaticMeshRenderPass::UpdateSkySphereTextureConstants(const USkySphereComponent* InSkySphereComponent)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
     FTextureConstants TextureConstants;
     if (InSkySphereComponent != nullptr)
     {
@@ -157,18 +164,22 @@ void StaticMeshRenderPass::UpdateSkySphereTextureConstants(const USkySphereCompo
         TextureConstants.UVOffset = FVector2D(0.0f, 0.0f);
     }
     
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FTextureConstants")), &TextureConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FTextureConstants")), &TextureConstants);
 }
 
 void StaticMeshRenderPass::UpdateSubMeshConstants(const bool bIsSelectedSubMesh)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
     FSubMeshConstants SubMeshConstants;
     SubMeshConstants.IsSelectedSubMesh = bIsSelectedSubMesh;
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
 }
 
 void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& MaterialInfo)
 {
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    FRenderer& Renderer = GEngineLoop.renderer;
+    
     FMaterialConstants MaterialConstants;
     MaterialConstants.DiffuseColor = MaterialInfo.Diffuse;
     MaterialConstants.TransparencyScalar = MaterialInfo.TransparencyScalar;
@@ -177,21 +188,21 @@ void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& Mater
     MaterialConstants.SpecularColor = MaterialInfo.Specular;
     MaterialConstants.SpecularScalar = MaterialInfo.SpecularScalar;
     MaterialConstants.EmissiveColor = MaterialInfo.Emissive;
-    GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
     
     if (MaterialInfo.bHasTexture == true)
     {
         std::shared_ptr<FTexture> texture = GEngineLoop.resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
-        GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
-        ID3D11SamplerState* linearSampler = GEngineLoop.renderer.GetSamplerState(ESamplerType::Linear);
-        GEngineLoop.graphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
+        Graphics.DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
+        ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
+        Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
     }
     else
     {
         ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
         ID3D11SamplerState* nullSampler[1] = {nullptr};
 
-        GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
-        GEngineLoop.graphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, nullSampler);
+        Graphics.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
+        Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, nullSampler);
     }
 }

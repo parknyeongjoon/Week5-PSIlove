@@ -15,6 +15,8 @@ public:
     virtual void InitializeComponent() override;
     virtual void TickComponent(float DeltaTime) override;
 
+    void CreatePostProcessBuffer();
+
     float FogDensity = 0.1f;
     float FogHeightFalloff = 0.5f;
     float StartDistance = 100.0f;
@@ -23,4 +25,3 @@ public:
 
     FLinearColor FogInscatteringColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f);
 };
-

@@ -21,7 +21,6 @@ public:
 
     void AddAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
     void AddOBB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
-    void AddCone(const FVector& center, float radius, float height, int segments,const FVector4& color, const FMatrix& modelMatri);
 
     void ClearBatchPrimitives() { BoundingBoxes.Empty(); OrientedBoundingBoxes.Empty(); Cones.Empty(); }
     

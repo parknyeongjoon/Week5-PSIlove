@@ -10,17 +10,20 @@
 class UParticleSubUVComp;
 extern FEngineLoop GEngineLoop;
 
-void BillboardRenderPass::Prepare(const std::shared_ptr<FViewportClient> viewport)
+void BillboardRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
-    BaseRenderPass::Prepare(viewport);
+    BaseRenderPass::Prepare(InViewportClient);
 }
 
-void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> viewport)
+void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
 {
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    
     FMatrix View = FMatrix::Identity;
     FMatrix Proj = FMatrix::Identity;
-    
-    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(viewport);
+
+    const std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (curEditorViewportClient != nullptr)
     {
         View = curEditorViewportClient->GetViewMatrix();
@@ -34,16 +37,16 @@ void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpor
             
          FConstants Constant;
          Constant.MVP = Model * VP;
-         GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
+         Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
          
          FSubUVConstant SubUVConstant;
          SubUVConstant.indexU = item->finalIndexU;
          SubUVConstant.indexV = item->finalIndexV;
-         GEngineLoop.renderer.UpdateConstant(GEngineLoop.renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
+         Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
 
-         const std::shared_ptr<FVIBuffers> currentVIBuffer = GEngineLoop.renderer.GetVIBuffer(item->VIBufferName);
-         currentVIBuffer->Bind(GEngineLoop.graphicDevice.DeviceContext);
-         GEngineLoop.graphicDevice.DeviceContext->PSSetShaderResources(0, 1, &(item->Texture->TextureSRV));
+         const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(item->VIBufferName);
+         currentVIBuffer->Bind(Graphics.DeviceContext);
+         Graphics.DeviceContext->PSSetShaderResources(0, 1, &(item->Texture->TextureSRV));
 
          // if (UParticleSubUVComp* SubUVParticle = Cast<UParticleSubUVComp>(item))
          // {
@@ -51,17 +54,17 @@ void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> viewpor
          // }
          // else
          {
-             GEngineLoop.graphicDevice.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0, 0);
+             Graphics.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0, 0);
          }
 
      }
 }
 
-void BillboardRenderPass::AddRenderObjectsToRenderPass(const ULevel* Level)
+void BillboardRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
     BillboardComponents.Empty();
     TArray<USceneComponent*> Ss;
-    for (const auto& A : Level->GetActors())
+    for (const auto& A : InLevel->GetActors())
     {
         Ss.Add(A->GetRootComponent());
         TArray<USceneComponent*> temp;

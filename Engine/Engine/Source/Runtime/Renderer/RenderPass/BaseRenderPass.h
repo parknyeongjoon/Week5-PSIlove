@@ -10,9 +10,9 @@ public:
     BaseRenderPass(const FString& InShaderName)
         :  ShaderName(InShaderName) {}
 
-    virtual void AddRenderObjectsToRenderPass(const ULevel* Level) = 0;
-    virtual void Prepare(std::shared_ptr<FViewportClient> viewport);
-    virtual void Execute(std::shared_ptr<FViewportClient> viewport) = 0;
+    virtual void AddRenderObjectsToRenderPass(const ULevel* InLevel) = 0;
+    virtual void Prepare(std::shared_ptr<FViewportClient> InViewportClient);
+    virtual void Execute(std::shared_ptr<FViewportClient> InViewportClient) = 0;
     
     virtual ~BaseRenderPass() {}
 protected:
