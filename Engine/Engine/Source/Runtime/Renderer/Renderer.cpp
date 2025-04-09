@@ -147,55 +147,35 @@ void FRenderer::CreateQuadShader()
 
 void FRenderer::DrawFullScreenQuadVertexBuffer() const
 {
-    struct Vertex
-    {
-        float Position[3]; 
-        float TexCoord[2];
-    };
-
-    UINT stride = sizeof(Vertex);
-    UINT offset = 0;
-
+    uint32 stride = sizeof(FScreenVertex);
+    uint32 offset = 0;
     //VertexBuffer 를 GPU 에 바인딩. 정보를 알려줌
-    Graphics->DeviceContext->IASetInputLayout(QuadInputLayout);
-    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &FullScreenQuadVertexBuffer,&stride, &offset);
+    Graphics->DeviceContext->IASetInputLayout(PostProcessInputLayout);
+    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &PostProcessVertexBuffer,&stride, &offset);
     // IndexBuffer 를 GPU 에 바인딩. 정보를 알려줌
-    Graphics->DeviceContext->IASetIndexBuffer(FullScreenQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+    Graphics->DeviceContext->IASetIndexBuffer(PostProcessIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
     Graphics->DeviceContext->DrawIndexed(6, 0, 0); // 무엇을 그릴지는 안 알려줌
+
+    // *** 상태 복구 ***
+    ID3D11ShaderResourceView* nullSRVForDepth[1] = { nullptr }; // 필요시 배열 크기/슬롯 인덱스 조정
+    Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRVForDepth); // 예시: 슬롯 0 사용 시
+
+    ID3D11SamplerState* nullSampler[1] = { nullptr };
+    Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 슬롯 0 가정
 }
 
 void FRenderer::PrepareDepthShader() const
 {
+    // 그런 다음, RenderTarget에 설정
+    ID3D11RenderTargetView* writeRTV = FEngineLoop::graphicDevice.GetWriteRTV();
+    Graphics->DeviceContext->OMSetRenderTargets(1, &writeRTV, nullptr);
+
     Graphics->DeviceContext->VSSetShader(QuadVertexShader, nullptr, 0);
     Graphics->DeviceContext->PSSetShader(DepthPixelShader, nullptr, 0);
-
-    // DepthStencil Texture를 사용하기 위해 기존 RTV 해제
-    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
-    Graphics->DeviceContext->PSSetShaderResources(0, 1, &Graphics->DepthStencilSRV);
-    Graphics->DeviceContext->PSSetSamplers(0, 1, &QuadSamplerState);
-
-    // 그런 다음, RenderTarget에 설정
-    Graphics->DeviceContext->OMSetRenderTargets(1, &FEngineLoop::graphicDevice.FrameBufferRTV, nullptr);
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-}
-
-void FRenderer::RenderFullScreenQuadVertexBuffer() const
-{
-
-    // 셰이더와 리소스를 준비. 
-    //FRenderer* renderer = new FRenderer();
-    //renderer->PrepareShader();
-    PrepareDepthShader();
-    // 풀 스크린 쿼드 그리기
-    //FRenderer* renderer = new FRenderer();
-    //renderer->DrawFullScreenQuadVertexBuffer();
-
-    // DepthStencil 을 픽셀쉐이더에 바인딩
-    Graphics->DeviceContext->PSSetShaderResources(0, 1, &FEngineLoop::graphicDevice.DepthStencilSRV);
+    Graphics->DeviceContext->PSSetShaderResources(0, 1, &Graphics->pingpongDepthSRV[0]);
     Graphics->DeviceContext->PSSetSamplers(0, 1, &QuadSamplerState);
-
-    DrawFullScreenQuadVertexBuffer();
 }
 
 void FRenderer::DrawQuad()
@@ -349,7 +329,7 @@ void FRenderer::ChangeViewMode(EViewModeIndex evi) const
     case EViewModeIndex::VMI_Unlit:
         UpdateLitUnlitConstant(0);
     case EViewModeIndex::VMI_SceneDepth:
-        UpdateSceneDepthConstant();
+        //UpdateSceneDepthConstant();
         break;
     }
 }
@@ -1274,33 +1254,9 @@ void FRenderer::ClearRenderArr()
 
 void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    // 1. 뷰포트 설정
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
-    
-    // 2. ShaderResource 초기화
-    ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
-    Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRV);
-
-    
-    // 4. 쉐이더 값 변경
+    Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
     ChangeViewMode(ActiveViewport->GetViewMode());
-
-
-    if (ActiveViewport->GetViewMode() != EViewModeIndex::VMI_SceneDepth) // SceneDepth 아닐 때!
-    {
-        switch (ActiveViewport->GetViewMode())
-        {
-        case EViewModeIndex::VMI_Wireframe:
-            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateWIREFRAME);
-            break;
-        default:
-            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID);
-            break;
-        }
-        // 기본 렌더 타겟 설정
-        //Graphics->DeviceContext->OMSetRenderTargets(1, &Graphics->FrameBufferRTV, Graphics->DepthStencilView);
-    }
-
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         RenderStaticMeshes(Level, ActiveViewport);
@@ -1314,25 +1270,16 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     if (ActiveViewport->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
     {
         PrepareDepthShader(); // 여기서 RT 변경, SRV 바인딩 발생
+        //UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
         DrawQuad();
-
-        // *** 상태 복구 ***
-        // 1. Depth SRV 언바인딩 (PrepareDepthShader에서 바인딩한 슬롯과 동일하게)
-        ID3D11ShaderResourceView* nullSRVForDepth[1] = { nullptr }; // 필요시 배열 크기/슬롯 인덱스 조정
-        Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRVForDepth); // 예시: 슬롯 0 사용 시
-
-        // 1.5. Sampler 언바인딩 (PrepareDepthShader에서 설정한 슬롯과 동일하게)
-        ID3D11SamplerState* nullSampler[1] = { nullptr };
-        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 슬롯 0 가정
     }
-
     if (ActiveViewport->ViewMode == VMI_Lit)
     {
-        RenderLighting(Level, ActiveViewport);
+        //RenderLighting(Level, ActiveViewport);
     }
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
     {
-        RenderFog(Level, ActiveViewport);
+        //RenderFog(Level, ActiveViewport);
     }
     Graphics->PrepareGridRender();
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
@@ -1840,7 +1787,7 @@ void FRenderer::RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient
     UpdatePostProcessVertexBuffer(ActiveViewport->GetD3DViewport());
 
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->GetReadDepthSRV()};
+    ID3D11ShaderResourceView* SRVs[2] = { Graphics->GetReadSRV(), Graphics->pingpongDepthSRV[0]};
     Graphics->DeviceContext->PSSetShaderResources(0, 2, SRVs);
     Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->SamplerState);
 
