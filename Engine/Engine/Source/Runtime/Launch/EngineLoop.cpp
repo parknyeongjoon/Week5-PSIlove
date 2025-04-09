@@ -284,7 +284,7 @@ void FEngineLoop::TogglePIE()
     {
         WorldContexts[1] = {Cast<UWorld>(WorldContexts[0].World->Duplicate()), EWorldType::PIE};
         WorldContexts[1].World->Level->Initialize(EWorldType::PIE);
-        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() & 14;
+        uint32 NewFlag = LevelEditor->GetActiveViewportClient()->GetShowFlag() & 31;
         LevelEditor->GetActiveViewportClient()->SetShowFlag(NewFlag);
         // LevelEditor->DisableMultiViewport();
         for (auto& actor : WorldContexts[1].World->Level->GetActors())
