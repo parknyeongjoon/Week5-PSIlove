@@ -52,19 +52,14 @@ public:
     ID3D11RenderTargetView* pingpongRTV[2];
     ID3D11ShaderResourceView* pingpongSRV[2];
 
-    // depth & stencil
-    ID3D11Texture2D* pingpongDepthTex[2];
-    ID3D11DepthStencilView* pingpongDSV[2];
-    ID3D11ShaderResourceView* pingpongDepthSRV[2];
+    // sampler
+    ID3D11SamplerState* SamplerState = nullptr;
 
     int CurrentIndex = 0;
     void SwapRTV() { CurrentIndex = 1 - CurrentIndex; }
 
     ID3D11RenderTargetView* GetWriteRTV() const { return pingpongRTV[CurrentIndex]; }
     ID3D11ShaderResourceView* GetReadSRV() const { return pingpongSRV[1 - CurrentIndex]; }
-
-    ID3D11DepthStencilView* GetWriteDSV() const { return pingpongDSV[CurrentIndex]; }
-    ID3D11ShaderResourceView* GetReadDepthSRV() const { return pingpongDepthSRV[1 - CurrentIndex]; }
 
     DXGI_SWAP_CHAIN_DESC SwapchainDesc;
     
@@ -73,7 +68,8 @@ public:
     // Depth-Stencil 관련 변수
     ID3D11Texture2D* DepthStencilBuffer = nullptr;  // 깊이/스텐실 텍스처
     ID3D11DepthStencilView* DepthStencilView = nullptr;  // 깊이/스텐실 뷰
-
+    ID3D11ShaderResourceView* DepthStencilSRV = nullptr;  // 깊이/스텐실 SRV
+    ID3D11DepthStencilState* DepthStencilState = nullptr;
     FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 화면을 초기화(clear) 할 때 사용할 색상(RGBA)
     FLOAT PositionClearColor[4] = {0,0,0,0};
 
@@ -95,6 +91,9 @@ public:
     void ClearRenderTarget();
     void SwapBuffer() const;
     void Prepare();
+    void PrepareGizmo();
+    void PrepareLighting() const;
+    void PrepareDepthScene() const;
     // void Prepare(D3D11_VIEWPORT* viewport) const;
     //void Prepare() const;
     //void Prepare(D3D11_VIEWPORT* viewport);
@@ -103,7 +102,18 @@ public:
     void BindSamplers(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* const* ppSamplers) const;
     
     void ReleaseDeviceAndSwapChain();
+    ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
+    void ChangeRasterizer(EViewModeIndex evi);
 
+    ID3D11Texture2D* WorldTexture = nullptr;
+    ID3D11RenderTargetView* WorldTextureRTV = nullptr;
+
+    void CreateWorldTexture();
+    ID3D11ShaderResourceView* WorldTextureSRV = nullptr;
+
+    ID3D11SamplerState* LinearSampler = nullptr;
+private:
+    ID3D11RasterizerState* CurrentRasterizer = nullptr;
 public:
     bool CreateVertexShader(const FString& fileName, ID3DBlob** ppCode, ID3D11VertexShader** ppVertexShader) const;
     bool CreatePixelShader(const FString& fileName, ID3DBlob** ppCode, ID3D11PixelShader** ppPixelShader) const;

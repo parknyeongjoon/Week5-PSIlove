@@ -1,6 +1,8 @@
-#include "ShaderHeaders/Samplers.hlsli"
+Texture2D DiffuseMap : register(t0);
+Texture2D SpecularMap : register(t1);
+Texture2D BumpMap : register(t2);
 
-Texture2D Textures : register(t0);
+SamplerState Sampler : register(s0);
 
 cbuffer FMatrixConstants : register(b0)
 {
@@ -96,17 +98,26 @@ PS_OUTPUT mainPS(PS_INPUT input)
     PS_OUTPUT output;
 
     output.position = input.vertexWorldPosition;
-    output.normal = float4(input.normal,0);
-
-    float2 texCoord = float2(UOffset + input.texcoord.x, VOffset + input.texcoord.y);
-    float3 texColor = Textures.Sample(linearSampler, texCoord);
+    
+    
     float3 color;// = Material.AmbientColor;
+    float3 texColor = DiffuseMap.Sample(Sampler, input.texcoord + UVOffset);
     if (texColor.g == 0) // TODO: boolean으로 변경
         color = saturate(DiffuseColor);
     else
     {
         color = texColor + DiffuseColor;
     }
+    
+    float3 specular = SpecularMap.Sample(Sampler, input.texcoord + UVOffset);
+    if (specular.g == 0)
+        specular = saturate(Material.SpecularColor);
+    else
+        specular = specular + Material.SpecularColor;
+
+    float3 normal = BumpMap.Sample(Sampler, input.texcoord + UVOffset);
+    if (normal.g == 0)
+        normal = input.normal;
     
     if (isSelected)
     {
@@ -118,8 +129,8 @@ PS_OUTPUT mainPS(PS_INPUT input)
     // 발광 색상 추가
     if (IsLit == true) // 조명이 적용되는 경우
     {
-        color += EmissiveColor;
-        output.material = float4(SpecularScalar, length(SpecularColor), DensityScalar, 0.0f);
+        color += Material.EmissiveColor;
+        output.material = float4(Material.SpecularScalar, length(specular), Material.DensityScalar, 0.0f);
     }
     else // unlit 상태
     {
@@ -128,5 +139,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     output.diffuse = float4(color, TransparencyScalar);
     output.color = float4(color,TransparencyScalar);
+    output.normal = float4(normal,1);
     return output;
 }

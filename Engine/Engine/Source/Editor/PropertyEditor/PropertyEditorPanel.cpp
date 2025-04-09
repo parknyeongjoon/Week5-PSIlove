@@ -700,17 +700,17 @@ void PropertyEditorPanel::RenderForProjectile(UProjectileMovementComponent* Proj
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
     if (ImGui::TreeNodeEx("ProjectileMovement", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
     {
-        FVector Velocity = FVector(0,0,0) = ProjectileMovementComponent->GetVelocity();
-        FVector MaxSpeed = FVector(0,0,0) = ProjectileMovementComponent->GetMaxSpeed();
-        FVector Acceleration = FVector(0,0,0) = ProjectileMovementComponent->GetAcceleration();
+        FVector Velocity = ProjectileMovementComponent->GetVelocity();
+        float MaxSpeed = ProjectileMovementComponent->GetMaxSpeed();
+        float Acceleration = ProjectileMovementComponent->GetAcceleration();
                 
         FImGuiWidget::DrawVec3Control("Velocity", Velocity, 0, 85);
         ImGui::Spacing();
-
-        FImGuiWidget::DrawVec3Control("MaxSpeed", MaxSpeed, 0, 85);
+        
+        FImGuiWidget::DrawFloatControl("MaxSpeed", MaxSpeed, 0, 85);
         ImGui::Spacing();
 
-        FImGuiWidget::DrawVec3Control("Acceleration", Acceleration, 0, 85);
+        FImGuiWidget::DrawFloatControl("Acceleration", Acceleration, 0, 85);
         ImGui::Spacing();
 
         ProjectileMovementComponent->SetVelocity(Velocity);

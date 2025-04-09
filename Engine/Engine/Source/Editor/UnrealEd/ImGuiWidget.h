@@ -86,4 +86,39 @@ struct FImGuiWidget
         ImGui::Columns(1);
         ImGui::PopID();
     }
+
+    static bool DrawFloatControl(const char* label, float& value, float resetValue = 0.0f, float columnWidth = 100.0f)
+    {
+        bool valueChanged = false;
+    
+        ImGui::PushID(label);
+    
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, columnWidth);
+        ImGui::Text("%s", label);
+        ImGui::NextColumn();
+    
+        ImGui::PushMultiItemsWidths(1, ImGui::CalcItemWidth());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+    
+        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+        ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+    
+        if (ImGui::Button("R", buttonSize))
+        {
+            value = resetValue;
+            valueChanged = true;
+        }
+    
+        ImGui::SameLine();
+        valueChanged |= ImGui::DragFloat("##X", &value, 0.1f, 0.0f, 0.0f, "%.2f");
+    
+        ImGui::PopStyleVar();
+        ImGui::PopItemWidth();
+    
+        ImGui::Columns(1);
+        ImGui::PopID();
+    
+        return valueChanged;
+    }
 };

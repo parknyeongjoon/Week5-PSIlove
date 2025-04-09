@@ -7,14 +7,16 @@ class UProjectileMovementComponent : public UActorComponent
 
 public:
     UPROPERTY(FVector, Velocity)
-    UPROPERTY(FVector, MaxSpeed)
-    UPROPERTY(FVector, Acceleration)
+    UPROPERTY(float, MaxSpeed)
+    UPROPERTY(float, Acceleration)
+
+    void AddVelocity(const FVector& value);
 
     UObject* Duplicate() override;
 private:
     void TickComponent(float DeltaTime) override;
     
     FVector Velocity;
-    FVector MaxSpeed;
-    FVector Acceleration;
+    float MaxSpeed = 3.0f;
+    float Acceleration = 0.1f;
 };

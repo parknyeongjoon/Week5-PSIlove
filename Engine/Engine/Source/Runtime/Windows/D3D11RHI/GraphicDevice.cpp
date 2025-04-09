@@ -16,6 +16,11 @@ void FGraphicsDevice::Initialize(const HWND hWindow)
     CreateFrameBuffer();
     CreateGBuffer();
     CreateDepthStencilBuffer(hWindow);
+    CreateDepthStencilState();
+    CreateRasterizerState();
+    CurrentRasterizer = RasterizerStateSOLID;
+
+    CreateWorldTexture();
 }
 void FGraphicsDevice::CreateDeviceAndSwapChain(const HWND hWindow)
 {
@@ -65,11 +70,13 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
     descDepth.Height = height; // 텍스처 높이 설정
     descDepth.MipLevels = 1; // 미맵 레벨 수 (1로 설정하여 미맵 없음)
     descDepth.ArraySize = 1; // 텍스처 배열의 크기 (1로 단일 텍스처)
-    descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 24비트 깊이와 8비트 스텐실을 위한 포맷
+    //descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 24비트 깊이와 8비트 스텐실을 위한 포맷
+    descDepth.Format = DXGI_FORMAT_R24G8_TYPELESS;
     descDepth.SampleDesc.Count = 1; // 멀티샘플링 설정 (1로 단일 샘플)
     descDepth.SampleDesc.Quality = 0; // 샘플 퀄리티 설정
     descDepth.Usage = D3D11_USAGE_DEFAULT; // 텍스처 사용 방식
-    descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL; // 깊이 스텐실 뷰로 바인딩 설정
+    //descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL; // 깊이 스텐실 뷰로 바인딩 설정
+    descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
     descDepth.CPUAccessFlags = 0; // CPU 접근 방식 설정
     descDepth.MiscFlags = 0; // 기타 플래그 설정
 
@@ -98,6 +105,73 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
         MessageBox(hWindow, errorMsg, L"Error", MB_ICONERROR | MB_OK);
         return;
     }
+
+    // 깊이용 쉐이더 리소스 뷰 만들기
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    hr = Device->CreateShaderResourceView(DepthStencilBuffer, &srvDesc, &DepthStencilSRV);
+    if (FAILED(hr)) {
+        MessageBox(hWindow, L"Failed to create depth stencil SRV!", L"Error", MB_ICONERROR | MB_OK);
+        return;
+    }
+}
+
+void FGraphicsDevice::CreateDepthStencilState()
+{
+    // DepthStencil 상태 설명 설정
+    D3D11_DEPTH_STENCIL_DESC dsDesc;
+
+    // Depth test parameters
+    dsDesc.DepthEnable = true;
+    dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    dsDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+    // Stencil test parameters
+    //dsDesc.StencilEnable = true;
+    dsDesc.StencilEnable = false;  // 스텐실 테스트 비활성화
+    dsDesc.StencilReadMask = 0xFF;
+    dsDesc.StencilWriteMask = 0xFF;
+
+    // Stencil operations if pixel is front-facing
+    dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+    dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    // Stencil operations if pixel is back-facing
+    dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+    dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    //// DepthStencil 상태 생성
+    HRESULT hr = Device->CreateDepthStencilState(&dsDesc, &DepthStencilState);
+    if (FAILED(hr)) {
+        // 오류 처리
+        return;
+    }
+
+    D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+    depthStencilDesc.DepthEnable = FALSE;  // 깊이 테스트 유지
+    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;  // 깊이 버퍼에 쓰지 않음
+    depthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;  // 깊이 비교를 항상 통과
+    Device->CreateDepthStencilState(&depthStencilDesc, &DepthStateDisable);
+
+}
+
+void FGraphicsDevice::CreateRasterizerState()
+{
+    D3D11_RASTERIZER_DESC rasterizerdesc = {};
+    rasterizerdesc.FillMode = D3D11_FILL_SOLID;
+    rasterizerdesc.CullMode = D3D11_CULL_BACK;
+    Device->CreateRasterizerState(&rasterizerdesc, &RasterizerStateSOLID);
+
+    rasterizerdesc.FillMode = D3D11_FILL_WIREFRAME;
+    rasterizerdesc.CullMode = D3D11_CULL_BACK;
+    Device->CreateRasterizerState(&rasterizerdesc, &RasterizerStateWIREFRAME);
 }
 
 bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const
@@ -180,11 +254,6 @@ void FGraphicsDevice::CreateFrameBuffer()
         Device->CreateTexture2D(&pingpongTextureDesc, nullptr, &pingpongTex[i]);
         Device->CreateRenderTargetView(pingpongTex[i], nullptr, &pingpongRTV[i]);
         Device->CreateShaderResourceView(pingpongTex[i], nullptr, &pingpongSRV[i]);
-
-        // SceneDepth
-        Device->CreateTexture2D(&depthDesc, nullptr, &pingpongDepthTex[i]);
-        Device->CreateDepthStencilView(pingpongDepthTex[i], &dsvDesc, &pingpongDSV[i]);
-        Device->CreateShaderResourceView(pingpongDepthTex[i], &srvDesc, &pingpongDepthSRV[i]);
     }
 
 //  RTVs[0] = FrameBufferRTV;
@@ -276,21 +345,6 @@ void FGraphicsDevice::ReleaseFrameBuffer()
             pingpongSRV[i]->Release();
             pingpongSRV[i] = nullptr;
         }
-        if (pingpongDepthTex[i])
-        {
-            pingpongDepthTex[i]->Release();
-            pingpongDepthTex[i] = nullptr;
-        }
-        if (pingpongDSV[i])
-        {
-            pingpongDSV[i]->Release();
-            pingpongDSV[i] = nullptr;
-        }
-        if (pingpongDepthSRV[i])
-        {
-            pingpongDepthSRV[i]->Release();
-            pingpongDepthSRV[i] = nullptr;
-        }
     }
 }
 
@@ -338,29 +392,88 @@ void FGraphicsDevice::SwapBuffer() const
 void FGraphicsDevice::ClearRenderTarget()
 {
     CurrentIndex = 0;
-    auto* RenderTarget = GetWriteRTV();
     DeviceContext->ClearRenderTargetView(pingpongRTV[0], ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearRenderTargetView(pingpongRTV[1], ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
+    DeviceContext->ClearRenderTargetView(pingpongRTV[1], ClearColor);
     DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(PositionRTV, PositionClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(NormalRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(DiffuseRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
     DeviceContext->ClearRenderTargetView(MaterialRTV, ClearColor); // 렌더 타겟 뷰에 저장된 이전 프레임 데이터를 삭제
-    DeviceContext->ClearDepthStencilView(pingpongDSV[0], D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
+    DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
 }
 
 
 void FGraphicsDevice::Prepare()
 {
     CurrentIndex = 0;
-    //DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
-    //DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-    DeviceContext->OMSetRenderTargets(5, RTVs, pingpongDSV[0]); // 렌더 타겟 설정
+    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->OMSetRenderTargets(5, RTVs, DepthStencilView); // 렌더 타겟 설정
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
-void FGraphicsDevice::OnResize(HWND hWindow)
+void FGraphicsDevice::PrepareGizmo()
 {
+    auto* RTV = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(DepthStateDisable, 0);
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
+    DeviceContext->OMSetRenderTargets(1, &RTV, DepthStencilView); // 렌더 타겟 설정
+    DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+}
+
+void FGraphicsDevice::PrepareLighting() const
+{
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr);
+    DeviceContext->PSSetShaderResources(0, 4, GBufferSRVs);
+    DeviceContext->PSSetSamplers(0, 1, &SamplerState);
+}
+void FGraphicsDevice::PreparePostProcessRender()
+{
+    SwapRTV();
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
+}
+
+void FGraphicsDevice::PrepareDepthScene() const
+{
+    ID3D11RenderTargetView* writeRTV = GetWriteRTV();
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->OMSetRenderTargets(1, &writeRTV, nullptr);
+    DeviceContext->PSSetShaderResources(0, 1, &DepthStencilSRV);
+    DeviceContext->PSSetSamplers(0, 1, &SamplerState);
+}
+
+void FGraphicsDevice::PrepareGridRender()
+{
+    auto* RenderTarget = GetWriteRTV();
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+    DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, DepthStencilView); // 렌더 타겟 설정
+}
+
+void FGraphicsDevice::PrepareFinalRender()
+{
+    SwapRTV();
+    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->RSSetState(RasterizerStateSOLID); //레스터 라이저 상태 설정
+    DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
+}
+
+
+void FGraphicsDevice::OnResize(HWND hWindow) {
     DeviceContext->OMSetRenderTargets(0, RTVs, 0);
     
     ReleaseFrameBuffer();
@@ -491,13 +604,13 @@ bool FGraphicsDevice::CreatePixelShader(const FString& fileName, ID3DBlob** ppCo
 
     if (FAILED(hr))
     {
-        if (errorBlob)
-        {
-            // errorBlob에 저장된 메시지를 출력 (디버그 출력이나 콘솔 등)
-            OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
-            errorBlob->Release();
-        }
-        abort();
+    case EViewModeIndex::VMI_Wireframe:
+        CurrentRasterizer = RasterizerStateWIREFRAME;
+        break;
+    case EViewModeIndex::VMI_Lit:
+    case EViewModeIndex::VMI_Unlit:
+        CurrentRasterizer = RasterizerStateSOLID;
+        break;
     }
 
     if (Device == nullptr)
@@ -508,6 +621,60 @@ bool FGraphicsDevice::CreatePixelShader(const FString& fileName, ID3DBlob** ppCo
 
     return true;
 }
+
+void FGraphicsDevice::ChangeRasterizer(EViewModeIndex evi)
+{
+    switch (evi)
+    {
+    case EViewModeIndex::VMI_Wireframe:
+        CurrentRasterizer = RasterizerStateWIREFRAME;
+        break;
+    case EViewModeIndex::VMI_Lit:
+        CurrentRasterizer = RasterizerStateSOLID;
+        break;
+    case EViewModeIndex::VMI_Unlit:
+        CurrentRasterizer = RasterizerStateSOLID;
+        break;
+    case EViewModeIndex::VMI_SceneDepth:
+        CurrentRasterizer = RasterizerStateSOLID;
+        break;
+    }
+    DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
+}
+
+void FGraphicsDevice::CreateWorldTexture()
+{
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    textureDesc.Width = screenWidth;
+    textureDesc.Height = screenHeight;
+    textureDesc.MipLevels = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    HRESULT hr = Device->CreateTexture2D(&textureDesc, nullptr, &WorldTexture);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    D3D11_RENDER_TARGET_VIEW_DESC UUIDFrameBufferRTVDesc = {};
+    UUIDFrameBufferRTVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;      // 색상 포맷
+    UUIDFrameBufferRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D 텍스처
+
+    hr = Device->CreateRenderTargetView(WorldTexture, &UUIDFrameBufferRTVDesc, &WorldTextureRTV);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    hr = Device->CreateShaderResourceView(WorldTexture, nullptr, &WorldTextureSRV);
+    if (FAILED(hr))
+    {
+        return;
+    }
 
 TArray<FConstantBufferInfo> FGraphicsDevice::ExtractConstantBufferNames(ID3DBlob* shaderBlob)
 {

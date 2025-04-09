@@ -14,9 +14,56 @@ UPrimitiveBatch::~UPrimitiveBatch()
 
 void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
 {
-    GridParam.GridSpacing = spacing;
-    GridParam.GridCount = gridCount;
-    GridParam.GridOrigin = { 0,0,0 };
+    GridParam.gridSpacing = spacing;
+    GridParam.numGridLines = gridCount;
+    GridParam.gridOrigin = { 0,0,0 };
+}
+
+void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection)
+{
+    FEngineLoop::renderer.PrepareLineShader();
+
+    InitializeVertexBuffer();
+
+    FMatrix Model = FMatrix::Identity;
+    FMatrix VP = View * Projection;
+    FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
+    FEngineLoop::renderer.UpdateConstant(Model, VP, NormalMatrix, false);
+    FEngineLoop::renderer.UpdateGridConstantBuffer(GridParam);
+
+    UpdateBoundingBoxResources();
+    UpdateConeResources();
+    UpdateOBBResources();
+    int boundingBoxSize = static_cast<int>(BoundingBoxes.Num());
+    int coneSize = static_cast<int>(Cones.Num());
+    int obbSize = static_cast<int>(OrientedBoundingBoxes.Num());
+    FEngineLoop::renderer.UpdateLinePrimitveCountBuffer(boundingBoxSize, coneSize);
+    FEngineLoop::renderer.RenderBatch(GridParam, pVertexBuffer, boundingBoxSize, coneSize, ConeSegmentCount, obbSize);
+    BoundingBoxes.Empty();
+    Cones.Empty();
+    OrientedBoundingBoxes.Empty();
+}
+void UPrimitiveBatch::InitializeVertexBuffer()
+{
+    if (!pVertexBuffer)
+        pVertexBuffer = FEngineLoop::renderer.CreateStaticVerticesBuffer();
+}
+
+void UPrimitiveBatch::UpdateBoundingBoxResources()
+{
+    if (BoundingBoxes.Num() > allocatedBoundingBoxCapacity) {
+        allocatedBoundingBoxCapacity = BoundingBoxes.Num();
+
+        ReleaseBoundingBoxResources();
+
+        pBoundingBoxBuffer = FEngineLoop::renderer.CreateBoundingBoxBuffer(static_cast<UINT>(allocatedBoundingBoxCapacity));
+        pBoundingBoxSRV = FEngineLoop::renderer.CreateBoundingBoxSRV(pBoundingBoxBuffer, static_cast<UINT>(allocatedBoundingBoxCapacity));
+    }
+
+    if (pBoundingBoxBuffer && pBoundingBoxSRV){
+        int boundingBoxCount = static_cast<int>(BoundingBoxes.Num());
+        FEngineLoop::renderer.UpdateBoundingBoxBuffer(pBoundingBoxBuffer, BoundingBoxes, boundingBoxCount);
+    }
 }
 
 void UPrimitiveBatch::AddAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix)

@@ -4,6 +4,8 @@
 #include "Renderer/Renderer.h"
 #include "Engine/ResourceMgr.h"
 
+class UProjectileMovementComponent;
+class AActor;
 class UnrealEd;
 class UImGuiManager;
 class ULevel;
@@ -22,10 +24,13 @@ public:
     void Render();
     void Tick();
     void EditorTick(double elapsedTime);
+    void SpawnMeteor();
     void PIETick(double elapsedTime);
     void Exit();
     float GetAspectRatio(IDXGISwapChain* swapChain) const;
-    void Input();
+    void EditorInput();
+    void BeginPIE() const;
+    void PIEInput() const;
     EWorldType GetWorldType() const {return WorldContexts[curWorldContextIndex].worldType;}
 
 private:
@@ -51,8 +56,14 @@ private:
     UnrealEd* UnrealEditor;
     bool bIsExit = false;
     const int32 targetFPS = 60;
+    double accumulatedTime = 0.0f;
     bool bTestInput = false;
     int curWorldContextIndex = 0;
+
+    // test용
+    UProjectileMovementComponent* movementComponent = nullptr;
+    ULightComponent* leftLight = nullptr;
+    ULightComponent* rightLight = nullptr;
 
 public:
     ULevel* GetLevel() const { return GLevel; }
