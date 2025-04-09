@@ -185,22 +185,22 @@ void AActor::DuplicateSubObjects()
     if (OwnedComponents.Num() == 0)
         return;
 
-    RootComponent = Cast<USceneComponent>(RootComponent->Duplicate());
-    RootComponent->ClearAttachment();
-    for (int i = 0;i< OwnedComponents.Num();i++)
+    for (int i = 0; i < OwnedComponents.Num(); i++)
     {
-        if (OwnedComponents[i] == RootComponent)
-        {
-            continue;
-        }
-
-        if (auto sc = Cast<USceneComponent>(OwnedComponents[i]))
-        {
-            sc->SetupAttachment(RootComponent);
-        }
-        
+        bool bIsRootComponent = OwnedComponents[i] == RootComponent;
         OwnedComponents[i] = Cast<UActorComponent>(OwnedComponents[i]->Duplicate());
         OwnedComponents[i]->Owner = this;
+    
+        if (bIsRootComponent)
+            RootComponent = Cast<USceneComponent>(OwnedComponents[i]);
+    }
+
+    for (const auto& comp : OwnedComponents)
+    {
+        if (comp == RootComponent) continue;
+
+        if (USceneComponent* sc = Cast<USceneComponent>(comp))
+            sc->SetupAttachment(RootComponent);
     }
     
     // RootComponent 아래있는 모든 scenecomponent가 생성됨

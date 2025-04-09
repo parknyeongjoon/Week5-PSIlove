@@ -1069,27 +1069,12 @@ void FRenderer::PrepareRender(ULevel* Level)
         {
             if (ULightComponent* pLightComp = Cast<ULightComponent>(comp))
                 LightObjs.Add(pLightComp);
-        }
-    }
-
-
-    for (const USceneComponent* iter : TObjectRange<USceneComponent>())
-    {
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        {
-            GizmoObjs.Add(pGizmoComp);
-        }
-        if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(iter))
-        {
-            TextObjs.Add(TextRenderComp);
-        }
-        if (ULightComponent* pLightComp = Cast<ULightComponent>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
-        if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(iter))
-        {
-            HeightFogObjs.Add(pHeightFogComp);
+            if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(comp))
+                HeightFogObjs.Add(pHeightFogComp);
+            if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(comp))
+                GizmoObjs.Add(pGizmoComp);
+            if (UTextRenderComponent* TextRenderComp = Cast<UTextRenderComponent>(comp))
+                TextObjs.Add(TextRenderComp);
         }
     }
     
