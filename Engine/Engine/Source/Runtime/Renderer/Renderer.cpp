@@ -29,12 +29,171 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     Graphics = graphics;
     CreateShader();
     CreateTextureShader();
+    
+    CreateDepthShader();
+
     CreateFontShader();
     CreateLineShader();
     CreateConstantBuffer();
     CreateLightingBuffer();
     CreateLitUnlitBuffer();
     UpdateLitUnlitConstant(1);
+    
+    CreateQuadShader();
+    CreateFullScreenQuadVertexBuffer();
+    CreateFullScreenQuadIndexBuffer();
+}
+
+void FRenderer::CreateFullScreenQuadVertexBuffer()
+{
+    struct Vertex
+    {
+        float Position[3]; // x, y, z
+        float TexCoord[2]; // u, v
+    };
+
+    Vertex vertices[4] = {
+        { {-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f} }, // Top-left
+        { { 1.0f, 1.0f, 0.0f}, {1.0f, 0.0f} }, // Top-right
+        { { 1.0f,-1.0f, 0.0f}, {1.0f, 1.0f} }, // Bottom-right
+        { {-1.0f,-1.0f, 0.0f}, {0.0f, 1.0f} }  // Bottom-left
+    };
+
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(Vertex) * 4;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA InitData = {};
+    InitData.pSysMem = vertices;
+
+    Graphics->Device->CreateBuffer(&bd, &InitData, &FullScreenQuadVertexBuffer);
+}
+
+void FRenderer::CreateFullScreenQuadIndexBuffer()
+{
+    UINT indices[6] = { 0, 1, 2, 0, 2, 3 };
+
+    D3D11_BUFFER_DESC bd = {};
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(UINT) * 6;
+    bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    bd.CPUAccessFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA InitData = {};
+    InitData.pSysMem = indices;
+
+    Graphics->Device->CreateBuffer(&bd, &InitData, &FullScreenQuadIndexBuffer);
+}
+
+void FRenderer::CreateDepthShader()
+{
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+    D3DCompileFromFile(L"Shaders/QuadShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", flags, 0, &VertexShaderCSO, nullptr);
+    Graphics->Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &QuadVertexShader);
+    D3DCompileFromFile(L"Shaders/QuadDepthPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", flags, 0, &PixelShaderCSO, nullptr);
+    Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &DepthPixelShader);
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
+}
+
+void FRenderer::CreateQuadShader()
+{
+    ID3DBlob* VertexShaderCSO;
+    ID3DBlob* PixelShaderCSO;
+
+    UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+
+    D3DCompileFromFile(L"Shaders/QuadShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", flags, 0, &VertexShaderCSO, nullptr);
+    Graphics->Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &QuadVertexShader);
+
+    D3DCompileFromFile(L"Shaders/QuadShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", flags, 0, &PixelShaderCSO, nullptr);
+    Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &QuadPixelShader);
+
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+    };
+
+    Graphics->Device->CreateInputLayout(
+        layout, ARRAYSIZE(layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), &QuadInputLayout
+    );
+
+    VertexShaderCSO->Release();
+    PixelShaderCSO->Release();
+
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    Graphics->Device->CreateSamplerState(&samplerDesc, &QuadSamplerState);
+}
+
+
+void FRenderer::DrawFullScreenQuadVertexBuffer() const
+{
+    struct Vertex
+    {
+        float Position[3]; 
+        float TexCoord[2];
+    };
+
+    UINT stride = sizeof(Vertex);
+    UINT offset = 0;
+
+    //VertexBuffer 를 GPU 에 바인딩. 정보를 알려줌
+    Graphics->DeviceContext->IASetInputLayout(QuadInputLayout);
+    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &FullScreenQuadVertexBuffer,&stride, &offset);
+    // IndexBuffer 를 GPU 에 바인딩. 정보를 알려줌
+    Graphics->DeviceContext->IASetIndexBuffer(FullScreenQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+    Graphics->DeviceContext->DrawIndexed(6, 0, 0); // 무엇을 그릴지는 안 알려줌
+}
+
+void FRenderer::PrepareDepthShader() const
+{
+    Graphics->DeviceContext->VSSetShader(QuadVertexShader, nullptr, 0);
+    Graphics->DeviceContext->PSSetShader(DepthPixelShader, nullptr, 0);
+
+    // DepthStencil Texture를 사용하기 위해 기존 RTV 해제
+    Graphics->DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+    Graphics->DeviceContext->PSSetShaderResources(0, 1, &Graphics->DepthStencilSRV);
+    Graphics->DeviceContext->PSSetSamplers(0, 1, &QuadSamplerState);
+
+    // 그런 다음, RenderTarget에 설정
+    Graphics->DeviceContext->OMSetRenderTargets(1, &FEngineLoop::graphicDevice.FrameBufferRTV, nullptr);
+    Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+void FRenderer::RenderFullScreenQuadVertexBuffer() const
+{
+
+    // 셰이더와 리소스를 준비. 
+    //FRenderer* renderer = new FRenderer();
+    //renderer->PrepareShader();
+    PrepareDepthShader();
+    // 풀 스크린 쿼드 그리기
+    //FRenderer* renderer = new FRenderer();
+    //renderer->DrawFullScreenQuadVertexBuffer();
+
+    // DepthStencil 을 픽셀쉐이더에 바인딩
+    Graphics->DeviceContext->PSSetShaderResources(0, 1, &FEngineLoop::graphicDevice.DepthStencilSRV);
+    Graphics->DeviceContext->PSSetSamplers(0, 1, &QuadSamplerState);
+
+    DrawFullScreenQuadVertexBuffer();
+}
+
+void FRenderer::DrawQuad()
+{
+    DrawFullScreenQuadVertexBuffer();
 }
 
 void FRenderer::Release()
@@ -157,6 +316,7 @@ void FRenderer::SetPixelShader(const FWString& filename, const FString& funcname
 
 void FRenderer::ChangeViewMode(EViewModeIndex evi) const
 {
+    ID3D11SamplerState* nullSampler[1] = { nullptr };
     switch (evi)
     {
     case EViewModeIndex::VMI_Lit:
@@ -165,8 +325,81 @@ void FRenderer::ChangeViewMode(EViewModeIndex evi) const
     case EViewModeIndex::VMI_Wireframe:
     case EViewModeIndex::VMI_Unlit:
         UpdateLitUnlitConstant(0);
+    case EViewModeIndex::VMI_SceneDepth:
+        UpdateSceneDepthConstant();
         break;
     }
+}
+
+//void FRenderer::ChangeViewMode(EViewModeIndex evi)
+//{
+//    // 샘플러를 사용하지 않을 때 쓸 null 샘플러 배열 (함수 초기에 선언해두면 편리)
+//    ID3D11SamplerState* nullSampler[1] = { nullptr };
+//    // Lit/Unlit에서 사용할 기본 샘플러 (FGraphicsDevice에 있다고 가정, 이름 확인 필요!)
+//    // 예시: ID3D11SamplerState* defaultSampler = Graphics->LinearSampler; // 실제 변수명으로!
+//
+//    switch (evi)
+//    {
+//    case EViewModeIndex::VMI_Lit:
+//        // 1. Vertex Shader 설정 (예시 변수명)
+//        Graphics->DeviceContext->VSSetShader(m_pLitVertexShader, nullptr, 0);
+//        // 2. Pixel Shader 설정 (예시 변수명)
+//        Graphics->DeviceContext->PSSetShader(m_pLitPixelShader, nullptr, 0);
+//        // 3. Sampler 설정 (Lit은 보통 텍스처 사용 -> 기본 샘플러 설정)
+//        //    Graphics->LinearSampler 같은 실제 샘플러 변수를 사용하세요! 없으면 만들어야 함.
+//        //    만약 Graphics->LinearSampler 가 있다면 아래 주석 해제
+//        // Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->LinearSampler); // 슬롯 0 가정
+//        //    만약 없다면 임시로 null 설정 (나중에 샘플러 생성 필요)
+//        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 임시 조치 또는 샘플러 불필요 시
+//        break;
+//
+//    case EViewModeIndex::VMI_Unlit:
+//        // 1. Vertex Shader 설정 (예시 변수명)
+//        Graphics->DeviceContext->VSSetShader(m_pUnlitVertexShader, nullptr, 0);
+//        // 2. Pixel Shader 설정 (예시 변수명)
+//        Graphics->DeviceContext->PSSetShader(m_pUnlitPixelShader, nullptr, 0);
+//        // 3. Sampler 설정 (Unlit이 텍스처를 쓴다면 샘플러 설정, 아니면 null)
+//        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 텍스처 안 쓴다고 가정
+//        break;
+//
+//    case EViewModeIndex::VMI_Wireframe:
+//        // 1. Vertex Shader 설정 (보통 Lit/Unlit과 같은 VS 사용 가능)
+//        Graphics->DeviceContext->VSSetShader(m_pLitVertexShader, nullptr, 0); // 예시
+//        // 2. Pixel Shader 설정 (단색 출력하는 Wireframe용 PS 필요)
+//        Graphics->DeviceContext->PSSetShader(m_pWireframePixelShader, nullptr, 0); // 예시
+//        // 3. Sampler 설정 (Wireframe은 텍스처 안 씀 -> null 설정)
+//        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler);
+//        break;
+//
+//        // case EViewModeIndex::VMI_SceneDepth:
+//            // SceneDepth는 FRenderer::Render 내부에서 특별 처리하므로 여기서 설정할 필요 없음
+//        //    break;
+//
+//    default: // 기본 모드 (예: Lit)
+//        Graphics->DeviceContext->VSSetShader(m_pLitVertexShader, nullptr, 0);
+//        Graphics->DeviceContext->PSSetShader(m_pLitPixelShader, nullptr, 0);
+//        // Graphics->DeviceContext->PSSetSamplers(0, 1, &Graphics->LinearSampler); // 기본 샘플러 사용 가정
+//        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 임시 조치
+//        break;
+//    }
+//}
+
+void FRenderer::UpdateSceneDepthConstant() const
+{
+//    if (ConstantBuffer)
+//    {
+//        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
+//
+//        Graphics->DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
+//        {
+//            FConstants* constants = static_cast<FConstants*>(ConstantBufferMSR.pData);
+//            constants->MVP = MVP;
+//            constants->ModelMatrixInverseTranspose = NormalMatrix;
+//            constants->UUIDColor = UUIDColor;
+//            constants->IsSelected = IsSelected;
+//        }
+//        Graphics->DeviceContext->Unmap(ConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
+//    }
 }
 
 void FRenderer::RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const
@@ -1103,9 +1336,64 @@ void FRenderer::ClearRenderArr()
 
 void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
+    // 1. 뷰포트 설정
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
-    Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
+    
+    // 2. ShaderResource 초기화
+    ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+    Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRV);
+
+    
+    // 4. 쉐이더 값 변경
     ChangeViewMode(ActiveViewport->GetViewMode());
+
+
+    if (ActiveViewport->GetViewMode() != EViewModeIndex::VMI_SceneDepth) // SceneDepth 아닐 때!
+    {
+        // 샘플러는 여기서 설정하지 않고, 실제 그리기 함수에서 텍스처와 함께 설정하거나 null로 설정해야 함.
+        // 따라서 여기서는 null로 초기화 해주는 것이 안전.
+        ID3D11SamplerState* nullSampler[1] = { nullptr };
+        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 슬롯 0 샘플러 클리어
+
+        switch (ActiveViewport->GetViewMode())
+        {
+        case EViewModeIndex::VMI_Lit:
+            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0); // VS 설정 추가!
+            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);  // PS 설정 추가!
+            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID); // Rasterizer 설정 추가!
+            break;
+        case EViewModeIndex::VMI_Unlit: // Lit과 Unlit이 같은 기본 StaticMesh 셰이더 사용 가정
+            // 기본 StaticMesh 셰이더 설정
+            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0); // !!! 정확한 이름 사용 !!!
+            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);  // !!! 정확한 이름 사용 !!!
+            
+            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID);
+            break;
+
+        case EViewModeIndex::VMI_Wireframe:
+            // Wireframe: StaticMesh VS + StaticMesh PS 사용 (Wireframe 전용 PS 없으므로)
+            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0); // !!! 정확한 이름 사용 !!!
+            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);  // !!! 정확한 이름 사용 !!!
+            
+            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateWIREFRAME);
+            break;
+
+        default: // 기본값 (Lit/Unlit 가정)
+            Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
+            Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
+            
+            Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID);
+            break;
+        }
+
+        // 기본 렌더 타겟 설정
+        Graphics->DeviceContext->OMSetRenderTargets(1, &Graphics->FrameBufferRTV, Graphics->DepthStencilView);
+    }
+    // 5. 기본 렌더링 (깊이 버퍼 필요)
+    // *** 중요: 기본 렌더 타겟 (Color + Depth) 설정 ***
+    //    PrepareDepthShader 전에 기본 상태를 설정하거나, 여기서 명시적으로 설정 필요
+
+    // 5. 렌더링
     UpdateLightBuffer();
     UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
 
@@ -1120,8 +1408,34 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
         RenderTexts(Level, ActiveViewport);
     }
     RenderLight(Level, ActiveViewport);
-    
+
+    // --- SceneDepth 특별 처리 ---
+    if (ActiveViewport->GetViewMode() == EViewModeIndex::VMI_SceneDepth)
+    {
+        PrepareDepthShader(); // 여기서 RT 변경, SRV 바인딩 발생
+        DrawQuad();
+
+        // *** 상태 복구 ***
+        // 1. Depth SRV 언바인딩 (PrepareDepthShader에서 바인딩한 슬롯과 동일하게)
+        ID3D11ShaderResourceView* nullSRVForDepth[1] = { nullptr }; // 필요시 배열 크기/슬롯 인덱스 조정
+        Graphics->DeviceContext->PSSetShaderResources(0, 1, nullSRVForDepth); // 예시: 슬롯 0 사용 시
+
+        // 1.5. Sampler 언바인딩 (PrepareDepthShader에서 설정한 슬롯과 동일하게)
+        ID3D11SamplerState* nullSampler[1] = { nullptr };
+        Graphics->DeviceContext->PSSetSamplers(0, 1, nullSampler); // 슬롯 0 가정
+
+        // 2. 기본 렌더 타겟 복구 (Color + Depth)
+        //    위에서 설정한 defaultRTV, defaultDSV 사용
+        Graphics->DeviceContext->OMSetRenderTargets(1, &Graphics->FrameBufferRTV, Graphics->DepthStencilView);
+
+        // 3. Quad 렌더링에 사용된 VS/PS/InputLayout을 기본 렌더링용으로 복구
+        Graphics->DeviceContext->VSSetShader(VertexShader, nullptr, 0);
+        Graphics->DeviceContext->PSSetShader(PixelShader, nullptr, 0);
+        Graphics->DeviceContext->RSSetState(Graphics->RasterizerStateSOLID); // 기본 SOLID 상태 설정
+    }
+
     ClearRenderArr();
+
 }
 
 void FRenderer::RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)

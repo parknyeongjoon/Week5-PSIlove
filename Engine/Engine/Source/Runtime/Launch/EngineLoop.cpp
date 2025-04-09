@@ -140,6 +140,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 void FEngineLoop::Render()
 {
     graphicDevice.Prepare();
+
     if (LevelEditor->IsMultiViewport())
     {
         std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
@@ -168,6 +169,8 @@ void FEngineLoop::Render()
         renderer.PrepareRender(GLevel);
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());
     }
+    //renderer.PrepareDepthShader();
+    //renderer.DrawQuad();
 }
 
 void FEngineLoop::Tick()

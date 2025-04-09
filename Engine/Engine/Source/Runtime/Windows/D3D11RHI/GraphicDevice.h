@@ -26,11 +26,14 @@ public:
     DXGI_SWAP_CHAIN_DESC SwapchainDesc;
 
     
+
+    
     UINT screenWidth = 0;
     UINT screenHeight = 0;
     // Depth-Stencil 관련 변수
     ID3D11Texture2D* DepthStencilBuffer = nullptr;  // 깊이/스텐실 텍스처
     ID3D11DepthStencilView* DepthStencilView = nullptr;  // 깊이/스텐실 뷰
+    ID3D11ShaderResourceView* DepthStencilSRV = nullptr;  // 깊이/스텐실 SRV
     ID3D11DepthStencilState* DepthStencilState = nullptr;
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f }; // 화면을 초기화(clear) 할 때 사용할 색상(RGBA)
 
@@ -57,6 +60,15 @@ public:
 
     uint32 GetPixelUUID(POINT pt);
     uint32 DecodeUUIDColor(FVector4 UUIDColor);
+
+    ID3D11Texture2D* WorldTexture = nullptr;
+    ID3D11RenderTargetView* WorldTextureRTV = nullptr;
+
+    void CreateWorldTexture();
+    ID3D11ShaderResourceView* WorldTextureSRV = nullptr;
+
+    ID3D11SamplerState* LinearSampler = nullptr;
+
 private:
     ID3D11RasterizerState* CurrentRasterizer = nullptr;
 };

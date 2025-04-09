@@ -26,16 +26,33 @@ class FRenderer
 private:
     float litFlag = 0;
 public:
+    // GPU 기본 연결
     FGraphicsDevice* Graphics;
+
+    // 셰이더 관련
     ID3D11VertexShader* VertexShader = nullptr;
     ID3D11PixelShader* PixelShader = nullptr;
     ID3D11InputLayout* InputLayout = nullptr;
+
+    ID3D11VertexShader* QuadVertexShader = nullptr;
+    ID3D11PixelShader* QuadPixelShader = nullptr;
+    ID3D11InputLayout* QuadInputLayout = nullptr;
+    ID3D11SamplerState* QuadSamplerState = nullptr;
+
+    ID3D11VertexShader* QuadDepthVertexShader = nullptr;
+    ID3D11PixelShader* DepthPixelShader = nullptr;
+
+    // ConstantBuffer 그룹
     ID3D11Buffer* ConstantBuffer = nullptr;
     ID3D11Buffer* LightingBuffer = nullptr;
     ID3D11Buffer* FlagBuffer = nullptr;
     ID3D11Buffer* MaterialConstantBuffer = nullptr;
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
     ID3D11Buffer* TextureConstantBufer = nullptr;
+
+    // VertexBuffer 그룹 (FullScreenQaud)
+    ID3D11Buffer* FullScreenQuadVertexBuffer = nullptr;
+    ID3D11Buffer* FullScreenQuadIndexBuffer = nullptr;
 
     FLighting lightingData;
 
@@ -63,6 +80,9 @@ public:
     void ResetPixelShader() const;
     void CreateShader();
 
+    void CreateQuadShader();
+    void CreateDepthShader();
+
     void SetVertexShader(const FWString& filename, const FString& funcname, const FString& version);
     void SetPixelShader(const FWString& filename, const FString& funcname, const FString& version);
     
@@ -77,6 +97,15 @@ public:
     ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices, UINT byteWidth) const;
 
+    void CreateFullScreenQuadVertexBuffer();
+    void DrawFullScreenQuadVertexBuffer() const;
+    void RenderFullScreenQuadVertexBuffer() const;
+
+    void PrepareDepthShader() const;
+
+    void CreateFullScreenQuadIndexBuffer();
+    void DrawQuad();
+
     // update
     void UpdateLightBuffer() const;
     void UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
@@ -84,6 +113,8 @@ public:
     void UpdateLitUnlitConstant(int isLit) const;
     void UpdateSubMeshConstant(bool isSelected) const;
     void UpdateTextureConstant(float UOffset, float VOffset);
+
+    void UpdateSceneDepthConstant() const;
 
 public://텍스쳐용 기능 추가
     ID3D11VertexShader* TextureVertexShader = nullptr;
@@ -171,5 +202,7 @@ public:
     ID3D11ShaderResourceView* pBBSRV = nullptr;
     ID3D11ShaderResourceView* pConeSRV = nullptr;
     ID3D11ShaderResourceView* pOBBSRV = nullptr;
+
+
 };
 
