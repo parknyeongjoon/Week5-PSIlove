@@ -23,14 +23,6 @@ cbuffer LightBuffer : register(b0)
     float LightCount;
 }
 
-cbuffer UVBuffer : register(b1)
-{
-    float UOffset;
-    float VOffset;
-    float UTiles;
-    float VTiles;
-}
-
 struct PS_INPUT
 {
     float4 position : SV_Position;
@@ -47,11 +39,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
     PS_OUTPUT output;
 
     // G-Buffer에서 데이터 샘플링
-    float2 texCoord = float2(UOffset + input.texCoord.x * UTiles, VOffset + input.texCoord.y * VTiles);
-    float4 position = PositionBuffer.Sample(SamLinear, texCoord);
-    float4 normal = NormalBuffer.Sample(SamLinear, texCoord);
-    float4 diffuse = DiffuseBuffer.Sample(SamLinear, texCoord);
-    float4 material = MaterialBuffer.Sample(SamLinear, texCoord);
+    float4 position = PositionBuffer.Sample(SamLinear, input.texCoord);
+    float4 normal = NormalBuffer.Sample(SamLinear, input.texCoord);
+    float4 diffuse = DiffuseBuffer.Sample(SamLinear, input.texCoord);
+    float4 material = MaterialBuffer.Sample(SamLinear, input.texCoord);
 
      // 유효한 픽셀인지 확인 (깊이 값이 0이면 스킵)
     if (position.w == 0.0f)
