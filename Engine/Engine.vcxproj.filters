@@ -477,9 +477,6 @@
     <FxCompile Include="Shaders\ShaderLine.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\ShaderW0.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\StaticMeshVertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -490,9 +487,6 @@
     <FxCompile Include="Shaders\FontVertexShader.hlsl" />
     <FxCompile Include="Shaders\TexturePixelShader.hlsl" />
     <FxCompile Include="Shaders\TextureVertexShader.hlsl" />
-    <FxCompile Include="Shaders\QuadShader.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\QuadDepthPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
