@@ -82,8 +82,6 @@ bool AActor::Destroy()
 
 void AActor::RemoveOwnedComponent(UActorComponent* Component)
 {
-    OwnedComponents.Empty();
-    return;
     if (OwnedComponents.Contains(Component))
     {
         OwnedComponents.Remove(Component);
@@ -121,7 +119,15 @@ void AActor::UninitializeComponents()
 
 bool AActor::SetRootComponent(USceneComponent* NewRootComponent)
 {
-    if (NewRootComponent == nullptr || NewRootComponent->GetOwner() == this)
+    if (NewRootComponent == nullptr)
+    {
+        if (RootComponent->GetAttachChildren().IsEmpty())
+            RootComponent = nullptr;
+        else
+            RootComponent = RootComponent->GetAttachChildren()[0];
+        return true;
+    }
+    if (NewRootComponent->GetOwner() == this)
     {
         if (RootComponent != NewRootComponent)
         {
@@ -165,34 +171,6 @@ bool AActor::SetActorScale(const FVector& NewScale)
     return false;
 }
 
-void AActor::DuplicateSubObjects()
-{
-    if (OwnedComponents.Num() == 0)
-        return;
-
-    if (OwnedComponents.Contains(RootComponent))
-    {
-        OwnedComponents.Empty();
-        //OwnedComponents.Remove(RootComponent);
-
-    }
-    
-    RootComponent = Cast<USceneComponent>(RootComponent->Duplicate());
-    // RootComponent 아래있는 모든 scenecomponent가 생성됨
-    // tree구조 완성되었지만
-    // owner는 그대로
-
-    TArray<USceneComponent*> NewSceneComponents;
-    RootComponent->GetChildrenComponents(NewSceneComponents);
-    NewSceneComponents.Add(RootComponent);
-    // Owner 바꿔주기
-    for (auto& s : NewSceneComponents)
-    {
-        Cast<UActorComponent>(s)->Owner = this;
-        OwnedComponents.Add(Cast<UActorComponent>(s));
-    }
-}
-
 UObject* AActor::Duplicate()
 {
     UObject* NewObject = FObjectFactory::ConstructObject<AActor>(this);
@@ -200,4 +178,36 @@ UObject* AActor::Duplicate()
     // 서브 오브젝트는 깊은 복사로 별도 처리
     Cast<AActor>(NewObject)->DuplicateSubObjects();
     return NewObject;
+}
+
+void AActor::DuplicateSubObjects()
+{
+    if (OwnedComponents.Num() == 0)
+        return;
+
+    for (int i = 0;i< OwnedComponents.Num();i++)
+    {
+        if (OwnedComponents[i] == RootComponent)
+        {
+            RootComponent = Cast<USceneComponent>(RootComponent->Duplicate());
+            OwnedComponents[i] = RootComponent;
+        }
+        
+        OwnedComponents[i] = Cast<UActorComponent>(OwnedComponents[i]->Duplicate());
+        OwnedComponents[i]->Owner = this;
+    }
+    
+    // RootComponent 아래있는 모든 scenecomponent가 생성됨
+    // tree구조 완성되었지만
+    // owner는 그대로
+
+    // TArray<USceneComponent*> NewSceneComponents;
+    // RootComponent->GetChildrenComponents(NewSceneComponents);
+    // NewSceneComponents.Add(RootComponent);
+    // // Owner 바꿔주기
+    // for (auto& s : NewSceneComponents)
+    // {
+    //     Cast<UActorComponent>(s)->Owner = this;
+    //     OwnedComponents.Add(Cast<UActorComponent>(s));
+    // }
 }

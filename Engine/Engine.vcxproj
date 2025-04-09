@@ -187,11 +187,16 @@
     <ClCompile Include="Engine\Source\Runtime\Core\Math\JungleMath.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Math\Vector.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\ActorEditor.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Object\FireBall.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Player.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ActorComponent.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\EditorViewportClient.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.cpp" /><ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\World.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\FogRenderer.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Slate\Widgets\Layout\SSplitter.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\ResourceMgr.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\UnrealClient.cpp" />
@@ -238,6 +243,11 @@
   <ItemGroup>
     <ClInclude Include="Engine\Source\Runtime\Core\Delegates\Delegate.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Delegates\DelegateCombination.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Object\FireBall.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\ViewportClient.h" />
     <ClInclude Include="Engine\Source\Editor\LevelEditor\SLevelEditor.h" />
@@ -281,6 +291,7 @@
     <ClInclude Include="Engine\Source\Runtime\Launch\EngineBaseTypes.h" />
     <ClInclude Include="Engine\Source\Runtime\Launch\EngineLoop.h" />
     <ClInclude Include="Engine\Source\Runtime\Launch\ImGuiManager.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\FogRenderer.h" />
     <ClInclude Include="Engine\Source\Runtime\SlateCore\Widgets\SWindow.h" />
     <ClInclude Include="Engine\Source\Runtime\Slate\Widgets\Layout\SSplitter.h" />
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -351,6 +362,26 @@
     <FxCompile Include="Shaders\QuadShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    <FxCompile Include="Shaders\LightingPixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainPS</EntryPointName>
+    </FxCompile>
+    <FxCompile Include="Shaders\QuadVertexShader.hlsl">
+      <ObjectFileOutput>C:\Users\Jungle\Desktop\Repos\Week5-PSIlove\Binaries\x64\Debug\%(Filename).cso</ObjectFileOutput>
+      <TrackerLogDirectory>C:\Users\Jungle\Desktop\Repos\Week5-PSIlove\Intermediate\Build\x64\Debug\Engine.tlog\</TrackerLogDirectory>
+      <EntryPointName>mainVS</EntryPointName>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <ShaderModel>4.0_level_9_3</ShaderModel>
+      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
+      <DisableOptimizations>true</DisableOptimizations>
+      <EnableDebuggingInformation>true</EnableDebuggingInformation>
+      <ShaderType>Vertex</ShaderType>
+      <ExcludedFromBuild>true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\StaticMeshPixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -360,6 +391,10 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainPS</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainPS</EntryPointName>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\FontPixelShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -387,6 +422,10 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainVS</EntryPointName>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainVS</EntryPointName>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\FontVertexShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

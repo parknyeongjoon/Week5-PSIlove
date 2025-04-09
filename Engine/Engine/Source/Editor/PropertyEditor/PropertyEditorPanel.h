@@ -2,6 +2,8 @@
 #include "Components/ActorComponent.h"
 #include "UnrealEd/EditorPanel.h"
 
+class URotationMovementComponent;
+class UProjectileMovementComponent;
 class UTextRenderComponent;
 class UTextBillboardComponent;
 class UBillboardComponent;
@@ -32,14 +34,22 @@ private:
 
     /* Billboard Settings */
     void RenderForBillboard(UBillboardComponent* BillboardComp);
-    
+    /* Movement Settings */
+    void RenderForRotation(URotationMovementComponent* RotationMovementComponent);
+    void RenderForProjectile(UProjectileMovementComponent* ProjectileMovementComponent);
 private:
     float Width = 0, Height = 0;
     FVector Location = FVector(0, 0, 0);
     FVector Rotation = FVector(0, 0, 0);
     FVector Scale = FVector(0, 0, 0);
 
-    /* Material Property */
+    /* RotationMovementProperty */
+    FVector RotationRate = FVector(0, 0, 0);
+    /* ProjecttileMovementProperty */
+    FVector Velocity = FVector(0,0,0);
+    FVector MaxSpeed = FVector(0,0,0);
+    FVector Acceleration = FVector(0,0,0);
+    
     int SelectedMaterialIndex = -1;
     int CurMaterialIndex = -1;
     UStaticMeshComponent* SelectedStaticMeshComp = nullptr;

@@ -402,6 +402,12 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\TextBillboardComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\TextRenderComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Level.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Object\FireBall.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\FogRenderer.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -490,6 +496,10 @@
     <FxCompile Include="Shaders\QuadDepthPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\LightingPixelShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\QuadVertexShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Engine.natvis" />
@@ -500,5 +510,11 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\TextBillboardComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\TextRenderComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Level.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Object\FireBall.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\RotationMovementComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\FogRenderer.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\HeightFogComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\Fog.cpp" />
   </ItemGroup>
 </Project>

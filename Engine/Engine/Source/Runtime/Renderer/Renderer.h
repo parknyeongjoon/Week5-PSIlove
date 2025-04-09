@@ -10,7 +10,7 @@
 #include "Container/Set.h"
 
 class UPrimitiveComponent;
-class ULightComponentBase;
+class ULightComponent;
 class ULevel;
 class FGraphicsDevice;
 class UMaterial;
@@ -20,6 +20,7 @@ class FEditorViewportClient;
 class UBillboardComponent;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
+class UHeightFogComponent;
 class FRenderer 
 {
 
@@ -31,7 +32,9 @@ public:
 
     // 셰이더 관련
     ID3D11VertexShader* VertexShader = nullptr;
+    ID3D11VertexShader* QuadShader = nullptr;
     ID3D11PixelShader* PixelShader = nullptr;
+    ID3D11PixelShader* LightingPixelShader = nullptr;
     ID3D11InputLayout* InputLayout = nullptr;
 
     ID3D11VertexShader* QuadVertexShader = nullptr;
@@ -44,7 +47,7 @@ public:
 
     // ConstantBuffer 그룹
     ID3D11Buffer* ConstantBuffer = nullptr;
-    ID3D11Buffer* LightingBuffer = nullptr;
+    ID3D11Buffer* LightArrConstantBuffer = nullptr;
     ID3D11Buffer* FlagBuffer = nullptr;
     ID3D11Buffer* MaterialConstantBuffer = nullptr;
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
@@ -63,10 +66,9 @@ public:
     void Initialize(FGraphicsDevice* graphics);
    
     void PrepareShader() const;
-    
+    void PrepareLightingShader() const;
+
     //Render
-    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) const;
-    void RenderPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices) const;
     void RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<FStaticMaterial*> materials, TArray<UMaterial*> overrideMaterial, int selectedSubMeshIndex) const;
    
     void RenderTexturedModelPrimitive(ID3D11Buffer* pVertexBuffer, UINT numVertices, ID3D11Buffer* pIndexBuffer, UINT numIndices, ID3D11ShaderResourceView* InTextureSRV, ID3D11SamplerState* InSamplerState) const;
@@ -90,8 +92,6 @@ public:
     
     // CreateBuffer
     void CreateConstantBuffer();
-    void CreateLightingBuffer();
-    void CreateLitUnlitBuffer();
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
@@ -107,12 +107,12 @@ public:
     void DrawQuad();
 
     // update
-    void UpdateLightBuffer() const;
-    void UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
+    void UpdateConstant(const FMatrix& Model, const FMatrix& ViewProjection, const FMatrix& NormalMatrix, bool IsSelected) const;
+    void UpdateLightBuffer(TArray<ULightComponent*> lightComponents) const;
     void UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const;
     void UpdateLitUnlitConstant(int isLit) const;
     void UpdateSubMeshConstant(bool isSelected) const;
-    void UpdateTextureConstant(float UOffset, float VOffset);
+    void UpdateTextureConstant(float UOffset, float VOffset, float UTiles, float VTiles) const;
 
     void UpdateSceneDepthConstant() const;
 
@@ -183,7 +183,7 @@ public: // line shader
     void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
-    void RenderLight(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport) const;
     void RenderBillboards(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderTexts(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
     
@@ -192,7 +192,8 @@ private:
     TArray<UGizmoBaseComponent*> GizmoObjs;
     TArray<UPrimitiveComponent*> TextObjs;
     TArray<UBillboardComponent*> BillboardObjs;
-    TArray<ULightComponentBase*> LightObjs;
+    TArray<ULightComponent*> LightObjs;
+    TArray<UHeightFogComponent*> HeightFogObjs;
 
 public:
     ID3D11VertexShader* VertexLineShader = nullptr;
@@ -202,7 +203,32 @@ public:
     ID3D11ShaderResourceView* pBBSRV = nullptr;
     ID3D11ShaderResourceView* pConeSRV = nullptr;
     ID3D11ShaderResourceView* pOBBSRV = nullptr;
+    // default postprocess
+public:
+    ID3D11VertexShader* PostProcessVertexShader = nullptr;
+    ID3D11PixelShader* PostProcessPixelShader = nullptr;
+    ID3D11InputLayout* PostProcessInputLayout = nullptr;
+    void CreateDefaultPostProcessShader();
+    void ReleaseDefaultPostProcessShader();
+    void PrepareDefaultPostProcessShader() const;
+    // fogshader
+public:
+    ID3D11VertexShader* FogVertexShader = nullptr;
+    ID3D11PixelShader* FogPixelShader = nullptr;
+    ID3D11InputLayout* FogInputLayout = nullptr;
+    ID3D11Buffer* PostProcessVertexBuffer = nullptr;
+    ID3D11Buffer* PostProcessIndexBuffer = nullptr;
+    ID3D11Buffer* FogConstantBuffer = nullptr;
+    ID3D11ShaderResourceView* FogSRV = nullptr;
 
-
+    void CreateFogShader();
+    void ReleaseFogShader();
+    void PrepareFogShader() const;
+    void CreatePostProcessVertexBuffer();
+    void CreatePostProcessIndexBuffer();
+    void UpdatePostProcessVertexBuffer(const D3D11_VIEWPORT& viewport);
+    void UpdateFogConstant(UHeightFogComponent* FogComponent, const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition);
+    void RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
 };
 

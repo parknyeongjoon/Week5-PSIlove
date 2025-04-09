@@ -50,6 +50,8 @@ void AEditorPlayer::Input()
 
             //    UE_LOG(LogLevel::Display, *obj->GetName());
             //}
+            // uint32 UUID = GetEngine().graphicDevice.GetPixelUUID(mousePos);
+            // TArray<UObject*> objectArr = GetWorld()->GetObjectArr();
             ScreenToClient(GetEngine().hWnd, &mousePos);
 
             FVector pickPosition;
@@ -228,7 +230,7 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     for (const auto iter : TObjectRange<UPrimitiveComponent>())
     {
         UPrimitiveComponent* pObj;
-        if (iter->IsA<UPrimitiveComponent>() || iter->IsA<ULightComponentBase>())
+        if (iter->IsA<UPrimitiveComponent>() || iter->IsA<ULightComponent>())
         {
             pObj = static_cast<UPrimitiveComponent*>(iter);
         }

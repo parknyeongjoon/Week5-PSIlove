@@ -1,7 +1,8 @@
 
 cbuffer MatrixBuffer : register(b0)
 {
-    row_major float4x4 MVP;
+    row_major float4x4 M;
+    row_major float4x4 VP;
 };
 
 cbuffer GridParametersData : register(b1)
@@ -292,8 +293,6 @@ PS_INPUT mainVS(VS_INPUT input)
         uint coneIndex = coneInstanceID / (2 * N);
         
         color = g_ConeData[coneIndex].Color;
-   
-        
     }
     else
     {
@@ -306,7 +305,7 @@ PS_INPUT mainVS(VS_INPUT input)
     }
 
     // 출력 변환
-    output.Position = mul(float4(pos, 1.0), MVP);
+    output.Position = mul(mul(float4(pos, 1.0), M),VP);
     output.Color = color;
     return output;
 }

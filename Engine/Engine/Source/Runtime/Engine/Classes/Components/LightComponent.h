@@ -2,32 +2,29 @@
 #include "PrimitiveComponent.h"
 #include "Define.h"
 
-class ULightComponentBase : public USceneComponent
+class ULightComponent : public USceneComponent
 {
-    DECLARE_CLASS(ULightComponentBase, USceneComponent)
-
+    DECLARE_CLASS(ULightComponent, USceneComponent)
+    
 public:
-    ULightComponentBase();
-    virtual ~ULightComponentBase() override;
+    ULightComponent();
 
     virtual void DuplicateSubObjects() override;
     virtual UObject* Duplicate() override;
 
     virtual void TickComponent(float DeltaTime) override;
-    virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance);
+    virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
     void InitializeLight();
-    void SetColor(FVector4 newColor);
-    FVector4 GetColor() const;
-    float GetRadius() const;
-    void SetRadius(float r);
 
 private:
-    FVector4 color;
-    float radius;
+    FLinearColor LightColor;
+    float Intensity = 3.0f;
+    float AttenuationRadius;
     FBoundingBox AABB;
     
 public:
+    UPROPERTY(FLinearColor, LightColor);
+    UPROPERTY(float, Intensity);
+    UPROPERTY(float, AttenuationRadius);
     FBoundingBox GetBoundingBox() const {return AABB;}
-    float GetRadius() {return radius;}
-    FVector4 GetColor() {return color;}
 };

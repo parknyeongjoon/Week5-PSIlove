@@ -40,9 +40,9 @@ void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection
     InitializeVertexBuffer();
 
     FMatrix Model = FMatrix::Identity;
-    FMatrix MVP = Model * View * Projection;
+    FMatrix VP = View * Projection;
     FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-    FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, FVector4(0,0,0,0), false);
+    FEngineLoop::renderer.UpdateConstant(Model, VP, NormalMatrix, false);
     FEngineLoop::renderer.UpdateGridConstantBuffer(GridParam);
 
     UpdateBoundingBoxResources();
@@ -192,7 +192,7 @@ void UPrimitiveBatch::RenderOBB(const FBoundingBox& localAABB, const FVector& ce
 
 }
 
-void UPrimitiveBatch::AddCone(const FVector& center, float radius, float height, int segments, const FVector4& color, const FMatrix& modelMatrix)
+void UPrimitiveBatch::AddCone(const FVector& center, float radius, float height, int segments, const FLinearColor& color, const FMatrix& modelMatrix)
 {
     ConeSegmentCount = segments;
     FVector localApex = FVector(0, 0, 0);
