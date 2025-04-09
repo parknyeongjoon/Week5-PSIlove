@@ -9,5 +9,6 @@ class AFog : public AActor
     ~AFog();
 
     virtual void Tick(float DeltaTime) override;
+    UObject* Duplicate() override;
 };
 

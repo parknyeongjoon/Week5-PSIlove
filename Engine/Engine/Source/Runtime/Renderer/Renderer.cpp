@@ -1072,10 +1072,10 @@ void FRenderer::PrepareRender(ULevel* Level)
         {
             LightObjs.Add(pLightComp);
         }
-        //if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(iter))
-        //{
-        //    HeightFogObjs.Add(pHeightFogComp);
-        //}
+        if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(iter))
+        {
+            HeightFogObjs.Add(pHeightFogComp);
+        }
     }
     
     for (const auto iter : Ss)
