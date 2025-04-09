@@ -45,9 +45,9 @@ void FinalRenderPass::Execute(std::shared_ptr<FViewportClient> InViewport)
     ID3D11ShaderResourceView* nullSRV[2] = { nullptr, nullptr };
     Graphics.DeviceContext->PSSetShaderResources(0, 2, nullSRV);
 
-    // Sampler 해제
-    ID3D11SamplerState* nullSamplers[1] = { nullptr };
-    Graphics.DeviceContext->PSSetSamplers(0, 1, nullSamplers);
+    // // Sampler 해제
+    // ID3D11SamplerState* nullSamplers[1] = { nullptr };
+    // Graphics.DeviceContext->PSSetSamplers(0, 1, nullSamplers);
 }
 
 void FinalRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
@@ -60,10 +60,10 @@ void FinalRenderPass::CreatePostProcessBuffer()
 
     FScreenVertex vertices[4] =
     {
-        { FVector4(-1.0f,  1.0f, 0.0f, 0.0f), 0.0f, 0.0f },
-        { FVector4(1.0f,  1.0f, 0.0f, 0.0f), 1.0f, 0.0f },
-        { FVector4(1.0f, -1.0f, 0.0f, 0.0f), 1.0f, 1.0f },
-        { FVector4(-1.0f, -1.0f, 0.0f, 0.0f), 0.0f, 1.0f }
+        { FVector4(-1.0f,  1.0f, 0.0f, 1.0f), 0.0f, 0.0f },
+        { FVector4(1.0f,  1.0f, 0.0f, 1.0f), 1.0f, 0.0f },
+        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), 1.0f, 1.0f },
+        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), 0.0f, 1.0f }
     };
 
     const uint32 indices[6] =
@@ -96,12 +96,12 @@ void FinalRenderPass::UpdatePostProcessQuadVertexBufferUpdate(const std::shared_
     const float uvMaxY = (activeD3DViewport->TopLeftY + activeD3DViewport->Height) / screenHeight;
 
     FScreenVertex vertices[4] = {
-        { FVector4(-1.0f, 1.0f, 0.0f, 0.0f), uvMinX, uvMinY }, // top-left
-        { FVector4(1.0f, 1.0f, 0.0f, 0.0f), uvMaxX, uvMinY }, // top-right
-        { FVector4(1.0f, -1.0f, 0.0f, 0.0f), uvMaxX, uvMaxY }, // bottom-right
-        { FVector4(-1.0f, -1.0f, 0.0f, 0.0f), uvMinX, uvMaxY }  // bottom-left
+        { FVector4(-1.0f, 1.0f, 0.0f, 1.0f), uvMinX, uvMinY }, // top-left
+        { FVector4(1.0f, 1.0f, 0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
+        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
+        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
     };
 
-    ID3D11Buffer* fogVertexBuffer = Renderer.GetVIBuffer(VIBufferName)->GetVertexBuffer();
-    Renderer.UpdateVertexBuffer(fogVertexBuffer, &vertices, 4);
+    ID3D11Buffer* VertexBuffer = Renderer.GetVIBuffer(VIBufferName)->GetVertexBuffer();
+    Renderer.UpdateVertexBuffer(VertexBuffer, &vertices, 4);
 }

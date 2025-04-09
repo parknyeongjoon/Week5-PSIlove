@@ -784,8 +784,8 @@ void FRenderer::Render(ULevel* InLevel, std::shared_ptr<FEditorViewportClient> I
 
     if (InActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
     {
-        // fogRenderPass->Prepare(InActiveViewport);
-        // fogRenderPass->Execute(InActiveViewport);
+        fogRenderPass->Prepare(InActiveViewport);
+        fogRenderPass->Execute(InActiveViewport);
     }
 
     lineBatchRenderPass->Prepare(InActiveViewport);

@@ -33,7 +33,7 @@ void FogRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewport)
     UpdateFogQuadVertexBufferUpdate(activeViewport);
 
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[] = { Graphics.GetReadSRV(), Graphics.GetReadDepthSRV()};
+    ID3D11ShaderResourceView* SRVs[] = { Graphics.GetReadSRV(), Graphics.pingpongDepthSRV[0] };
     Graphics.DeviceContext->PSSetShaderResources(0, 2, SRVs);
 
     ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);

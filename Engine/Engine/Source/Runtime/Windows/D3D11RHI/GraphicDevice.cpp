@@ -478,7 +478,7 @@ bool FGraphicsDevice::CreatePixelShader(const FString& fileName, ID3DBlob** ppCo
 #ifdef  _DEBUG
     shaderFlags |= D3DCOMPILE_DEBUG;
 #endif
-    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+    // shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
     ID3DBlob* errorBlob = nullptr;
 

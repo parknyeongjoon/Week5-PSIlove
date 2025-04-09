@@ -207,9 +207,7 @@ void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& Mater
     else
     {
         ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
-        ID3D11SamplerState* nullSampler[1] = {nullptr};
 
         Graphics.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
-        Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, nullSampler);
     }
 }

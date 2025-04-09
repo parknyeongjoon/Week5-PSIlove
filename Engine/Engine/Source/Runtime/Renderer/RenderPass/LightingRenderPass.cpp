@@ -75,8 +75,4 @@ void LightingRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClie
     // SRV 해제 (다음 패스를 위한 정리)
     ID3D11ShaderResourceView* nullSRV[4] = { nullptr, nullptr, nullptr, nullptr };
     Graphics.DeviceContext->PSSetShaderResources(0, 4, nullSRV);
-
-    // Sampler 해제
-    ID3D11SamplerState* nullSamplers[1] = { nullptr };
-    Graphics.DeviceContext->PSSetSamplers(0, 1, nullSamplers);
 }
