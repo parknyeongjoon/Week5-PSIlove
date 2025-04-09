@@ -61,7 +61,7 @@ private:
     int curWorldContextIndex = 0;
 
     // test용
-    UProjectileMovementComponent* movementActor = nullptr;
+    UProjectileMovementComponent* movementComponent = nullptr;
     ULightComponent* leftLight = nullptr;
     ULightComponent* rightLight = nullptr;
 

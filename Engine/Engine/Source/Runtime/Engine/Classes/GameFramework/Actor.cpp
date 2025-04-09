@@ -185,12 +185,18 @@ void AActor::DuplicateSubObjects()
     if (OwnedComponents.Num() == 0)
         return;
 
+    RootComponent = Cast<USceneComponent>(RootComponent->Duplicate());
+    RootComponent->ClearAttachment();
     for (int i = 0;i< OwnedComponents.Num();i++)
     {
         if (OwnedComponents[i] == RootComponent)
         {
-            RootComponent = Cast<USceneComponent>(RootComponent->Duplicate());
-            OwnedComponents[i] = RootComponent;
+            continue;
+        }
+
+        if (auto sc = Cast<USceneComponent>(OwnedComponents[i]))
+        {
+            sc->SetupAttachment(RootComponent);
         }
         
         OwnedComponents[i] = Cast<UActorComponent>(OwnedComponents[i]->Duplicate());
@@ -205,6 +211,7 @@ void AActor::DuplicateSubObjects()
     // RootComponent->GetChildrenComponents(NewSceneComponents);
     // NewSceneComponents.Add(RootComponent);
     // // Owner 바꿔주기
+    // OwnedComponents.Empty();
     // for (auto& s : NewSceneComponents)
     // {
     //     Cast<UActorComponent>(s)->Owner = this;

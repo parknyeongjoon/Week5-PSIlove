@@ -302,6 +302,30 @@ struct FLoaderOBJ
 
                 CreateTextureFromFile(OutFStaticMesh.Materials[MaterialIndex].DiffuseTexturePath);
             }
+
+            if (Token == "map_Ks")
+            {
+                LineStream >> Line;
+                OutFStaticMesh.Materials[MaterialIndex].SpecularTextureName = Line;
+
+                FWString TexturePath = OutObjInfo.PathName + OutFStaticMesh.Materials[MaterialIndex].SpecularTextureName.ToWideString();
+                OutFStaticMesh.Materials[MaterialIndex].SpecularTexturePath = TexturePath;
+                OutFStaticMesh.Materials[MaterialIndex].bHasTexture = true;
+
+                CreateTextureFromFile(OutFStaticMesh.Materials[MaterialIndex].SpecularTexturePath);
+            }
+
+            if (Token == "bump")
+            {
+                LineStream >> Line;
+                OutFStaticMesh.Materials[MaterialIndex].BumpTextureName = Line;
+
+                FWString TexturePath = OutObjInfo.PathName + OutFStaticMesh.Materials[MaterialIndex].BumpTextureName.ToWideString();
+                OutFStaticMesh.Materials[MaterialIndex].BumpTexturePath = TexturePath;
+                OutFStaticMesh.Materials[MaterialIndex].bHasTexture = true;
+
+                CreateTextureFromFile(OutFStaticMesh.Materials[MaterialIndex].BumpTexturePath);
+            }
         }
         
         return true;
