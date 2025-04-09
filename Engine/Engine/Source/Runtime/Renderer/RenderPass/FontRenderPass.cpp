@@ -14,7 +14,6 @@ extern FEngineLoop GEngineLoop;
 void FontRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     BaseRenderPass::Prepare(InViewportClient);
-    GEngineLoop.graphicDevice.DeviceContext->OMSetDepthStencilState(GEngineLoop.renderer .GetDepthStencilState(EDepthStencilState::DepthNone), 0);
 }
 
 void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
@@ -58,8 +57,9 @@ void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportCl
         const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(item->VIBufferName);
         currentVIBuffer->Bind(Graphics.DeviceContext);
 
-        Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
         Graphics.DeviceContext->PSSetShaderResources(0,1, &item->Texture->TextureSRV);
+        Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+
         Graphics.DeviceContext->Draw(currentVIBuffer->GetNumVertices(), 0);
     }
 }

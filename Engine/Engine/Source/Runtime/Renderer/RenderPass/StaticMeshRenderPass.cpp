@@ -75,7 +75,7 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InView
         const int selectedSubMeshIndex = item->GetselectedSubMeshIndex();
 
         // SubSet마다 Material Update 및 Draw
-        for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); subMeshIndex++)
+        for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); ++subMeshIndex)
         {
             const int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
 
@@ -83,7 +83,7 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InView
             UpdateSubMeshConstants(bIsSelectedSubMesh);
 
             UMaterial* overrideMaterial = item->GetOverrideMaterial(materialIndex);
-            if (overrideMaterial)
+            if (overrideMaterial != nullptr)
             {
                 UpdateMaterialConstants(overrideMaterial->GetMaterialInfo());
             }
@@ -154,17 +154,24 @@ void StaticMeshRenderPass::UpdateMatrixConstants(UStaticMeshComponent* InStaticM
 void StaticMeshRenderPass::UpdateSkySphereTextureConstants(const USkySphereComponent* InSkySphereComponent)
 {
     FRenderer& Renderer = GEngineLoop.renderer;
-    FTextureConstants TextureConstants;
+    FUVBuffer UVBuffer;
+    
     if (InSkySphereComponent != nullptr)
     {
-        TextureConstants.UVOffset = FVector2D(InSkySphereComponent->UOffset, InSkySphereComponent->VOffset);
+        UVBuffer.UOffset = InSkySphereComponent->UOffset;
+        UVBuffer.VOffset = InSkySphereComponent->VOffset;
+        UVBuffer.UTiles = 1;
+        UVBuffer.VTiles = 1;
     }
     else
     {
-        TextureConstants.UVOffset = FVector2D(0.0f, 0.0f);
+        UVBuffer.UOffset = 0;
+        UVBuffer.VOffset = 0;
+        UVBuffer.UTiles = 1;
+        UVBuffer.VTiles = 1;
     }
     
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FTextureConstants")), &TextureConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FUVBuffer")), &UVBuffer);
 }
 
 void StaticMeshRenderPass::UpdateSubMeshConstants(const bool bIsSelectedSubMesh)

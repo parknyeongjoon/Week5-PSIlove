@@ -756,10 +756,10 @@ void FRenderer::AddRenderObjectsToRenderPass(const ULevel* InLevel) const
     finalRenderPass->AddRenderObjectsToRenderPass(InLevel);
 }
 
-void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::Render(ULevel* InLevel, std::shared_ptr<FEditorViewportClient> InActiveViewport)
 {
-    Graphics->DeviceContext->RSSetViewports(1, ActiveViewport->GetD3DViewport());
-    ChangeViewMode(ActiveViewport->GetViewMode());
+    Graphics->DeviceContext->RSSetViewports(1, InActiveViewport->GetD3DViewport());
+    ChangeViewMode(InActiveViewport->GetViewMode());
 
     // for (const auto renderPass : RenderPasses)
     // {
@@ -767,30 +767,36 @@ void FRenderer::Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> Act
     //     renderPass->Execute(ActiveViewport);
     // }
     
-    staticMeshRenderPass->Prepare(ActiveViewport);
-    staticMeshRenderPass->Execute(ActiveViewport);
+    staticMeshRenderPass->Prepare(InActiveViewport);
+    staticMeshRenderPass->Execute(InActiveViewport);
 
-    fontRenderPass->Prepare(ActiveViewport);
-    fontRenderPass->Execute(ActiveViewport);
+    fontRenderPass->Prepare(InActiveViewport);
+    fontRenderPass->Execute(InActiveViewport);
     
-    billboardRenderPass->Prepare(ActiveViewport);
-    billboardRenderPass->Execute(ActiveViewport);
-
-    lightingRenderPass->Prepare(ActiveViewport);
-    lightingRenderPass->Execute(ActiveViewport);
-
-    lineBatchRenderPass->Prepare(ActiveViewport);
-    lineBatchRenderPass->Execute(ActiveViewport);
-
-    gizmoRenderPass->Prepare(ActiveViewport);
-    gizmoRenderPass->Execute(ActiveViewport);
+    billboardRenderPass->Prepare(InActiveViewport);
+    billboardRenderPass->Execute(InActiveViewport);
     
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
+    if (InActiveViewport->ViewMode == VMI_Lit)
     {
-        fogRenderPass->Prepare(ActiveViewport);
-        fogRenderPass->Execute(ActiveViewport);
+        lightingRenderPass->Prepare(InActiveViewport);
+        lightingRenderPass->Execute(InActiveViewport);
     }
 
-    finalRenderPass->Prepare(ActiveViewport);
-    finalRenderPass->Execute(ActiveViewport);
+    if (InActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_HeightFog))
+    {
+        // fogRenderPass->Prepare(InActiveViewport);
+        // fogRenderPass->Execute(InActiveViewport);
+    }
+
+    lineBatchRenderPass->Prepare(InActiveViewport);
+    lineBatchRenderPass->Execute(InActiveViewport);
+
+    if (InLevel->GetSelectedActor() != nullptr)
+    {
+        gizmoRenderPass->Prepare(InActiveViewport);
+        gizmoRenderPass->Execute(InActiveViewport);
+    }
+
+    finalRenderPass->Prepare(InActiveViewport);
+    finalRenderPass->Execute(InActiveViewport);
 }

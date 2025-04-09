@@ -50,7 +50,7 @@ void UHeightFogComponent::CreatePostProcessBuffer()
     };
 
     ID3D11Buffer* vertexBuffer = GEngineLoop.renderer.CreateDynamicVertexBuffer<FScreenVertex>(vertices, 4);
-    FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("FogQuad"), vertexBuffer, sizeof(FVertexTexture), 4);
+    FEngineLoop::renderer.AddOrSetVertexBuffer(TEXT("FogQuad"), vertexBuffer, sizeof(FScreenVertex), 4);
     
     ID3D11Buffer* indexBuffer = GEngineLoop.renderer.CreateIndexBuffer(indices, 6);
     FEngineLoop::renderer.AddOrSetIndexBuffer(TEXT("FogQuad"), indexBuffer, 6);

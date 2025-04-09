@@ -13,7 +13,12 @@
 void GizmoRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     BaseRenderPass::Prepare(InViewportClient);
-    GEngineLoop.graphicDevice.DeviceContext->RSSetState(GEngineLoop.renderer.GetRasterizerState(ERasterizerState::SolidBack)); //레스터 라이저 상태 설정
+    
+    FRenderer& Renderer = GEngineLoop.renderer;
+    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+    
+    Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+    Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack)); //레스터 라이저 상태 설정
 }
 
 void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
@@ -52,11 +57,13 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportC
 
         UpdateMatrixConstants(item, View, Proj);
 
-        const std::shared_ptr<FVIBuffers> currentVIBuffer =  Renderer.GetVIBuffer(item->VIBufferName);
-        currentVIBuffer->Bind(Graphics.DeviceContext);
+        if (!item->GetStaticMesh()) continue;
 
         const OBJ::FStaticMeshRenderData* renderData = item->GetStaticMesh()->GetRenderData();
         if (renderData == nullptr) continue;
+
+        const std::shared_ptr<FVIBuffers> currentVIBuffer =  Renderer.GetVIBuffer(item->VIBufferName);
+        currentVIBuffer->Bind(Graphics.DeviceContext);
 
         // If There's No Material Subset
         if (renderData->MaterialSubsets.Num() == 0)

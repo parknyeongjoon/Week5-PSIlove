@@ -8,6 +8,7 @@
 
 // NOTE: Generated code - do not modify manually.
 
+
 struct FLighting
 {
     FVector Position;
@@ -49,12 +50,12 @@ struct alignas(16) FConstants
 
 struct alignas(16) LightBuffer
 {
-    FLighting Lights[100]; // offset: 0, size: 6400
+    FLighting Lights[100] ; // offset: 0, size: 6400
     FVector EyePosition; // offset: 6400, size: 12
     float LightCount; // offset: 6412, size: 4
 };
 
-struct alignas(16) UVBuffer
+struct alignas(16) FUVBuffer
 {
     float UOffset; // offset: 0, size: 4
     float VOffset; // offset: 4, size: 4
@@ -118,12 +119,6 @@ struct alignas(16) FSubMeshConstants
     FVector SubMeshPad0; // offset: 4, size: 12
 };
 
-struct alignas(16) FTextureConstants
-{
-    FVector2D UVOffset; // offset: 0, size: 8
-    FVector2D TexturePad0; // offset: 8, size: 8
-};
-
 enum class EShaderConstantBuffer
 {
     FConstants = 0,
@@ -136,9 +131,8 @@ enum class EShaderConstantBuffer
     FPrimitiveCounts = 7,
     FSubMeshConstants = 8,
     FSubUVConstant = 9,
-    FTextureConstants = 10,
+    FUVBuffer = 10,
     LightBuffer = 11,
-    UVBuffer = 12,
     EShaderConstantBuffer_MAX
 };
 
@@ -156,9 +150,8 @@ inline const TCHAR* EShaderConstantBufferToString(EShaderConstantBuffer e)
     case EShaderConstantBuffer::FPrimitiveCounts: return TEXT("FPrimitiveCounts");
     case EShaderConstantBuffer::FSubMeshConstants: return TEXT("FSubMeshConstants");
     case EShaderConstantBuffer::FSubUVConstant: return TEXT("FSubUVConstant");
-    case EShaderConstantBuffer::FTextureConstants: return TEXT("FTextureConstants");
+    case EShaderConstantBuffer::FUVBuffer: return TEXT("FUVBuffer");
     case EShaderConstantBuffer::LightBuffer: return TEXT("LightBuffer");
-    case EShaderConstantBuffer::UVBuffer: return TEXT("UVBuffer");
     default: return TEXT("unknown");
     }
 }
@@ -176,9 +169,8 @@ inline EShaderConstantBuffer EShaderConstantBufferFromString(const TCHAR* str)
     if(std::wcscmp(str, TEXT("FPrimitiveCounts")) == 0) return EShaderConstantBuffer::FPrimitiveCounts;
     if(std::wcscmp(str, TEXT("FSubMeshConstants")) == 0) return EShaderConstantBuffer::FSubMeshConstants;
     if(std::wcscmp(str, TEXT("FSubUVConstant")) == 0) return EShaderConstantBuffer::FSubUVConstant;
-    if(std::wcscmp(str, TEXT("FTextureConstants")) == 0) return EShaderConstantBuffer::FTextureConstants;
+    if(std::wcscmp(str, TEXT("FUVBuffer")) == 0) return EShaderConstantBuffer::FUVBuffer;
     if(std::wcscmp(str, TEXT("LightBuffer")) == 0) return EShaderConstantBuffer::LightBuffer;
-    if(std::wcscmp(str, TEXT("UVBuffer")) == 0) return EShaderConstantBuffer::UVBuffer;
 #else
     if(std::strcmp(str, "FConstants") == 0) return EShaderConstantBuffer::FConstants;
     if(std::strcmp(str, "FFlagConstants") == 0) return EShaderConstantBuffer::FFlagConstants;
@@ -190,9 +182,8 @@ inline EShaderConstantBuffer EShaderConstantBufferFromString(const TCHAR* str)
     if(std::strcmp(str, "FPrimitiveCounts") == 0) return EShaderConstantBuffer::FPrimitiveCounts;
     if(std::strcmp(str, "FSubMeshConstants") == 0) return EShaderConstantBuffer::FSubMeshConstants;
     if(std::strcmp(str, "FSubUVConstant") == 0) return EShaderConstantBuffer::FSubUVConstant;
-    if(std::strcmp(str, "FTextureConstants") == 0) return EShaderConstantBuffer::FTextureConstants;
+    if(std::strcmp(str, "FUVBuffer") == 0) return EShaderConstantBuffer::FUVBuffer;
     if(std::strcmp(str, "LightBuffer") == 0) return EShaderConstantBuffer::LightBuffer;
-    if(std::strcmp(str, "UVBuffer") == 0) return EShaderConstantBuffer::UVBuffer;
 #endif
     return EShaderConstantBuffer::EShaderConstantBuffer_MAX;
 }

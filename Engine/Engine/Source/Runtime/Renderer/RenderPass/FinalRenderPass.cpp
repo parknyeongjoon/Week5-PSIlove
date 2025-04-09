@@ -16,6 +16,7 @@ FinalRenderPass::FinalRenderPass(const FString& InName)
 void FinalRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewport)
 {
     BaseRenderPass::Prepare(InViewport);
+    
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     Graphics.SwapRTV();
     Graphics.DeviceContext->OMSetDepthStencilState(nullptr, 0);
@@ -26,12 +27,14 @@ void FinalRenderPass::Execute(std::shared_ptr<FViewportClient> InViewport)
 {
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     FRenderer& Renderer = GEngineLoop.renderer;
+
+    std::shared_ptr<FEditorViewportClient> activeViewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewport);
+
+    UpdatePostProcessQuadVertexBufferUpdate(activeViewport);
     
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[2] = { Graphics.GetReadSRV(), Graphics.GetReadDepthSRV()};
+    ID3D11ShaderResourceView* SRVs[2] = { Graphics.GetReadSRV(), Graphics.pingpongDepthSRV[0] };
     Graphics.DeviceContext->PSSetShaderResources(0, 2, SRVs);
-    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
-    Graphics.DeviceContext->PSSetSamplers(0, 1, &linearSampler);
 
     const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(VIBufferName);
     currentVIBuffer->Bind(Graphics.DeviceContext);
@@ -57,10 +60,10 @@ void FinalRenderPass::CreatePostProcessBuffer()
 
     FScreenVertex vertices[4] =
     {
-        { FVector4(-1.0f,  1.0f, 0.0f, 1.0f), 0.0f, 0.0f },
-        { FVector4(1.0f,  1.0f, 0.0f, 1.0f), 1.0f, 0.0f },
-        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), 1.0f, 1.0f },
-        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), 0.0f, 1.0f }
+        { FVector4(-1.0f,  1.0f, 0.0f, 0.0f), 0.0f, 0.0f },
+        { FVector4(1.0f,  1.0f, 0.0f, 0.0f), 1.0f, 0.0f },
+        { FVector4(1.0f, -1.0f, 0.0f, 0.0f), 1.0f, 1.0f },
+        { FVector4(-1.0f, -1.0f, 0.0f, 0.0f), 0.0f, 1.0f }
     };
 
     const uint32 indices[6] =
@@ -70,7 +73,7 @@ void FinalRenderPass::CreatePostProcessBuffer()
     };
 
     ID3D11Buffer* vertexBuffer = Renderer.CreateDynamicVertexBuffer<FScreenVertex>(vertices, 4);
-    Renderer.AddOrSetVertexBuffer(TEXT("FinalQuad"), vertexBuffer, sizeof(FVertexTexture), 4);
+    Renderer.AddOrSetVertexBuffer(TEXT("FinalQuad"), vertexBuffer, sizeof(FScreenVertex), 4);
     
     ID3D11Buffer* indexBuffer = Renderer.CreateIndexBuffer(indices, 6);
     Renderer.AddOrSetIndexBuffer(TEXT("FinalQuad"), indexBuffer, 6);
@@ -93,12 +96,12 @@ void FinalRenderPass::UpdatePostProcessQuadVertexBufferUpdate(const std::shared_
     const float uvMaxY = (activeD3DViewport->TopLeftY + activeD3DViewport->Height) / screenHeight;
 
     FScreenVertex vertices[4] = {
-        { FVector4(-1.0f, 1.0f, 0.0f, 1.0f), uvMinX, uvMinY }, // top-left
-        { FVector4(1.0f, 1.0f, 0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
-        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
-        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
+        { FVector4(-1.0f, 1.0f, 0.0f, 0.0f), uvMinX, uvMinY }, // top-left
+        { FVector4(1.0f, 1.0f, 0.0f, 0.0f), uvMaxX, uvMinY }, // top-right
+        { FVector4(1.0f, -1.0f, 0.0f, 0.0f), uvMaxX, uvMaxY }, // bottom-right
+        { FVector4(-1.0f, -1.0f, 0.0f, 0.0f), uvMinX, uvMaxY }  // bottom-left
     };
 
     ID3D11Buffer* fogVertexBuffer = Renderer.GetVIBuffer(VIBufferName)->GetVertexBuffer();
-    Renderer.UpdateVertexBuffer(fogVertexBuffer, &vertices);
+    Renderer.UpdateVertexBuffer(fogVertexBuffer, &vertices, 4);
 }

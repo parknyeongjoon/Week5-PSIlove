@@ -25,9 +25,13 @@ LineBatchRenderPass::LineBatchRenderPass(const FString& InShaderName)
 void LineBatchRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     BaseRenderPass::Prepare(InViewportClient);
-
+    
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
+
+    auto* RenderTarget = Graphics.GetWriteRTV();
+    Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
+    Graphics.DeviceContext->OMSetRenderTargets(1, &RenderTarget, Graphics.pingpongDSV[0]); // 렌더 타겟 설정
 
     ID3D11ShaderResourceView* BoundingBoxSRV = Renderer.GetStructuredBufferShaderResourceView(TEXT("BoundingBox"));
     Graphics.DeviceContext->VSSetShaderResources(2, 1, &BoundingBoxSRV);

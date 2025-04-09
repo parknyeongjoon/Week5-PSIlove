@@ -21,7 +21,7 @@ void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
 
 void UPrimitiveBatch::AddAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix)
 {
-    FVector localVertices[8] = {
+    const FVector localVertices[8] = {
          { localAABB.min.x, localAABB.min.y, localAABB.min.z },
          { localAABB.max.x, localAABB.min.y, localAABB.min.z },
          { localAABB.min.x, localAABB.max.y, localAABB.min.z },

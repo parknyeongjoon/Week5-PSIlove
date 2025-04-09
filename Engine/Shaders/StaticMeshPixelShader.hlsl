@@ -35,10 +35,12 @@ cbuffer FSubMeshConstants : register(b4)
     float3 SubMeshPad0;
 }
 
-cbuffer FTextureConstants : register(b5)
+cbuffer FUVBuffer : register(b5)
 {
-    float2 UVOffset;
-    float2 TexturePad0;
+    float UOffset;
+    float VOffset;
+    float UTiles;
+    float VTiles;
 }
 
 struct PS_INPUT
@@ -95,8 +97,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     output.position = input.vertexWorldPosition;
     output.normal = float4(input.normal,0);
-    
-    float3 texColor = Textures.Sample(linearSampler, input.texcoord + UVOffset);
+
+    float2 texCoord = float2(UOffset + input.texcoord.x, VOffset + input.texcoord.y);
+    float3 texColor = Textures.Sample(linearSampler, texCoord);
     float3 color;// = Material.AmbientColor;
     if (texColor.g == 0) // TODO: boolean으로 변경
         color = saturate(DiffuseColor);

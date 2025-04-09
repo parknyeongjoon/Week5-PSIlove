@@ -44,17 +44,17 @@ void LightingRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClie
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     
-    UVBuffer uvBuffer;
+    FUVBuffer uvBuffer;
     uvBuffer.UOffset = InViewportClient->GetD3DViewport()->TopLeftX / Graphics.screenWidth;
     uvBuffer.VOffset = InViewportClient->GetD3DViewport()->TopLeftY / Graphics.screenHeight;
     uvBuffer.UTiles = InViewportClient->GetD3DViewport()->Width / Graphics.screenWidth;
     uvBuffer.VTiles = InViewportClient->GetD3DViewport()->Height / Graphics.screenHeight;
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("UVBuffer")), &uvBuffer);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FUVBuffer")), &uvBuffer);
 
     LightBuffer lightBuffer;
     lightBuffer.EyePosition = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->ViewTransformPerspective.ViewLocation;
     lightBuffer.LightCount = LightComponents.Num();
-    for (int i = 0; i < LightComponents.Num(); i++)
+    for (int i = 0; i < LightComponents.Num(); ++i)
     {
         lightBuffer.Lights[i].Intensity = LightComponents[i]->GetIntensity();
         lightBuffer.Lights[i].Position = LightComponents[i]->GetOwner()->GetActorLocation();
@@ -65,6 +65,11 @@ void LightingRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClie
     }
     Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("LightBuffer")), &lightBuffer);
 
+    Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Graphics.DeviceContext->IASetInputLayout(nullptr); // 입력 레이아웃 불필요
+    Graphics.DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Graphics.DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_R32_UINT, 0);
+    
     Graphics.DeviceContext->Draw(6, 0); // 4개의 정점으로 화면 전체 사각형 그리기
     
     // SRV 해제 (다음 패스를 위한 정리)

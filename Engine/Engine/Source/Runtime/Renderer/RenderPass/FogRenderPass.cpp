@@ -39,7 +39,7 @@ void FogRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewport)
     ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
     Graphics.DeviceContext->PSSetSamplers(0, 1, &linearSampler);
 
-    const std::shared_ptr<FVIBuffers> currentVIBuffer =  Renderer.GetVIBuffer(FogComponent->VIBufferName);
+    const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(FogComponent->VIBufferName);
     currentVIBuffer->Bind(Graphics.DeviceContext);
 
     // 풀스크린 쿼드 그리기
@@ -49,9 +49,9 @@ void FogRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewport)
     ID3D11ShaderResourceView* nullSRV[2] = { nullptr, nullptr };
     Graphics.DeviceContext->PSSetShaderResources(0, 2, nullSRV);
 
-    // Sampler 해제
-    ID3D11SamplerState* nullSamplers[1] = { nullptr };
-    Graphics.DeviceContext->PSSetSamplers(0, 1, nullSamplers);
+    // // Sampler 해제
+    // ID3D11SamplerState* nullSamplers[1] = { nullptr };
+    // Graphics.DeviceContext->PSSetSamplers(0, 1, nullSamplers);
 }
 
 void FogRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
@@ -73,10 +73,11 @@ void FogRenderPass::UpdateFogConstant(const std::shared_ptr<FEditorViewportClien
     
     fogConstants.InvProjectionMatrix = FMatrix::Inverse(InActiveViewport->GetProjectionMatrix());
     fogConstants.InvViewMatrix = FMatrix::Inverse(InActiveViewport->GetViewMatrix());
+    
     const FVector cameraPos = InActiveViewport->ViewTransformPerspective.GetLocation();
     fogConstants.CameraWorldPos = FVector4(cameraPos.x,cameraPos.y, cameraPos.z, 1);
     
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FogConstants")), &fogConstants);
+    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FFogConstants")), &fogConstants);
 }
 
 void FogRenderPass::UpdateFogQuadVertexBufferUpdate(const std::shared_ptr<FEditorViewportClient>& InActiveViewport) const
@@ -101,5 +102,5 @@ void FogRenderPass::UpdateFogQuadVertexBufferUpdate(const std::shared_ptr<FEdito
     };
 
     ID3D11Buffer* fogVertexBuffer = Renderer.GetVIBuffer(FogComponent->VIBufferName)->GetVertexBuffer();
-    Renderer.UpdateVertexBuffer(fogVertexBuffer, &vertices);
+    Renderer.UpdateVertexBuffer(fogVertexBuffer, &vertices, 4);
 }

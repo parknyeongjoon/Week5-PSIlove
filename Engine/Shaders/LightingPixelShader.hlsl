@@ -24,7 +24,7 @@ cbuffer LightBuffer : register(b0)
     float LightCount;
 }
 
-cbuffer UVBuffer : register(b1)
+cbuffer FUVBuffer : register(b1)
 {
     float UOffset;
     float VOffset;

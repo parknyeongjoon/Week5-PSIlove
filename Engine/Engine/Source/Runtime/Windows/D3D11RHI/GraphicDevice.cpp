@@ -351,12 +351,10 @@ void FGraphicsDevice::ClearRenderTarget()
 void FGraphicsDevice::Prepare()
 {
     CurrentIndex = 0;
-    auto* RenderDepthTarget = GetWriteDSV();
-    DeviceContext->ClearDepthStencilView(RenderDepthTarget, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
-    DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    DeviceContext->ClearDepthStencilView(pingpongDSV[0], D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); // 깊이 버퍼 초기화 추가
     //DeviceContext->RSSetState(CurrentRasterizer); //레스터 라이저 상태 설정
     //DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-    DeviceContext->OMSetRenderTargets(5, RTVs, RenderDepthTarget); // 렌더 타겟 설정
+    DeviceContext->OMSetRenderTargets(5, RTVs, pingpongDSV[0]); // 렌더 타겟 설정
     DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 

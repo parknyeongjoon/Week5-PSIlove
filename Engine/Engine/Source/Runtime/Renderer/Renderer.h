@@ -133,7 +133,7 @@ public:
     void UpdateConstnatBuffer(ID3D11Buffer* InBuffer, const T* InData = nullptr);
 
     template<typename T>
-    void UpdateVertexBuffer(ID3D11Buffer* InBuffer, T* vertices) const;
+    void UpdateVertexBuffer(ID3D11Buffer* InBuffer, T* vertices, const uint32 numVertices) const;
     
     template <typename T>
     void UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const;
@@ -144,7 +144,7 @@ public:
     void AddRenderObjectsToRenderPass(const ULevel* InLevel) const;
     
     //Render Passes Run
-    void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void Render(ULevel* InLevel, std::shared_ptr<FEditorViewportClient> InActiveViewport);
 private:
     //TArray<std::shared_ptr<BaseRenderPass>> RenderPasses;
     std::shared_ptr<BillboardRenderPass> billboardRenderPass;
@@ -249,7 +249,7 @@ void FRenderer::UpdateConstnatBuffer(ID3D11Buffer* InBuffer, const T* InData)
 }
 
 template <typename T>
-void FRenderer::UpdateVertexBuffer(ID3D11Buffer* InBuffer, T* vertices) const
+void FRenderer::UpdateVertexBuffer(ID3D11Buffer* InBuffer, T* vertices, const uint32 numVertices) const
 {
     D3D11_MAPPED_SUBRESOURCE sub = {};
     const HRESULT hr = Graphics->DeviceContext->Map(InBuffer, 0,D3D11_MAP_WRITE_DISCARD,0, &sub);
@@ -257,7 +257,7 @@ void FRenderer::UpdateVertexBuffer(ID3D11Buffer* InBuffer, T* vertices) const
     {
         assert(TEXT("Map failed"));
     }
-    memcpy(sub.pData, vertices, sizeof(vertices));
+    memcpy(sub.pData, vertices, sizeof(T) * numVertices);
     Graphics->DeviceContext->Unmap(InBuffer, 0);
 }
 
