@@ -20,7 +20,7 @@ struct FLighting
     FVector pad0;
 };
 
-struct alignas(16) FFogConstants
+struct alignas(16) FogConstants
 {
     float FogDensity; // offset: 0, size: 4
     float FogHeightFalloff; // offset: 4, size: 4
@@ -50,7 +50,7 @@ struct alignas(16) FConstants
 
 struct alignas(16) LightBuffer
 {
-    FLighting Lights[100] ; // offset: 0, size: 6400
+    FLighting Lights[100]; // offset: 0, size: 6400
     FVector EyePosition; // offset: 6400, size: 12
     float LightCount; // offset: 6412, size: 4
 };
@@ -123,15 +123,15 @@ enum class EShaderConstantBuffer
 {
     FConstants = 0,
     FFlagConstants = 1,
-    FFogConstants = 2,
-    FGridParametersData = 3,
-    FMVPConstant = 4,
-    FMaterialConstants = 5,
-    FMatrixConstants = 6,
-    FPrimitiveCounts = 7,
-    FSubMeshConstants = 8,
-    FSubUVConstant = 9,
-    FUVBuffer = 10,
+    FGridParametersData = 2,
+    FMVPConstant = 3,
+    FMaterialConstants = 4,
+    FMatrixConstants = 5,
+    FPrimitiveCounts = 6,
+    FSubMeshConstants = 7,
+    FSubUVConstant = 8,
+    FUVBuffer = 9,
+    FogConstants = 10,
     LightBuffer = 11,
     EShaderConstantBuffer_MAX
 };
@@ -142,7 +142,6 @@ inline const TCHAR* EShaderConstantBufferToString(EShaderConstantBuffer e)
     {
     case EShaderConstantBuffer::FConstants: return TEXT("FConstants");
     case EShaderConstantBuffer::FFlagConstants: return TEXT("FFlagConstants");
-    case EShaderConstantBuffer::FFogConstants: return TEXT("FFogConstants");
     case EShaderConstantBuffer::FGridParametersData: return TEXT("FGridParametersData");
     case EShaderConstantBuffer::FMVPConstant: return TEXT("FMVPConstant");
     case EShaderConstantBuffer::FMaterialConstants: return TEXT("FMaterialConstants");
@@ -151,6 +150,7 @@ inline const TCHAR* EShaderConstantBufferToString(EShaderConstantBuffer e)
     case EShaderConstantBuffer::FSubMeshConstants: return TEXT("FSubMeshConstants");
     case EShaderConstantBuffer::FSubUVConstant: return TEXT("FSubUVConstant");
     case EShaderConstantBuffer::FUVBuffer: return TEXT("FUVBuffer");
+    case EShaderConstantBuffer::FogConstants: return TEXT("FogConstants");
     case EShaderConstantBuffer::LightBuffer: return TEXT("LightBuffer");
     default: return TEXT("unknown");
     }
@@ -161,7 +161,6 @@ inline EShaderConstantBuffer EShaderConstantBufferFromString(const TCHAR* str)
 #if USE_WIDECHAR
     if(std::wcscmp(str, TEXT("FConstants")) == 0) return EShaderConstantBuffer::FConstants;
     if(std::wcscmp(str, TEXT("FFlagConstants")) == 0) return EShaderConstantBuffer::FFlagConstants;
-    if(std::wcscmp(str, TEXT("FFogConstants")) == 0) return EShaderConstantBuffer::FFogConstants;
     if(std::wcscmp(str, TEXT("FGridParametersData")) == 0) return EShaderConstantBuffer::FGridParametersData;
     if(std::wcscmp(str, TEXT("FMVPConstant")) == 0) return EShaderConstantBuffer::FMVPConstant;
     if(std::wcscmp(str, TEXT("FMaterialConstants")) == 0) return EShaderConstantBuffer::FMaterialConstants;
@@ -170,11 +169,11 @@ inline EShaderConstantBuffer EShaderConstantBufferFromString(const TCHAR* str)
     if(std::wcscmp(str, TEXT("FSubMeshConstants")) == 0) return EShaderConstantBuffer::FSubMeshConstants;
     if(std::wcscmp(str, TEXT("FSubUVConstant")) == 0) return EShaderConstantBuffer::FSubUVConstant;
     if(std::wcscmp(str, TEXT("FUVBuffer")) == 0) return EShaderConstantBuffer::FUVBuffer;
+    if(std::wcscmp(str, TEXT("FogConstants")) == 0) return EShaderConstantBuffer::FogConstants;
     if(std::wcscmp(str, TEXT("LightBuffer")) == 0) return EShaderConstantBuffer::LightBuffer;
 #else
     if(std::strcmp(str, "FConstants") == 0) return EShaderConstantBuffer::FConstants;
     if(std::strcmp(str, "FFlagConstants") == 0) return EShaderConstantBuffer::FFlagConstants;
-    if(std::strcmp(str, "FFogConstants") == 0) return EShaderConstantBuffer::FFogConstants;
     if(std::strcmp(str, "FGridParametersData") == 0) return EShaderConstantBuffer::FGridParametersData;
     if(std::strcmp(str, "FMVPConstant") == 0) return EShaderConstantBuffer::FMVPConstant;
     if(std::strcmp(str, "FMaterialConstants") == 0) return EShaderConstantBuffer::FMaterialConstants;
@@ -183,6 +182,7 @@ inline EShaderConstantBuffer EShaderConstantBufferFromString(const TCHAR* str)
     if(std::strcmp(str, "FSubMeshConstants") == 0) return EShaderConstantBuffer::FSubMeshConstants;
     if(std::strcmp(str, "FSubUVConstant") == 0) return EShaderConstantBuffer::FSubUVConstant;
     if(std::strcmp(str, "FUVBuffer") == 0) return EShaderConstantBuffer::FUVBuffer;
+    if(std::strcmp(str, "FogConstants") == 0) return EShaderConstantBuffer::FogConstants;
     if(std::strcmp(str, "LightBuffer") == 0) return EShaderConstantBuffer::LightBuffer;
 #endif
     return EShaderConstantBuffer::EShaderConstantBuffer_MAX;

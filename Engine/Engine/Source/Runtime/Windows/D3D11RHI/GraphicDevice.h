@@ -6,10 +6,8 @@
 #define _TCHAR_DEFINED
 #define SAFE_RELEASE(p) if(p) { p->Release(); p = nullptr; }
 #include <d3d11.h>
-#include "EngineBaseTypes.h"
 #include "Container/Array.h"
 
-#include "Container/Map.h"
 #include "Container/String.h"
 
 enum class EShaderStage;
@@ -91,19 +89,12 @@ public:
     void ClearRenderTarget();
     void SwapBuffer() const;
     void Prepare();
-    void PrepareGizmo();
-    void PrepareLighting() const;
-    void PrepareDepthScene() const;
-    // void Prepare(D3D11_VIEWPORT* viewport) const;
-    //void Prepare() const;
-    //void Prepare(D3D11_VIEWPORT* viewport);
     void OnResize(HWND hWindow);
     void BindSampler(EShaderStage stage, uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* const* ppSamplers) const;
     void BindSamplers(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* const* ppSamplers) const;
     
     void ReleaseDeviceAndSwapChain();
     ID3D11RasterizerState* GetCurrentRasterizer() const { return CurrentRasterizer; }
-    void ChangeRasterizer(EViewModeIndex evi);
 
     ID3D11Texture2D* WorldTexture = nullptr;
     ID3D11RenderTargetView* WorldTextureRTV = nullptr;

@@ -1,15 +1,14 @@
 #pragma once
 #include "BaseRenderPass.h"
 
-class LineBatchRenderPass : public BaseRenderPass
+class DepthSceneRenderPass : public BaseRenderPass
 {
 public:
-    explicit LineBatchRenderPass(const FString& InShaderName);
-
+    DepthSceneRenderPass(const FString& InName)
+        : BaseRenderPass(InName) {}
     virtual void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
     virtual void Execute(std::shared_ptr<FViewportClient> InViewportClient) override;
 
     void AddRenderObjectsToRenderPass(const ULevel* InLevel) override;
-private:
-    static void UpdateBatchResources();
+    
 };

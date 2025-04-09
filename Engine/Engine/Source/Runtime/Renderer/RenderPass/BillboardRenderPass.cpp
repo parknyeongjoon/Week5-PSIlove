@@ -43,12 +43,12 @@ void BillboardRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewp
             
          FConstants Constant;
          Constant.MVP = Model * VP;
-         Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
+         Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
          
          FSubUVConstant SubUVConstant;
          SubUVConstant.indexU = item->finalIndexU;
          SubUVConstant.indexV = item->finalIndexV;
-         Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
+         Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
 
          const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(item->VIBufferName);
          currentVIBuffer->Bind(Graphics.DeviceContext);
@@ -73,9 +73,6 @@ void BillboardRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
     for (const auto& A : InLevel->GetActors())
     {
         Ss.Add(A->GetRootComponent());
-        TArray<USceneComponent*> temp;
-        A->GetRootComponent()->GetChildrenComponents(temp);
-        Ss + temp;
     }
 
     for (const auto iter : Ss)

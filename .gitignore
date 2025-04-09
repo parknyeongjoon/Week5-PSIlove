@@ -451,3 +451,7 @@ FodyWeavers.xsd
 *.bin
 
 *.ini
+*.bmp
+*.mtl
+Engine/Assets/Demo.obj
+Engine/Assets/Zombie.obj

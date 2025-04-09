@@ -1,5 +1,6 @@
+#include "ShaderHeaders/Samplers.hlsli"
+
 Texture2D<float> SceneDepthTexture : register(t0);
-SamplerState DepthSampler : register(s0);
 
 struct PS_INPUT
 {
@@ -9,7 +10,7 @@ struct PS_INPUT
 
 float4 mainPS(PS_INPUT input) : SV_Target
 {
-    float depth = SceneDepthTexture.Sample(DepthSampler, input.texcoord);
+    float depth = SceneDepthTexture.Sample(linearSampler, input.texcoord);
     
     depth = pow(depth, 0.25); // 밝기 조정 (선택사항)
     depth = saturate(depth); // 0~1 범위로 제한

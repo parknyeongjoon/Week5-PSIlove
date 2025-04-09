@@ -17,11 +17,12 @@ void GizmoRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewportC
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     
-    //Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+    auto* RTV = Graphics.GetWriteRTV();
+    Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+    Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack)); //레스터 라이저 상태 설정
-    
-    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear); 
-    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
+    Graphics.DeviceContext->OMSetRenderTargets(1, &RTV, Graphics.DepthStencilView); // 렌더 타겟 설정
+    Graphics.DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
 }
 
 void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
@@ -34,7 +35,7 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportC
 
     FFlagConstants flagConstants;
     flagConstants.IsLit = true;
-    Renderer.UpdateConstnatBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
+    Renderer.UpdateConstantBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
     
     // 쉐이더 내에서 한 번만 Update되어야하는 정보
     std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
@@ -105,11 +106,17 @@ void GizmoRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportC
 void GizmoRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
     GizmoComponents.Empty();
-    for (const USceneComponent* iter : TObjectRange<USceneComponent>())
+
+    TArray<USceneComponent*> Ss;
+    for (const auto& A : InLevel->GetActors())
     {
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
+        Ss.Add(A->GetRootComponent());
+        TArray<UActorComponent*> components;
+        components = A->GetComponents();
+        for (const auto& comp : components)
         {
-            GizmoComponents.Add(pGizmoComp);
+            if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(comp))
+                GizmoComponents.Add(pGizmoComp);
         }
     }
 }
@@ -135,7 +142,7 @@ void GizmoRenderPass::UpdateMatrixConstants(UGizmoBaseComponent* InGizmoComponen
     {
         MatrixConstants.isSelected = false;
     }
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
 }
 
 void GizmoRenderPass::UpdateSubMeshConstants(bool bIsSelectedSubMesh)
@@ -144,7 +151,7 @@ void GizmoRenderPass::UpdateSubMeshConstants(bool bIsSelectedSubMesh)
     
     FSubMeshConstants SubMeshConstants;
     SubMeshConstants.IsSelectedSubMesh = bIsSelectedSubMesh;
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
 }
 
 void GizmoRenderPass::UpdateMaterialConstants(const UMaterial* CurrentMaterial)
@@ -162,5 +169,5 @@ void GizmoRenderPass::UpdateMaterialConstants(const UMaterial* CurrentMaterial)
         MaterialConstants.SpecularScalar = CurrentMaterial->GetSpecularScalar();
         MaterialConstants.EmissiveColor = CurrentMaterial->GetEmissive();
     }
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
 }

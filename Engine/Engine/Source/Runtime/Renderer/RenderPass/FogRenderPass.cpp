@@ -16,39 +16,46 @@ void FogRenderPass::Prepare(const std::shared_ptr<FViewportClient> InViewport)
 
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& GraphicDevice = GEngineLoop.graphicDevice;
-    
-    GraphicDevice.DeviceContext->RSSetState(Renderer.GetRasterizerState(Renderer.GetCurrentRasterizerState()));
-    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
-    GraphicDevice.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
-    
+
     GraphicDevice.SwapRTV();
     ID3D11RenderTargetView* RenderTarget = GraphicDevice.GetWriteRTV();
     GraphicDevice.DeviceContext->OMSetDepthStencilState(nullptr, 0);
+    GraphicDevice.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    GraphicDevice.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack));
     GraphicDevice.DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr); // 렌더 타겟 설정
 }
 
-void FogRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewport)
+void FogRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportClient)
 {
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     
-    std::shared_ptr<FEditorViewportClient> activeViewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewport);
+    std::shared_ptr<FEditorViewportClient> activeViewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     UpdateFogConstant(activeViewport);
 
-    UpdateFogQuadVertexBufferUpdate(activeViewport);
+    FUVBuffer uvBuffer;
+
+    D3D11_VIEWPORT* d3dViewport = InViewportClient->GetD3DViewport();
+    uvBuffer.UOffset = d3dViewport->TopLeftX / Graphics.screenWidth;
+    uvBuffer.VOffset = d3dViewport->TopLeftY / Graphics.screenHeight;
+    uvBuffer.UTiles = d3dViewport->Width / Graphics.screenWidth;
+    uvBuffer.VTiles = d3dViewport->Height / Graphics.screenHeight;
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FUVBuffer")), &uvBuffer);
 
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[] = { Graphics.GetReadSRV(), Graphics.pingpongDepthSRV[0] };
+    ID3D11ShaderResourceView* SRVs[] = { Graphics.GetReadSRV(), Graphics.DepthStencilSRV };
     Graphics.DeviceContext->PSSetShaderResources(0, 2, SRVs);
 
+        
     ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
-    Graphics.DeviceContext->PSSetSamplers(0, 1, &linearSampler);
+    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 
-    const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(FogComponent->VIBufferName);
-    currentVIBuffer->Bind(Graphics.DeviceContext);
+    Graphics.DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Graphics.DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
+    Graphics.DeviceContext->IASetInputLayout(nullptr);
 
     // 풀스크린 쿼드 그리기
-    Graphics.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0, 0);
+    Graphics.DeviceContext->Draw(6, 0);
 
     // SRV 해제 (다음 패스를 위한 정리)
     ID3D11ShaderResourceView* nullSRV[2] = { nullptr, nullptr };
@@ -61,14 +68,28 @@ void FogRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewport)
 
 void FogRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
-    FogComponent = InLevel->GetFog()->GetComponentByClass<UHeightFogComponent>();
+    TArray<USceneComponent*> Ss;
+    for (const auto& A : InLevel->GetActors())
+    {
+        Ss.Add(A->GetRootComponent());
+        TArray<UActorComponent*> components;
+        components = A->GetComponents();
+        for (const auto& comp : components)
+        {
+            if (UHeightFogComponent* pHeightFogComp = Cast<UHeightFogComponent>(comp))
+            {
+                FogComponent = pHeightFogComp;
+                return;
+            }
+        }
+    }
 }
 
 void FogRenderPass::UpdateFogConstant(const std::shared_ptr<FEditorViewportClient>& InActiveViewport) const
 {
     FRenderer& Renderer = GEngineLoop.renderer;
 
-    FFogConstants fogConstants;
+    FogConstants fogConstants;
     fogConstants.FogDensity = FogComponent->FogDensity;
     fogConstants.FogHeightFalloff = FogComponent->FogHeightFalloff;
     fogConstants.StartDistance = FogComponent->StartDistance;
@@ -82,30 +103,5 @@ void FogRenderPass::UpdateFogConstant(const std::shared_ptr<FEditorViewportClien
     const FVector cameraPos = InActiveViewport->ViewTransformPerspective.GetLocation();
     fogConstants.CameraWorldPos = FVector4(cameraPos.x,cameraPos.y, cameraPos.z, 1);
     
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FFogConstants")), &fogConstants);
-}
-
-void FogRenderPass::UpdateFogQuadVertexBufferUpdate(const std::shared_ptr<FEditorViewportClient>& InActiveViewport) const
-{
-    FRenderer& Renderer = GEngineLoop.renderer;
-    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
-
-    const float screenWidth = static_cast<float>(Graphics.screenWidth);
-    const float screenHeight = static_cast<float>(Graphics.screenHeight);
-
-    D3D11_VIEWPORT* activeD3DViewport = InActiveViewport->GetD3DViewport();
-    const float uvMinX = activeD3DViewport->TopLeftX / screenWidth;
-    const float uvMinY = activeD3DViewport->TopLeftY / screenHeight;
-    const float uvMaxX = (activeD3DViewport->TopLeftX + activeD3DViewport->Width) / screenWidth;
-    const float uvMaxY = (activeD3DViewport->TopLeftY + activeD3DViewport->Height) / screenHeight;
-
-    FScreenVertex vertices[4] = {
-        { FVector4(-1.0f, 1.0f, 0.0f, 1.0f), uvMinX, uvMinY }, // top-left
-        { FVector4(1.0f, 1.0f, 0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
-        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
-        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
-    };
-
-    ID3D11Buffer* fogVertexBuffer = Renderer.GetVIBuffer(FogComponent->VIBufferName)->GetVertexBuffer();
-    Renderer.UpdateVertexBuffer(fogVertexBuffer, &vertices, 4);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FogConstants")), &fogConstants);
 }

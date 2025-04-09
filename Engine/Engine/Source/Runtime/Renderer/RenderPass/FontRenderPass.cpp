@@ -43,7 +43,7 @@ void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportCl
         FSubUVConstant SubUVConstant;
         SubUVConstant.indexU = item->finalIndexU;
         SubUVConstant.indexV = item->finalIndexV;
-        Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
+        Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FSubUVConstant")), &SubUVConstant);
 
         FMatrix Model;
         if (UTextBillboardComponent* TextBillboardComponent = Cast<UTextBillboardComponent>(item))
@@ -59,13 +59,13 @@ void FontRenderPass::Execute(const std::shared_ptr<FViewportClient> InViewportCl
             
         FConstants Constant;
         Constant.MVP = Model * VP;
-        Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
+        Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FConstants")), &Constant);
 
         const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(item->VIBufferName);
         currentVIBuffer->Bind(Graphics.DeviceContext);
 
         Graphics.DeviceContext->PSSetShaderResources(0,1, &item->Texture->TextureSRV);
-        //Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
+        Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
 
         Graphics.DeviceContext->Draw(currentVIBuffer->GetNumVertices(), 0);
     }
@@ -78,9 +78,6 @@ void FontRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
     for (const auto& A : InLevel->GetActors())
     {
         Ss.Add(A->GetRootComponent());
-        TArray<USceneComponent*> temp;
-        A->GetRootComponent()->GetChildrenComponents(temp);
-        Ss + temp;
     }
 
     for (const auto iter : Ss)

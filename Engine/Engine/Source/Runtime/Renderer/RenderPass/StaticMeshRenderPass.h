@@ -19,6 +19,7 @@ public:
 
     void AddRenderObjectsToRenderPass(const ULevel* InLevel) override;
     void AddStaticMesh(UStaticMeshComponent* InStaticMesh) { StaticMesheComponents.Add(InStaticMesh); }
+    void AddAABB(ULevel* InLevel, std::shared_ptr<FViewportClient> InViewportClient);
 private:
     static void UpdateMatrixConstants(UStaticMeshComponent* InStaticMeshComponent, const FMatrix& InView, const FMatrix& InProjection);
     static void UpdateSkySphereTextureConstants(const USkySphereComponent* InSkySphereComponent);

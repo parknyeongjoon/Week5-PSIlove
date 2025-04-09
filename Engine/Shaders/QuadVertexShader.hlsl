@@ -4,7 +4,7 @@ struct PSInput
     float2 texCoord : TEXCOORD;
 };
 
-cbuffer UVBuffer : register(b0)
+cbuffer FUVBuffer : register(b0)
 {
     float UOffset;
     float VOffset;

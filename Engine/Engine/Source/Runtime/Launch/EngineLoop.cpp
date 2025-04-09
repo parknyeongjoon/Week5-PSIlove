@@ -4,11 +4,8 @@
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/UnrealEd.h"
-#include "UnrealClient.h"
-#include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "World.h"
-#include "Actors/Object/FireBall.h"
 #include "Components/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/FLoaderOBJ.h"
@@ -174,14 +171,14 @@ void FEngineLoop::Render()
         for (int i = 0; i < 4; ++i)
         {
             LevelEditor->SetViewportClient(i);
-            renderer.SetRenderObj(GLevel);
+            renderer.AddRenderObjectsToRenderPass(GLevel);
             renderer.Render(GetLevel(), LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
     {
-        renderer.SetRenderObj(GLevel);
+        renderer.AddRenderObjectsToRenderPass(GLevel);
         graphicDevice.ClearRenderTarget();
         graphicDevice.Prepare();
         renderer.Render(GetLevel(),LevelEditor->GetActiveViewportClient());

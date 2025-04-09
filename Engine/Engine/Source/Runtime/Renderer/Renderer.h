@@ -10,6 +10,7 @@
 #include "D3D11RHI/GraphicDevice.h"
 #include "D3D11RHI/GPUBuffer/TestConstantDefine.h"
 
+class DepthSceneRenderPass;
 class FinalRenderPass;
 class FogRenderPass;
 class LightingRenderPass;
@@ -41,24 +42,8 @@ public:
     // GPU 기본 연결
     FGraphicsDevice* Graphics;
 
-    // 셰이더 관련
-    ID3D11VertexShader* VertexShader = nullptr;
-    ID3D11VertexShader* QuadShader = nullptr;
-    ID3D11PixelShader* PixelShader = nullptr;
-    ID3D11PixelShader* LightingPixelShader = nullptr;
-    ID3D11PixelShader* DepthPixelShader = nullptr;
-    ID3D11InputLayout* InputLayout = nullptr;
-
-    // ConstantBuffer 그룹
-    ID3D11Buffer* ConstantBuffer = nullptr;
-    ID3D11Buffer* LightArrConstantBuffer = nullptr;
-    ID3D11Buffer* FlagBuffer = nullptr;
-    ID3D11Buffer* MaterialConstantBuffer = nullptr;
-    ID3D11Buffer* SubMeshConstantBuffer = nullptr;
-    ID3D11Buffer* TextureConstantBufer = nullptr;
-
-    void AddOrSetVertexShader(const FString& InName, ID3D11VertexShader* InShader);
-    void AddOrSetPixelShader(const FString& InName, ID3D11PixelShader* InShader);
+    void AddOrSetVertexShader(const FString& InName, const FString& InVSName/*ID3D11VertexShader* InShader*/);
+    void AddOrSetPixelShader(const FString& InName, const FString& InPSName/*ID3D11PixelShader* InShader*/);
     void AddOrSetInputLayout(const FString& InName, ID3D11InputLayout* InLayout);
 
     void AddOrSetVertexBuffer(const FString& InName, ID3D11Buffer* InBuffer, uint32 InStride, uint32 InNumVertices, D3D11_PRIMITIVE_TOPOLOGY
@@ -68,17 +53,12 @@ public:
     void AddOrSetStructuredBuffer(const FString& InName, ID3D11Buffer* InBuffer);
     void AddOrSetStructuredBufferShaderResourceView(const FString& InName, ID3D11ShaderResourceView* InShaderResourceView);
     
-    std::shared_ptr<FVIBuffers> GetVIBuffer(const FString& InVIName) { return VIBuffers[InVIName]; }
+    std::shared_ptr<FVIBuffers> GetVIBuffer(const FString& InVIName);
+    
+    ID3D11Buffer* GetStructuredBuffer(const FString& InName);
+    ID3D11ShaderResourceView* GetStructuredBufferShaderResourceView(const FString& InName);
 
-    // VertexBuffer 그룹 (FullScreenQaud)
-    ID3D11Buffer* FullScreenQuadVertexBuffer = nullptr;
-    ID3D11Buffer* FullScreenQuadIndexBuffer = nullptr;
-
-    FLighting lightingData;
-    ID3D11Buffer* GetStructuredBuffer(const FString& InName) { return StructuredBuffers[InName].Key; }
-    ID3D11ShaderResourceView* GetStructuredBufferShaderResourceView(const FString& InName) { return StructuredBuffers[InName].Value; }
-
-    ID3D11Buffer* GetConstantBuffer(const FString& InName) { return ConstantBuffers[InName]; }
+    ID3D11Buffer* GetConstantBuffer(const FString& InName);
 
     ID3D11SamplerState* GetSamplerState(ESamplerType InType) const { return SamplerStates[static_cast<uint32>(InType)]; }
     ID3D11RasterizerState* GetRasterizerState(ERasterizerState InState) const { return RasterizerStates[static_cast<uint32>(InState)]; }
@@ -87,12 +67,23 @@ public:
 
     ERasterizerState GetCurrentRasterizerState() const {  return CurrentRasterizerState; }
     void SetCurrentRasterizerState(const ERasterizerState InState) { CurrentRasterizerState = InState; }
+
+    ID3D11VertexShader* GetVertexShader(const FString& InName);
+    ID3D11PixelShader* GetPixelShader(const FString& InName);
+
+    void AddVertexShader(const FString& InName, ID3D11VertexShader* InShader);
+    void AddPixelShader(const FString& InName, ID3D11PixelShader* InShader);
 private:
     TMap<FString, std::shared_ptr<FShaderProgram>> ShaderPrograms;
+    
+    TMap<FString, ID3D11VertexShader*> VertexShaders;
+    TMap<FString, ID3D11PixelShader*> PixelShaders;
+    
     TMap<FString, std::shared_ptr<FVIBuffers>> VIBuffers;
 
     TMap<FString, TMap<FShaderConstantKey, uint32>> ShaderConstantNames;
     TMap<FString, ID3D11Buffer*> ConstantBuffers;
+    
     TMap<FString, TPair<ID3D11Buffer*, ID3D11ShaderResourceView*>> StructuredBuffers;
 
     ID3D11SamplerState* SamplerStates[static_cast<uint32>(ESamplerType::End)] = {};
@@ -106,10 +97,6 @@ private:
 
 public:
     void Initialize(FGraphicsDevice* graphics);
-   
-    void PrepareShader() const;
-    void PrepareGizmoShader() const;
-    void PrepareLightingShader() const;
     
     void CreateStaticMeshShader();
     void CreateTextureShader();
@@ -118,6 +105,7 @@ public:
     void CreateLightShader();
     void CreateDefaultPostProcessShader();
     void CreateFogShader();
+    void CreateDepthSceneShader();
     void LoadStates();
 
     void Release();
@@ -156,7 +144,7 @@ public:
     ID3D11Buffer* CreateConstantBuffer(uint32 InSize, const void* InData = nullptr) const;
     
     template<typename T>
-    void UpdateConstnatBuffer(ID3D11Buffer* InBuffer, const T* InData = nullptr);
+    void UpdateConstantBuffer(ID3D11Buffer* InBuffer, const T* InData = nullptr);
 
     template<typename T>
     void UpdateVertexBuffer(ID3D11Buffer* InBuffer, T* vertices, const uint32 numVertices) const;
@@ -166,48 +154,8 @@ public:
 
 public:    
     ID3D11ShaderResourceView* CreateBufferSRV(ID3D11Buffer* pBuffer, UINT numElements) const;
-    // CreateBuffer
-    void CreateConstantBuffer();
-    ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const;
-    ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
-    ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
-    ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices, UINT byteWidth) const;
 
-    void PrepareDepthShader() const;
-
-    // update
-    void UpdateConstant(const FMatrix& Model, const FMatrix& ViewProjection, const FMatrix& NormalMatrix, bool IsSelected) const;
-    void UpdateLightBuffer(TArray<ULightComponent*> lightComponents) const;
-    void UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const;
-    void UpdateLitUnlitConstant(int isLit) const;
-    void UpdateSubMeshConstant(bool isSelected) const;
-    void UpdateTextureConstant(float UOffset, float VOffset, float UTiles, float VTiles) const;
-
-public://텍스쳐용 기능 추가
-    ID3D11VertexShader* TextureVertexShader = nullptr;
-    ID3D11PixelShader* TexturePixelShader = nullptr;
-    ID3D11InputLayout* TextureInputLayout = nullptr;
-
-    ID3D11VertexShader* FontVertexShader = nullptr;
-    ID3D11PixelShader* FontPixelShader = nullptr;
-    ID3D11InputLayout* FontInputLayout = nullptr;
-
-    uint32 TextureStride;
-    struct FSubUVConstant
-    {
-        float indexU;
-        float indexV;
-    };
-    ID3D11Buffer* SubUVConstantBuffer = nullptr;
-
-public:
-    void CreateFontShader();
-    void ReleaseFontShader();
-
-    void PrepareFontShader() const;
-    
     void AddRenderObjectsToRenderPass(const ULevel* InLevel) const;
-    
     //Render Passes Run
     void Render(ULevel* InLevel, std::shared_ptr<FEditorViewportClient> InActiveViewport);
 private:
@@ -220,41 +168,10 @@ private:
     std::shared_ptr<LightingRenderPass> lightingRenderPass;
     std::shared_ptr<FogRenderPass> fogRenderPass;
     std::shared_ptr<FinalRenderPass> finalRenderPass;
-
-public:
-    ID3D11ShaderResourceView* FogSRV = nullptr;
+    std::shared_ptr<DepthSceneRenderPass> depthRenderPass;
 
 
 public: // line shader
-    void PrepareLineShader() const;
-    void CreateLineShader();
-    void ReleaseLineShader() const;
-    void RenderBatch(const FGridParameters& gridParam, ID3D11Buffer* pVertexBuffer, int boundingBoxCount, int coneCount, int coneSegmentCount, int obbCount) const;
-    void SetRenderObj(ULevel* Level);
-    void UpdateGridConstantBuffer(const FGridParameters& gridParams) const;
-    void UpdateLinePrimitveCountBuffer(int numBoundingBoxes, int numCones) const;
-    ID3D11Buffer* CreateStaticVerticesBuffer() const;
-    ID3D11Buffer* CreateBoundingBoxBuffer(UINT numBoundingBoxes) const;
-    ID3D11Buffer* CreateOBBBuffer(UINT numBoundingBoxes) const;
-    ID3D11Buffer* CreateConeBuffer(UINT numCones) const;
-    ID3D11ShaderResourceView* CreateBoundingBoxSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes);
-    ID3D11ShaderResourceView* CreateOBBSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes);
-    ID3D11ShaderResourceView* CreateConeSRV(ID3D11Buffer* pConeBuffer, UINT numCones);
-
-    void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
-    void UpdateOBBBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes, int numBoundingBoxes) const;
-    void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
-
-    //Render Pass Demo
-    void ClearRenderArr();
-    void Render(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderStaticMeshes(ULevel* Level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderGizmos(const ULevel* Level, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
-    void RenderLighting(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport) const;
-    void RenderDepthScene(ULevel* Level, std::shared_ptr<FEditorViewportClient>& ActiveViewport);
-    void RenderBillboards(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderTexts(ULevel* Level,std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    
 public:
     bool IsLit() const { return bIsLit; }
     void SetLit(const bool InbIsLit) { bIsLit = InbIsLit; }
@@ -332,7 +249,7 @@ ID3D11Buffer* FRenderer::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize
 }
 
 template <typename T>
-void FRenderer::UpdateConstnatBuffer(ID3D11Buffer* InBuffer, const T* InData)
+void FRenderer::UpdateConstantBuffer(ID3D11Buffer* InBuffer, const T* InData)
 {
     D3D11_MAPPED_SUBRESOURCE sub = {};
     const HRESULT hr = Graphics->DeviceContext->Map(InBuffer, 0,D3D11_MAP_WRITE_DISCARD,0, &sub);
@@ -400,33 +317,8 @@ ID3D11Buffer* FRenderer::CreateStructuredBuffer(const uint32 numElements) const
     }
     return buffer;
 }
-public:
-    ID3D11VertexShader* VertexLineShader = nullptr;
-    ID3D11PixelShader* PixelLineShader = nullptr;
-    ID3D11Buffer* GridConstantBuffer = nullptr;
-    ID3D11Buffer* LinePrimitiveBuffer = nullptr;
-    ID3D11ShaderResourceView* pBBSRV = nullptr;
-    ID3D11ShaderResourceView* pConeSRV = nullptr;
-    ID3D11ShaderResourceView* pOBBSRV = nullptr;
-    // default postprocess
-public:
-    ID3D11PixelShader* PostProcessPixelShader = nullptr;
-    void CreateDefaultPostProcessShader();
-    void ReleaseDefaultPostProcessShader();
-    void PrepareDefaultPostProcessShader() const;
-    // fogshader
-public:
-    ID3D11PixelShader* FogPixelShader = nullptr;
-    ID3D11Buffer* FogConstantBuffer = nullptr;
-    ID3D11ShaderResourceView* FogSRV = nullptr;
 
-    void CreateFogShader();
-    void ReleaseFogShader();
-    void PrepareFogShader() const;
-    void UpdateFogConstant(UHeightFogComponent* FogComponent, const FMatrix& InvProjectionMatrix, const FMatrix& InvViewMatrix, const FVector CameraPosition);
-    void RenderFog(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderFinal(ULevel* level, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-};
+
 template <typename T>
 ID3D11Buffer* FRenderer::CreateStaticVertexBuffer(const TArray<T>& vertices) const
 {

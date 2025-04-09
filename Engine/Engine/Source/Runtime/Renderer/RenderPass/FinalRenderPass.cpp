@@ -10,7 +10,6 @@ extern FEngineLoop GEngineLoop;
 FinalRenderPass::FinalRenderPass(const FString& InName)
     : BaseRenderPass(InName)
 {
-    CreatePostProcessBuffer();
 }
 
 void FinalRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewport)
@@ -20,33 +19,44 @@ void FinalRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewport)
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
 
-    Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack));
-    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
-    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
-    
     Graphics.SwapRTV();
+    Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
+    Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(ERasterizerState::SolidBack)); //레스터 라이저 상태 설정
     Graphics.DeviceContext->OMSetDepthStencilState(nullptr, 0);
     Graphics.DeviceContext->OMSetRenderTargets(1, &Graphics.FrameBufferRTV, nullptr); // 렌더 타겟 설정(백버퍼를 가르킴)
 }
 
-void FinalRenderPass::Execute(std::shared_ptr<FViewportClient> InViewport)
+void FinalRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
 {
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
     FRenderer& Renderer = GEngineLoop.renderer;
 
-    std::shared_ptr<FEditorViewportClient> activeViewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewport);
+    std::shared_ptr<FEditorViewportClient> activeViewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
+    
+    FUVBuffer uvBuffer;
 
-    UpdatePostProcessQuadVertexBufferUpdate(activeViewport);
+    D3D11_VIEWPORT* d3dViewport = InViewportClient->GetD3DViewport();
+    uvBuffer.UOffset = d3dViewport->TopLeftX / Graphics.screenWidth;
+    uvBuffer.VOffset = d3dViewport->TopLeftY / Graphics.screenHeight;
+    uvBuffer.UTiles = d3dViewport->Width / Graphics.screenWidth;
+    uvBuffer.VTiles = d3dViewport->Height / Graphics.screenHeight;
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FUVBuffer")), &uvBuffer);
     
     // SceneColor + Depth SRV 바인딩
-    ID3D11ShaderResourceView* SRVs[2] = { Graphics.GetReadSRV(), Graphics.pingpongDepthSRV[0] };
+    // SceneColor + Depth SRV 바인딩
+    ID3D11ShaderResourceView* SRVs[2] = { Graphics.GetReadSRV(), Graphics.DepthStencilSRV};
     Graphics.DeviceContext->PSSetShaderResources(0, 2, SRVs);
 
-    const std::shared_ptr<FVIBuffers> currentVIBuffer = Renderer.GetVIBuffer(VIBufferName);
-    currentVIBuffer->Bind(Graphics.DeviceContext);
-    // 풀스크린 쿼드 그리기
-    Graphics.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0, 0);
+    ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
+    Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
+    
+    Graphics.DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    Graphics.DeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
+    Graphics.DeviceContext->IASetInputLayout(nullptr);
 
+    // 풀스크린 쿼드 그리기
+    Graphics.DeviceContext->Draw(6, 0);
+    
     // SRV 해제 (다음 패스를 위한 정리)
     ID3D11ShaderResourceView* nullSRV[2] = { nullptr, nullptr };
     Graphics.DeviceContext->PSSetShaderResources(0, 2, nullSRV);
@@ -58,56 +68,4 @@ void FinalRenderPass::Execute(std::shared_ptr<FViewportClient> InViewport)
 
 void FinalRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
 {
-}
-
-void FinalRenderPass::CreatePostProcessBuffer()
-{
-    FRenderer& Renderer = GEngineLoop.renderer;
-
-    FScreenVertex vertices[4] =
-    {
-        { FVector4(-1.0f,  1.0f, 0.0f, 1.0f), 0.0f, 0.0f },
-        { FVector4(1.0f,  1.0f, 0.0f, 1.0f), 1.0f, 0.0f },
-        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), 1.0f, 1.0f },
-        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), 0.0f, 1.0f }
-    };
-
-    const uint32 indices[6] =
-    {
-        0, 1, 2, // 첫 번째 삼각형
-        0, 2, 3  // 두 번째 삼각형
-    };
-
-    ID3D11Buffer* vertexBuffer = Renderer.CreateDynamicVertexBuffer<FScreenVertex>(vertices, 4);
-    Renderer.AddOrSetVertexBuffer(TEXT("FinalQuad"), vertexBuffer, sizeof(FScreenVertex), 4);
-    
-    ID3D11Buffer* indexBuffer = Renderer.CreateIndexBuffer(indices, 6);
-    Renderer.AddOrSetIndexBuffer(TEXT("FinalQuad"), indexBuffer, 6);
-    
-    VIBufferName = TEXT("FinalQuad");
-}
-
-void FinalRenderPass::UpdatePostProcessQuadVertexBufferUpdate(const std::shared_ptr<FEditorViewportClient>& InActiveViewport) const
-{
-    FRenderer& Renderer = GEngineLoop.renderer;
-    FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
-
-    const float screenWidth = static_cast<float>(Graphics.screenWidth);
-    const float screenHeight = static_cast<float>(Graphics.screenHeight);
-
-    D3D11_VIEWPORT* activeD3DViewport = InActiveViewport->GetD3DViewport();
-    const float uvMinX = activeD3DViewport->TopLeftX / screenWidth;
-    const float uvMinY = activeD3DViewport->TopLeftY / screenHeight;
-    const float uvMaxX = (activeD3DViewport->TopLeftX + activeD3DViewport->Width) / screenWidth;
-    const float uvMaxY = (activeD3DViewport->TopLeftY + activeD3DViewport->Height) / screenHeight;
-
-    FScreenVertex vertices[4] = {
-        { FVector4(-1.0f, 1.0f, 0.0f, 1.0f), uvMinX, uvMinY }, // top-left
-        { FVector4(1.0f, 1.0f, 0.0f, 1.0f), uvMaxX, uvMinY }, // top-right
-        { FVector4(1.0f, -1.0f, 0.0f, 1.0f), uvMaxX, uvMaxY }, // bottom-right
-        { FVector4(-1.0f, -1.0f, 0.0f, 1.0f), uvMinX, uvMaxY }  // bottom-left
-    };
-
-    ID3D11Buffer* VertexBuffer = Renderer.GetVIBuffer(VIBufferName)->GetVertexBuffer();
-    Renderer.UpdateVertexBuffer(VertexBuffer, &vertices, 4);
 }

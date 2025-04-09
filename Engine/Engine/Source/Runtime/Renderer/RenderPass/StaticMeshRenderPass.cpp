@@ -22,7 +22,12 @@ void StaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InView
     FRenderer& Renderer = GEngineLoop.renderer;
     FGraphicsDevice& Graphics = GEngineLoop.graphicDevice;
 
+    Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
+    Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     Graphics.DeviceContext->RSSetState(Renderer.GetRasterizerState(Renderer.GetCurrentRasterizerState()));
+    Graphics.DeviceContext->OMSetRenderTargets(5, Graphics.RTVs, Graphics.DepthStencilView); // 렌더 타겟 설정
+    Graphics.DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // 블렌뎅 상태 설정, 기본블렌딩 상태임
+    
     ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
     Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 }
@@ -36,9 +41,9 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InView
     FRenderer& Renderer = GEngineLoop.renderer;
 
     // 쉐이더 내에서 한 번만 Update되어야하는 정보
-    FFlagConstants flagConstants;
-    flagConstants.IsLit = Renderer.IsLit();
-    Renderer.UpdateConstnatBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
+    // FFlagConstants flagConstants;
+    // flagConstants.IsLit = Renderer.IsLit();
+    // Renderer.UpdateConstnatBuffer<FFlagConstants>(Renderer.GetConstantBuffer(TEXT("FFlagConstants")), &flagConstants);
     
     std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (curEditorViewportClient != nullptr)
@@ -47,30 +52,42 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InView
         Proj = curEditorViewportClient->GetProjectionMatrix();
     }
     
-    for (const auto item : StaticMesheComponents)
+    for (UStaticMeshComponent* staticMeshComp : StaticMesheComponents)
     {
-        const FMatrix Model = JungleMath::CreateModelMatrix(item->GetWorldLocation(), item->GetWorldRotation(),
-                                                    item->GetWorldScale());
+        const FMatrix Model = JungleMath::CreateModelMatrix(staticMeshComp->GetWorldLocation(), staticMeshComp->GetWorldRotation(),
+                                                    staticMeshComp->GetWorldScale());
         
-        UpdateMatrixConstants(item, View, Proj);
+        UpdateMatrixConstants(staticMeshComp, View, Proj);
 
-        UpdateSkySphereTextureConstants(Cast<USkySphereComponent>(item));
+        UpdateSkySphereTextureConstants(Cast<USkySphereComponent>(staticMeshComp));
 
-        if (!item->GetStaticMesh()) continue;
+        if (curEditorViewportClient->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
+        {
+            if (GEngineLoop.GetLevel()->GetSelectedActor() == staticMeshComp->GetOwner())
+            {
+                UPrimitiveBatch::GetInstance().AddAABB(
+                    staticMeshComp->GetBoundingBox(),
+                    staticMeshComp->GetWorldLocation(),
+                    Model
+                );
+            }
+        }
+
+        if (!staticMeshComp->GetStaticMesh()) continue;
         
-        // VIBuffer Bind
-        const std::shared_ptr<FVIBuffers> currentVIBuffer =  Renderer.GetVIBuffer(item->VIBufferName);
-        currentVIBuffer->Bind(Graphics.DeviceContext);
-        
-        const OBJ::FStaticMeshRenderData* renderData = item->GetStaticMesh()->GetRenderData();
+        const OBJ::FStaticMeshRenderData* renderData = staticMeshComp->GetStaticMesh()->GetRenderData();
         if (renderData == nullptr) continue;
+
+        // VIBuffer Bind
+        const std::shared_ptr<FVIBuffers> currentVIBuffer =  Renderer.GetVIBuffer(staticMeshComp->VIBufferName);
+        currentVIBuffer->Bind(Graphics.DeviceContext);
 
         // If There's No Material Subset
         if (renderData->MaterialSubsets.Num() == 0)
         {
             Graphics.DeviceContext->DrawIndexed(currentVIBuffer->GetNumIndices(), 0,0);
         }
-        const int selectedSubMeshIndex = item->GetselectedSubMeshIndex();
+        const int selectedSubMeshIndex = staticMeshComp->GetselectedSubMeshIndex();
 
         // SubSet마다 Material Update 및 Draw
         for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); ++subMeshIndex)
@@ -80,14 +97,14 @@ void StaticMeshRenderPass::Execute(const std::shared_ptr<FViewportClient> InView
             const bool bIsSelectedSubMesh = (subMeshIndex == selectedSubMeshIndex);
             UpdateSubMeshConstants(bIsSelectedSubMesh);
 
-            UMaterial* overrideMaterial = item->GetOverrideMaterial(materialIndex);
+            UMaterial* overrideMaterial = staticMeshComp->GetOverrideMaterial(materialIndex);
             if (overrideMaterial != nullptr)
             {
                 UpdateMaterialConstants(overrideMaterial->GetMaterialInfo());
             }
             else
             {
-                UpdateMaterialConstants(item->GetMaterial(materialIndex)->GetMaterialInfo());
+                UpdateMaterialConstants(staticMeshComp->GetMaterial(materialIndex)->GetMaterialInfo());
             }
             
             if (currentVIBuffer != nullptr)
@@ -108,9 +125,6 @@ void StaticMeshRenderPass::AddRenderObjectsToRenderPass(const ULevel* InLevel)
     for (const auto& A : InLevel->GetActors())
     {
         Ss.Add(A->GetRootComponent());
-        TArray<USceneComponent*> temp;
-        A->GetRootComponent()->GetChildrenComponents(temp);
-        Ss + temp;
     }
 
     for (const auto iter : Ss)
@@ -146,7 +160,7 @@ void StaticMeshRenderPass::UpdateMatrixConstants(UStaticMeshComponent* InStaticM
     {
         MatrixConstants.isSelected = false;
     }
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FMatrixConstants")), &MatrixConstants);
 }
 
 void StaticMeshRenderPass::UpdateSkySphereTextureConstants(const USkySphereComponent* InSkySphereComponent)
@@ -169,7 +183,7 @@ void StaticMeshRenderPass::UpdateSkySphereTextureConstants(const USkySphereCompo
         UVBuffer.VTiles = 1;
     }
     
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FUVBuffer")), &UVBuffer);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FUVBuffer")), &UVBuffer);
 }
 
 void StaticMeshRenderPass::UpdateSubMeshConstants(const bool bIsSelectedSubMesh)
@@ -177,7 +191,7 @@ void StaticMeshRenderPass::UpdateSubMeshConstants(const bool bIsSelectedSubMesh)
     FRenderer& Renderer = GEngineLoop.renderer;
     FSubMeshConstants SubMeshConstants;
     SubMeshConstants.IsSelectedSubMesh = bIsSelectedSubMesh;
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FSubMeshConstants")), &SubMeshConstants);
 }
 
 void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& MaterialInfo)
@@ -193,7 +207,7 @@ void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& Mater
     MaterialConstants.SpecularColor = MaterialInfo.Specular;
     MaterialConstants.SpecularScalar = MaterialInfo.SpecularScalar;
     MaterialConstants.EmissiveColor = MaterialInfo.Emissive;
-    Renderer.UpdateConstnatBuffer(Renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
+    Renderer.UpdateConstantBuffer(Renderer.GetConstantBuffer(TEXT("FMaterialConstants")), &MaterialConstants);
     
     if (MaterialInfo.bHasTexture == true)
     {
@@ -205,7 +219,6 @@ void StaticMeshRenderPass::UpdateMaterialConstants(const FObjMaterialInfo& Mater
     else
     {
         ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
-
         Graphics.DeviceContext->PSSetShaderResources(0, 1, nullSRV);
     }
 }
